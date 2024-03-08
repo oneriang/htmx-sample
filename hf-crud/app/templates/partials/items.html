@@ -1,0 +1,16 @@
+{% for item in items %}
+  <tr hx-delete="/items/{{ item.id }}" hx-swap="outerHTML" hx-target="#item-list">
+    <td>{{ item.id }}</td>
+    <td>{{ item.name }}</td>
+    <td>{{ item.description }}</td>
+    <td>
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#updateModal"
+        data-item-id="{{ item.id }}" data-item-name="{{ item.name }}" data-item-description="{{ item.description }}">
+        Update
+      </button>
+      <button type="button" class="btn btn-danger" data-confirm="Are you sure you want to delete this item?">
+        Delete
+      </button>
+    </td>
+  </tr>
+{% endfor %}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Index</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <script async src="https://unpkg.com/htmx.org@1.6.0"></script>
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Tables</h1>
+    <select id="table-select" class="form-control mb-4" onchange="loadCrud(this.value)">
+      <option value="">Select a table</option>
+      {% for table_name in table_names %}
+        <option value="{{ table_name }}">{{ table_name }}</option>
+      {% endfor %}
+    </select>
+
+    <div id="crud-container"></div>
+  </div>
+
+  <script>
+    function loadCrud(tableName) {
+      if (tableName) {
+        htmx.request(`/crud/${tableName}`, {
+          method: 'GET',
+          target: '#crud-container',
+          swap: 'outerHTML'
+        });
+      }
+    }
+  </script>
+</body>
+</html>
