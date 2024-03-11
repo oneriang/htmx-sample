@@ -1,12 +1,12 @@
-# app/main.py
+# main.py
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from typing import List, Dict
-from . import models, crud, database, schemas
-from fastapi.requests import Request
+from . import models, crud, database
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -18,10 +18,6 @@ def get_db():
     finally:
         db.close()
 
-# @app.get("/")
-# def read_root():
-#     return {"Hello": "World"}
-
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request, db: Session = Depends(get_db)):
     table_names = crud.get_table_names(db)
@@ -32,31 +28,61 @@ def read_tables(db: Session = Depends(get_db)):
     return crud.get_table_names(db)
 
 @app.get("/crud", response_class=HTMLResponse)
-def crud_ui(request: Request, table_name: str, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+def crud_ui(request: Request, table_name: str, limit: int = 10, offset: int = 0, db: Session = Depends(get_db)):
     columns = crud.get_columns(db, table_name)
-    # print(columns)
-    items = crud.get_items(db, table_name, skip, limit)
-    # print(items)
-    return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": columns, "items": items})
+    items, total_items = crud.get_items(db, table_name, limit, offset)  # 修改这里
+    return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": columns, "items": items, "limit": limit, "offset": offset, "total_items": total_items})  # 修改这里
 
-    # total_items = get_item_count(db, table_name)
-    # return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": columns, "items": items, "total_items": total_items, "skip": skip, "limit": limit})
+# @app.post("/aaa", response_class=HTMLResponse)
+# def aaa(request: Request):
+#     print(request)
+#     print(request.query_params)
+#     print(dict(request.query_params))  
+#     return "<a>a</a>"
 
-@app.post("/{table_name}/", response_model=schemas.Item)
-def create_item(table_name: str, data: Dict, db: Session = Depends(get_db)):
-    item = crud.create_item(db, table_name, data)
-    return item
+# class FormData(BaseModel):
+#     data: Dict[str, str] = {}
 
-@app.put("/{table_name}/{item_id}", response_model=schemas.Item)
-def update_item(table_name: str, item_id: int, data: Dict, db: Session = Depends(get_db)):
-    item = crud.update_item(db, table_name, item_id, data)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
+# @app.post("/aaa/")
+# async def process_form(form: FormData):
+#     for key, value in form.data.items():
+#         print(f"Key: {key}, Value: {value}")
+#     return {"message": "Form data processed successfully"}
 
-@app.delete("/{table_name}/{item_id}")
-def delete_item(table_name: str, item_id: int, db: Session = Depends(get_db)):
-    item = crud.delete_item(db, table_name, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return {"detail": "Item deleted"}
+# @app.post("/aaa/")
+# async def submit_form(data: Dict[str, str] = Form(...)):
+#     for key, value in data.items():
+#         print(f"{key}: {value}")
+#     return {"data_received": data}
+
+# from typing import Dict, Union, List
+
+# @app.post("/aaa")
+# async def handle_dynamic_form(email: str = Form()):
+#     print(email)
+#     # email = data.get("email")
+#     return {"message": "Form data received successfully", "email": email}
+
+@app.post("/aaa")
+def create_item(data: dict):
+    return data
+
+@app.post("/crud/{table_name}")
+def create_item(table_name: str, data: dict, db: Session = Depends(get_db)):
+    return crud.create_item(db, table_name, data)
+
+@app.put("/crud/{table_name}", response_class=HTMLResponse)
+def update_item(request: Request, table_name: str, data: dict, db: Session = Depends(get_db), limit: int = 10, offset: int = 0):
+    print('------------------------')
+    print('update')
+    print(table_name)
+    # return crud.update_item(db, table_name, data)
+    item = crud.update_item(db, table_name, data)
+    # table_columns = crud.get_columns(db, table_name)
+    # items, total_items = crud.get_items(db, table_name, limit, offset)
+    # return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": table_columns, "items": items, "limit": limit, "offset": offset})
+    return crud_ui(request, table_name, limit, offset, db)
+
+@app.delete("/crud/{table_name}")
+def delete_item(table_name: str, data: dict, db: Session = Depends(get_db)):
+    return crud.delete_item(db, table_name, data)

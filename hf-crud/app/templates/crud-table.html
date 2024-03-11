@@ -1,0 +1,127 @@
+<div class="crud container mt-4">
+  <h1>{{ table_name }} CRUD</h1>
+  <form hx-post="/{{ table_name }}/" hx-swap="outerHTML" hx-target="#item-list">
+    {% for column in columns %}
+    <div class="form-group">
+      <label for="{{ column.name }}">{{ column.name }}</label>
+      <input type="text" class="form-control" id="{{ column.name }}" name="{{ column.name }}" required>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Create Item</button>
+  </form>
+<div id="item-list">
+  <table class="table">
+    <thead>
+      <tr>
+        {% for column in columns %}
+        <th>{{ column.name }}</th>
+        {% endfor %}
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr id="item-{{ item.id }}" hx-swap="outerHTML" hx-target="#item-list">
+        {% for column in columns %}
+        <td>{{ item[column.name] }}</td>
+        {% endfor %}
+        <td>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateModal"
+            data-item-id="{{ item.id }}" {% for column in columns if column.name !='id' %} data-{{ column.name
+            }}="{{ item[column.name] }}" {% endfor %}>
+            Update
+          </button>
+          <button type="button" class="btn btn-danger" hx-delete="/{{ table_name }}/{{ item.id }}" hx-trigger="click"
+            data-confirm="Are you sure you want to delete this item?">
+            Delete
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <nav aria-label="Page navigation example">
+    <ul class="pagination">
+      <li class="page-item {% if offset == 0 %}disabled1{% endif %}">
+        <a class="page-link" hx-get="/crud/?table_name={{ table_name }}&limit={{ limit }}&offset={{ offset - limit }}" hx-swap="outerHTML"
+          hx-target="#item-list" tabindex="-1">Previous</a>
+      </li>
+      {% for i in range(0, items|length, limit) %}
+      <li class="page-item {% if offset == i %}active{% endif %}"><a class="page-link"
+          hx-get="/crud/{{ table_name }}/{{ limit }}/{{ i }}" hx-swap="outerHTML" hx-target="#item-list">{{ i // limit +
+          1 }}</a></li>
+      {% endfor %}
+      <li class="page-item {% if offset + limit >= items|length %}disabled1{% endif %}">
+        <a class="page-link" hx-get="/crud?table_name={{ table_name }}&limit={{ limit }}&offset={{ offset + limit }}" hx-swap="outerHTML"
+          hx-target="#item-list">Next</a>
+      </li>
+    </ul>
+  </nav>
+</div>
+  <!-- Update Modal -->
+  <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form hx-put="/{{ table_name }}/{item_id}" hx-swap="outerHTML" hx-target="#item-list">
+          <div class="modal-header">
+            <h5 class="modal-title" id="updateModalLabel">Update Item</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="item-id" name="item_id">
+            {% for column in columns if column.name != 'id' %}
+            <div class="form-group">
+              <label for="update-{{ column.name }}">{{ column.name }}</label>
+              <input type="text" class="form-control" id="update-{{ column.name }}" name="{{ column.name }}" required>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- <script>
+    $('#updateModal').on('show.bs.modal', function (event) {
+      console.log('show.bs.modal');
+      var button = $(event.relatedTarget);
+      var itemId = button.data('item-id');
+  
+      var modal = $(this);
+      modal.find('.modal-body #item-id').val(itemId);
+  
+      {% for column in columns if column.name != 'id' %}
+        var item{{ column.name }} = button.data('{{ column.name }}-value');
+        modal.find('.modal-body #update-{{ column.name }}').val(item{{ column.name }});
+      {% endfor %}
+  
+      modal.find('form').attr('hx-put', `/{{ table_name }}/${itemId}`);
+    });
+  </script> -->
+
+<script>
+  $('#updateModal').on('show.bs.modal', function (event) {
+    console.log('show.bs.modal');
+    var button = $(event.relatedTarget);
+    var itemId = button.data('item-id');
+
+    var modal = $(this);
+    modal.find('.modal-body #item-id').val(itemId);
+
+    {% for column in columns if column.name != 'id' %}
+    var itemValue = button.data('{{ column.name.lower() }}');
+    modal.find('.modal-body #update-{{ column.name }}').val(itemValue);
+    {% endfor %}
+
+    modal.find('form').attr('hx-put', `/{{ table_name }}/${itemId}`);
+  });
+</script>
