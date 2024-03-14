@@ -27,10 +27,30 @@ def read_root(request: Request, db: Session = Depends(get_db)):
 def read_tables(db: Session = Depends(get_db)):
     return crud.get_table_names(db)
 
+
+from fastapi.responses import HTMLResponse
+from fastapi import Query
+
+@app.get("/crud/{table_name}", response_class=HTMLResponse)
+def search_items(request: Request, table_name: str, search_key: str = "", limit: int = 10, offset: int = 0, sort_column: str = None, sort_order: str = "asc", db: Session = Depends(get_db)):
+    items, total_items = crud.search_items(db, table_name, search_key, limit, offset, sort_column, sort_order)
+    table_columns = crud.get_columns(db, table_name)
+    return templates.TemplateResponse("crud.html", 
+        {"request": request, 
+        "table_name": table_name, 
+        "columns": table_columns, 
+        "items": items, 
+        "limit": limit, 
+        "offset": offset, 
+        "total_items": total_items, 
+        "search_key": search_key,
+        "sort_column": sort_column,
+        "sort_order": sort_order})
+
 @app.get("/crud", response_class=HTMLResponse)
-def crud_ui(request: Request, table_name: str, limit: int = 10, offset: int = 0, db: Session = Depends(get_db)):
+def crud_ui(request: Request, table_name: str, limit: int = 10, offset: int = 0, sort_column: str = None, sort_order: str = "asc",  db: Session = Depends(get_db)):
     columns = crud.get_columns(db, table_name)
-    items, total_items = crud.get_items(db, table_name, limit, offset)  # 修改这里
+    items, total_items = crud.get_items(db, table_name, limit, offset, sort_column, sort_order)  # 修改这里
     return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": columns, "items": items, "limit": limit, "offset": offset, "total_items": total_items})  # 修改这里
 
 # @app.post("/aaa", response_class=HTMLResponse)
@@ -68,8 +88,13 @@ def create_item(data: dict):
     return data
 
 @app.post("/crud/{table_name}")
-def create_item(table_name: str, data: dict, db: Session = Depends(get_db)):
-    return crud.create_item(db, table_name, data)
+def create_item(request: Request, table_name: str, data: dict, db: Session = Depends(get_db), limit: int = 10, offset: int = 0):
+    print('------------------------')
+    print('create')
+    print(table_name)
+
+    crud.create_item(db, table_name, data)
+    return crud_ui(request, table_name, limit, offset, db)
 
 @app.put("/crud/{table_name}", response_class=HTMLResponse)
 def update_item(request: Request, table_name: str, data: dict, db: Session = Depends(get_db), limit: int = 10, offset: int = 0):
@@ -83,6 +108,10 @@ def update_item(request: Request, table_name: str, data: dict, db: Session = Dep
     # return templates.TemplateResponse("crud.html", {"request": request, "table_name": table_name, "columns": table_columns, "items": items, "limit": limit, "offset": offset})
     return crud_ui(request, table_name, limit, offset, db)
 
-@app.delete("/crud/{table_name}")
-def delete_item(table_name: str, data: dict, db: Session = Depends(get_db)):
-    return crud.delete_item(db, table_name, data)
+@app.delete("/crud/{table_name}", response_class=HTMLResponse)
+def delete_item(request: Request, table_name: str, data: dict, db: Session = Depends(get_db), limit: int = 10, offset: int = 0):
+    print('------------------------')
+    print('delete')
+    # return crud.delete_item(db, table_name, data)
+    crud.delete_item(db, table_name, data)
+    return crud_ui(request, table_name, limit, offset, db)

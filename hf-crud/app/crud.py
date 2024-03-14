@@ -1,6 +1,6 @@
 # app/crud.py
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, or_, and_
 from sqlalchemy.orm import Session
 from . import models, database
 from app.models import create_table_class
@@ -29,13 +29,59 @@ def get_columns(db: Session, table_name: str):
 
     return columns
 
-def get_items(db: Session, table_name: str, limit: int, offset: int):
+# def get_items(db: Session, table_name: str, limit: int, offset: int):
+#     table_class = create_table_class(table_name, engine)
+#     query = db.query(table_class)
+#     total_items = query.count()
+#     items = query.limit(limit).offset(offset).all()
+#     return items, total_items
+
+def get_items(db: Session, table_name: str, limit: int, offset: int, sort_column: str = None, sort_order: str = "asc"):
     table_class = create_table_class(table_name, engine)
     query = db.query(table_class)
+    
+    if sort_column:
+        if sort_order.lower() == "asc":
+            query = query.order_by(getattr(table_class, sort_column))
+        else:
+            query = query.order_by(getattr(table_class, sort_column).desc())
+    
     total_items = query.count()
     items = query.limit(limit).offset(offset).all()
-    return items, total_items
     
+    return items, total_items
+
+def search_items(db: Session, table_name: str, search_key: str, limit: int, offset: int, sort_column: str = None, sort_order: str = "asc"):
+    # 创建表对应的类
+    table_class = create_table_class(table_name, engine)
+    query = db.query(table_class)
+
+    print(search_key)
+    print(sort_column)
+
+    # # 构造查询语句
+    # if search_key != '':
+    #     search_filters = []
+    #     for column in table_class.__table__.columns:
+    #         search_filters.append(column.ilike(f"%{search_key}%"))
+    #     query = query.filter(or_(*search_filters))
+
+    if sort_column:
+        if sort_order.lower() == "asc":
+            print(sort_order)
+            query = query.order_by(getattr(table_class, sort_column))
+            print(query)
+        else:
+            print(sort_order)
+            query = query.order_by(getattr(table_class, sort_column).desc())
+            print(query)
+
+    # 获取查询结果
+    total_items = query.count()
+    print(total_items)
+    items = query.limit(limit).offset(offset).all()
+    print(items)
+    return items, total_items
 def create_item(db: Session, table_name: str, data: dict):
     # 创建表对应的类
     table_class = create_table_class(table_name, engine)
@@ -60,24 +106,25 @@ def get_primary_key_value(data: dict, columns: dict):
                 return column_name, column_value
     raise ValueError("Primary key column not found in the data")
 
-# def update_item(db: Session, table_name: str, data: dict):
-#     # 获取表的列信息
-#     columns = get_columns(db, table_name)
-    
-#     # 获取主键列的名称和值
-#     primary_key_column, primary_key_value = get_primary_key_value(data, columns)
-
-#     # 创建表对应的类
-#     table_class = create_table_class(table_name, engine)
-
-#     # 更新项目
-#     item = db.query(table_class).filter(getattr(table_class, primary_key_column) == primary_key_value).first()
-#     if item:
-#         for key, value in data.items():
-#             setattr(item, key, value)
-#         db.commit()
-#     return item
 def update_item(db: Session, table_name: str, data: dict):
+    # 获取表的列信息
+    columns = get_columns(db, table_name)
+    
+    # 获取主键列的名称和值
+    primary_key_column, primary_key_value = get_primary_key_value(data, columns)
+
+    # 创建表对应的类
+    table_class = create_table_class(table_name, engine)
+
+    # 更新项目
+    item = db.query(table_class).filter(getattr(table_class, primary_key_column) == primary_key_value).first()
+    if item:
+        for key, value in data.items():
+            setattr(item, key, value)
+        db.commit()
+    return item
+
+def update_item1(db: Session, table_name: str, data: dict):
     print("update_item")
     print(data)
 

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ table_name }}</h2>
+
+    <!-- Search form -->
+    <form hx-get="/table/{{ table_name }}/search" class="mb-4">
+        <input type="text" name="query" placeholder="Search...">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Insert form -->
+    <dialog id="insert-dialog" class="dialog">
+        <form hx-post="/table/{{ table_name }}/insert" method="dialog">
+            {% for column_name in column_names if column_name != primary_key %}
+            <div class="mb-2">
+                <label for="{{ column_name }}">{{ column_name }}:</label>
+                <input type="text" name="{{ column_name }}" id="{{ column_name }}" required>
+            </div>
+            {% endfor %}
+            <button type="submit">Insert</button>
+            <button type="button" class="cancel" onclick="document.querySelector('#insert-dialog').close()">Cancel</button>
+        </form>
+    </dialog>
+    <button onclick="document.querySelector('#insert-dialog').showModal()">Insert</button>
+
+    <!-- Table -->
+    <div id="table-container">
+        <table>
+            <thead>
+                <tr>
+                    {% for column_name in column_names %}
+                    <th>{{ column_name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                {% set row_dict = dict(zip(column_names, row)) %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td>
+                        <!-- Update button -->
+                        <button onclick="openUpdateDialog({{ row_dict|tojson }})">
+                            Update
+                        </button>
+
+                        <!-- Delete button -->
+                        <form hx-post="/table/{{ table_name }}/delete" style="display: inline;">
+                            <input type="hidden" name="primary_key_value" value="{{ row[column_names.index(primary_key)] }}">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      {% set total_pages = total_results // per_page + (total_results % per_page > 0) %}
+      {% for i in range(1, total_pages + 1) %}
+        <a hx-get="/table/{{ table_name }}/?page={{ i }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="outerHTML" class="page-link{% if i == page %} active{% endif %}">{{ i }}</a>
+      {% endfor %}
+    </div>
+
+    <!-- Update modal -->
+    <dialog id="update-dialog" class="dialog">
+        <form hx-post="/table/{{ table_name }}/update" method="dialog">
+            <input type="hidden" id="primary-key-value">
+            {% for column_name in column_names if column_name != primary_key %}
+            <div class="mb-2">
+                <label for="{{ column_name }}">{{ column_name }}:</label>
+                <input type="text" id="{{ column_name }}" required>
+            </div>
+            {% endfor %}
+            <button type="submit">Update</button>
+            <button type="button" class="cancel" onclick="document.querySelector('#update-dialog').close()">Cancel</button>
+        </form>
+    </dialog>
+</div>
+
+<script>
+function openUpdateDialog(row) {
+    const updateDialog = document.querySelector('#update-dialog');
+    const form = updateDialog.querySelector('form');
+    const primaryKeyInput = updateDialog.querySelector('#primary-key-value');
+
+    // Set primary key value
+    primaryKeyInput.value = row['{{ primary_key }}'];
+
+    // Set input values
+    {% for column_name in column_names if column_name != primary_key %}
+    const {{ column_name }}Input = updateDialog.querySelector('#{{ column_name }}');
+    {{ column_name }}Input.value = row['{{ column_name }}'];
+    {% endfor %}
+
+    // Show the dialog
+    updateDialog.showModal();
+}
+</script>
+
+<style>
+/* ... */
+</style>
+
+{% endblock %}
