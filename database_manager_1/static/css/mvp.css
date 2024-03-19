@@ -72,7 +72,7 @@ header,
 main {
     margin: 0 auto;
     max-width: var(--width-content);
-    /* padding: 3rem 1rem; */
+    padding: 3rem 1rem;
 }
 
 hr {
@@ -123,7 +123,7 @@ main header {
 }
 
 header {
-    /* text-align: var(--justify-important); */
+    text-align: var(--justify-important);
 }
 
 header a b,
@@ -443,10 +443,10 @@ dialog {
     border: 1px solid var(--color-bg-secondary);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow) var(--color-shadow);
-    /* position: fixed;
+    position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); */
+    transform: translate(-50%, -50%);
     width: 50%;
     z-index: 999;
 }
@@ -463,18 +463,8 @@ table {
     white-space: nowrap;
 }
 
-/* table td,
-table th,
-table tr {
-    padding: 0.4rem 0.8rem;
-    text-align: var(--justify-important);
-} */
-
-table th div {
-    padding: 0.4rem 0.8rem;
-}
-
 table td,
+table th,
 table tr {
     padding: 0.4rem 0.8rem;
     text-align: var(--justify-important);
@@ -543,9 +533,4 @@ blockquote footer {
 *::-webkit-scrollbar-thumb {
     background-color: rgb(202, 202, 232);
     border-radius: 10px;
-}
-
-
-th a {
-    color: white;
 }

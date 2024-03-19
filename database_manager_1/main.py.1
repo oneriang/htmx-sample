@@ -1,0 +1,122 @@
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import sessionmaker
+from typing import Dict, List, Any
+#import htmx
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+# 数据库连接配置
+DATABASE_URL = "sqlite:///./my_database.db"
+engine = create_engine(DATABASE_URL)
+metadata = MetaData()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 获取所有表名
+metadata.reflect(bind=engine)
+table_names = metadata.tables.keys()
+
+# 主页，显示所有数据库表
+@app.get("/", response_class=htmx.HtmxHTMLResponse)
+def index(request: htmx.HtmxRequest):
+    return templates.TemplateResponse("index.html", {"request": request, "table_names": table_names})
+
+# 显示单个数据库表的详细信息和操作
+@app.get("/table/{table_name}", response_class=htmx.HtmxHTMLResponse)
+def table_view(request: htmx.HtmxRequest, table_name: str):
+    table = Table(table_name, metadata, autoload_with=engine)
+    with get_db() as db:
+        try:
+            stmt = select([table])
+            results = db.execute(stmt).fetchall()
+            column_names = [column.name for column in table.columns]
+            # 获取主键
+            primary_keys = [column for column in table.columns if column.primary_key]
+            primary_key = primary_keys[0] if primary_keys else None
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse("table_view.html", {
+        "request": request,
+        "table_name": table_name,
+        "results": results,
+        "column_names": column_names,
+        "primary_key": primary_key,
+    })
+
+# 处理插入操作
+@app.post("/table/{table_name}/insert", response_class=htmx.HtmxHTMLResponse)
+def insert_row(request: htmx.HtmxRequest, table_name: str, data: Dict[str, Any]):
+    table = Table(table_name, metadata, autoload_with=engine)
+    with get_db() as db:
+        try:
+            stmt = insert(table).values(data)
+            db.execute(stmt)
+            db.commit()
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse("insert_success.html", {"request": request})
+
+# 处理更新操作
+@app.post("/table/{table_name}/update", response_class=htmx.HtmxHTMLResponse)
+def update_row(request: htmx.HtmxRequest, table_name: str, data: Dict[str, Any]):
+    table = Table(table_name, metadata, autoload_with=engine)
+    primary_key = next(column for column in table.columns if column.primary_key)
+    primary_key_value = data.pop(primary_key.name)
+    with get_db() as db:
+        try:
+            stmt = update(table).where(primary_key == primary_key_value).values(data)
+            db.execute(stmt)
+            db.commit()
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse("update_success.html", {"request": request})
+
+# 处理删除操作
+@app.post("/table/{table_name}/delete", response_class=htmx.HtmxHTMLResponse)
+def delete_row(request: htmx.HtmxRequest, table_name: str, primary_key_value: int):
+    table = Table(table_name, metadata, autoload_with=engine)
+    primary_key = next(column for column in table.columns if column.primary_key)
+    with get_db() as db:
+        try:
+            stmt = delete(table).where(primary_key == primary_key_value)
+            db.execute(stmt)
+            db.commit()
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse("delete_success.html", {"request": request})
+
+# 处理搜索操作
+@app.get("/table/{table_name}/search", response_class=htmx.HtmxHTMLResponse)
+def search_rows(request: htmx.HtmxRequest, table_name: str, query: str):
+    table = Table(table_name, metadata, autoload_with=engine)
+    with get_db() as db:
+        try:
+            # 假设所有列都可搜索，您可以根据需要调整搜索逻辑
+            stmt = select([table]).where(
+                *[getattr(table.c, column.name).like(f"%{query}%") for column in table.columns]
+            )
+            results = db.execute(stmt).fetchall()
+            column_names = [column.name for column in table.columns]
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse("search_results.html", {
+        "request": request,
+        "table_name": table_name,
+        "results": results,
+        "column_names": column_names,
+    })

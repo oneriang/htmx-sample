@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Tables</h2>
+    <ul>
+        {% for table_name in table_names %}
+        <li>
+            <a hx-get="/table/{{ table_name }}" hx-trigger="click" hx-swap="outerHTML">{{ table_name }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+

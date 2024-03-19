@@ -2,12 +2,9 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, or_, and_, inspect, func, asc, desc
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, or_, and_, func, asc, desc
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.types import String, Text
-import sqlalchemy
-from typing import List, Dict
+from typing import Dict
 import logging
 
 app = FastAPI()
@@ -56,75 +53,11 @@ def table_view1(request: Request, table_name: str, page: int = 1, per_page: int 
     primary_key = next((column.name for column in table.columns if column.primary_key), None)
     return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page})
 
-@app.get("/table2/{table_name}", response_class=HTMLResponse)
+@app.get("/table/{table_name}", response_class=HTMLResponse)
 def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, db: Session = Depends(get_db)):
     table = Table(table_name, metadata, autoload_with=engine)
     stmt = select(table)
     total_results = db.execute(select(func.count()).select_from(table)).scalar()
-
-    if sort_column:
-        if sort_order == "asc":
-            stmt = stmt.order_by(asc(table.c[sort_column]))
-        elif sort_order == "desc":
-            stmt = stmt.order_by(desc(table.c[sort_column]))
-
-    stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-    results = db.execute(stmt).fetchall()
-    column_names = [column.name for column in table.columns]
-    primary_key = next((column.name for column in table.columns if column.primary_key), None)
-    return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "columns": table.columns, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page, "sort_column": sort_column, "sort_order": sort_order})
-
-
-# @app.get("/table/{table_name}", response_class=HTMLResponse)
-# def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, query: str = None, db: Session = Depends(get_db)):
-#     table = Table(table_name, metadata, autoload_with=engine)
-#     stmt = select(table)
-
-#     if query is not None:
-#         conditions = []
-#         for column in table.columns:
-#             if isinstance(column.type, (sqlalchemy.sql.sqltypes.String, sqlalchemy.sql.sqltypes.TEXT, sqlalchemy.sql.sqltypes.NVARCHAR)):
-#                 column_conditions = or_(column.contains(query), column.ilike(f"%{query}%"))
-#                 conditions.append(column_conditions)
-#         if conditions:
-#             stmt = stmt.where(and_(*conditions))
-
-#     # total_results = db.execute(select(func.count()).select_from(table)).scalar()
-#     total_results = db.query(func.count()).select_from(table).scalar()
-
-#     if sort_column:
-#         if sort_order == "asc":
-#             stmt = stmt.order_by(asc(table.c[sort_column]))
-#         elif sort_order == "desc":
-#             stmt = stmt.order_by(desc(table.c[sort_column]))
-
-#     stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-#     results = db.execute(stmt).fetchall()
-#     column_names = [column.name for column in table.columns]
-#     primary_key = next((column.name for column in table.columns if column.primary_key), None)
-#     return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "columns": table.columns, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page, "sort_column": sort_column, "sort_order": sort_order})
-from sqlalchemy import func
-
-@app.get("/table/{table_name}", response_class=HTMLResponse)
-def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, query: str = None, db: Session = Depends(get_db)):
-    table = Table(table_name, metadata, autoload_with=engine)
-    stmt = select(table)
-
-    total_results = None  # 初期値を設定
-
-    if query is not None:
-        conditions = []
-        for column in table.columns:
-            if isinstance(column.type, (sqlalchemy.sql.sqltypes.String, sqlalchemy.sql.sqltypes.TEXT, sqlalchemy.sql.sqltypes.NVARCHAR)):
-                column_conditions = or_(column.contains(query), column.ilike(f"%{query}%"))
-                conditions.append(column_conditions)
-        if conditions:
-            stmt = stmt.where(or_(*conditions))
-            # クエリが適用された後に集計を行う
-            total_results = db.query(func.count()).select_from(table).filter(*conditions).scalar()
-
-    if total_results is None:  # クエリが適用されなかった場合の集計
-        total_results = db.query(func.count()).select_from(table).scalar()
 
     if sort_column:
         if sort_order == "asc":
