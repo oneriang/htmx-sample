@@ -2,13 +2,16 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, or_, and_, inspect, func, asc, desc
+from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, or_, and_, inspect, func, asc, desc, DateTime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.types import String, Text
 import sqlalchemy
 from typing import List, Dict
 import logging
+import types
+from datetime import datetime
+import pycountry
 
 app = FastAPI()
 
@@ -16,8 +19,8 @@ app.mount(path="/static", app=StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
+#logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
 
 DATABASE_URL = "sqlite:///./my_database.db"
 engine = create_engine(DATABASE_URL, echo=True)
@@ -45,73 +48,81 @@ def index(request: Request):
     return HTMLResponse(html)
     #return templates.TemplateResponse("index.html>
 
-@app.get("/table1/{table_name}", response_class=HTMLResponse)
-def table_view1(request: Request, table_name: str, page: int = 1, per_page: int = 10, db: Session = Depends(get_db)):
-    table = Table(table_name, metadata, autoload_with=engine)
-    stmt = select(table)
-    total_results = db.execute(select(func.count()).select_from(table)).scalar()
-    stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-    results = db.execute(stmt).fetchall()
-    column_names = [column.name for column in table.columns]
-    primary_key = next((column.name for column in table.columns if column.primary_key), None)
-    return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page})
 
-@app.get("/table2/{table_name}", response_class=HTMLResponse)
-def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, db: Session = Depends(get_db)):
-    table = Table(table_name, metadata, autoload_with=engine)
-    stmt = select(table)
-    total_results = db.execute(select(func.count()).select_from(table)).scalar()
+import json
+import os
+from sqlalchemy import inspect
 
-    if sort_column:
-        if sort_order == "asc":
-            stmt = stmt.order_by(asc(table.c[sort_column]))
-        elif sort_order == "desc":
-            stmt = stmt.order_by(desc(table.c[sort_column]))
-
-    stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-    results = db.execute(stmt).fetchall()
-    column_names = [column.name for column in table.columns]
-    primary_key = next((column.name for column in table.columns if column.primary_key), None)
-    return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "columns": table.columns, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page, "sort_column": sort_column, "sort_order": sort_order})
-
-
-# @app.get("/table/{table_name}", response_class=HTMLResponse)
-# def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, query: str = None, db: Session = Depends(get_db)):
-#     table = Table(table_name, metadata, autoload_with=engine)
-#     stmt = select(table)
-
-#     if query is not None:
-#         conditions = []
-#         for column in table.columns:
-#             if isinstance(column.type, (sqlalchemy.sql.sqltypes.String, sqlalchemy.sql.sqltypes.TEXT, sqlalchemy.sql.sqltypes.NVARCHAR)):
-#                 column_conditions = or_(column.contains(query), column.ilike(f"%{query}%"))
-#                 conditions.append(column_conditions)
-#         if conditions:
-#             stmt = stmt.where(and_(*conditions))
-
-#     # total_results = db.execute(select(func.count()).select_from(table)).scalar()
-#     total_results = db.query(func.count()).select_from(table).scalar()
-
-#     if sort_column:
-#         if sort_order == "asc":
-#             stmt = stmt.order_by(asc(table.c[sort_column]))
-#         elif sort_order == "desc":
-#             stmt = stmt.order_by(desc(table.c[sort_column]))
-
-#     stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-#     results = db.execute(stmt).fetchall()
-#     column_names = [column.name for column in table.columns]
-#     primary_key = next((column.name for column in table.columns if column.primary_key), None)
-#     return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "columns": table.columns, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page, "sort_column": sort_column, "sort_order": sort_order})
-from sqlalchemy import func
+def get_column_info(table):
+    #global engine
+    # 检查 JSON 文件是否存在
+    if os.path.exists(f'{table.name}.json'):
+        # 如果存在，则从 JSON 文件中读取列信息
+        with open(f'{table.name}.json') as f:
+            #return json.load(f)
+            column_info = json.load(f)
+            
+            for c in column_info:
+                if 'data_source' in c:
+                    if c['data_source'] == 'countries':
+                        
+                        if os.path.exists('countries.json') == False:
+                            # 获取 ISO 国家列表
+                            countries = list(pycountry.countries)
+                            
+                            # 提取国家名称
+                            country_names = [country.name for country in countries]
+                            
+                            # 写入到 JSON 文件
+                            with open('countries.json', 'w') as file:
+                                json.dump(country_names, file, indent=4)
+                       
+                        # 读取国家列表
+                        with open('countries.json') as file:
+                            country_list = json.load(file)
+                            
+                            c['form_element']['options'] = country_list
+                
+            return column_info
+    else:
+        # 7如果不存在，则从数据库中获取列信息
+        #inspector = inspect(engine)
+        columns = table.columns
+        #inspector.get_columns(table_name)
+        column_info = []
+        for c in columns:
+            print('###########--------------')
+            #print(dir(c))
+            print(c.primary_key)
+            print('###########--------------')
+            column_info.append({
+                'name': c.name,
+                'label': c.name,
+                'type': str(c.type),
+                'required': c.nullable == False,
+                'primary_key': c.primary_key,
+                #'max_length': column.length
+            })
+        # 将列信息保存到 JSON 文件中
+        with open(f'{table.name}.json', 'w') as f:
+            json.dump(column_info, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
+        return column_info
 
 @app.get("/table/{table_name}", response_class=HTMLResponse)
 def table_view(request: Request, table_name: str, page: int = 1, per_page: int = 10, sort_column: str = None, sort_order: str = None, query: str = None, db: Session = Depends(get_db)):
     table = Table(table_name, metadata, autoload_with=engine)
     stmt = select(table)
 
-    total_results = None  # 初期値を設定
+    column_info = get_column_info(table)
+    print('###########--------------')
+    print(column_info)
+    #column_info = types.SimpleNamespace(**column_info)
+    for c in column_info:
+        print(c["type"])
+    print('--------------###########')
 
+    total_results = None  # 初期値を設定
+    
     if query is not None:
         conditions = []
         for column in table.columns:
@@ -122,7 +133,7 @@ def table_view(request: Request, table_name: str, page: int = 1, per_page: int =
             stmt = stmt.where(or_(*conditions))
             # クエリが適用された後に集計を行う
             total_results = db.query(func.count()).select_from(table).filter(*conditions).scalar()
-
+                
     if total_results is None:  # クエリが適用されなかった場合の集計
         total_results = db.query(func.count()).select_from(table).scalar()
 
@@ -133,10 +144,35 @@ def table_view(request: Request, table_name: str, page: int = 1, per_page: int =
             stmt = stmt.order_by(desc(table.c[sort_column]))
 
     stmt = stmt.limit(per_page).offset((page - 1) * per_page)
-    results = db.execute(stmt).fetchall()
-    column_names = [column.name for column in table.columns]
+    
+    # 自动检测日期时间列并进行格式化
+    for column in table.columns:
+        #print(column.type)
+        if isinstance(column.type, (sqlalchemy.sql.sqltypes.DateTime)):
+            #print('++++++++++++--------------')
+            #print(column.type)
+            #print(column.type.__class__.__name__)
+            #print('++++++++++++--------------')
+            stmt = stmt.column(func.strftime('%Y-%m-%dT%H:%M', column))
+        
+    results = db.execute(stmt).mappings().all()
+    #print('--------------')
+    #print(results)
+    #print('--------------')
     primary_key = next((column.name for column in table.columns if column.primary_key), None)
-    return templates.TemplateResponse("table_view.html", {"request": request, "table_name": table_name, "columns": table.columns, "results": results, "column_names": column_names, "primary_key": primary_key, "total_results": total_results, "page": page, "per_page": per_page, "sort_column": sort_column, "sort_order": sort_order})
+    return templates.TemplateResponse("table_view.html", {
+        "request": request, 
+        "table_name": table_name, 
+        "columns": table.columns, 
+        "column_info": column_info, 
+        "results": results, 
+        "primary_key": primary_key, 
+        "total_results": total_results, 
+        "page": page, 
+        "per_page": per_page, 
+        "sort_column": sort_column, 
+        "sort_order": sort_order
+    })
 
 @app.post("/table/{table_name}/insert", response_class=HTMLResponse)
 async def insert_record(request: Request, table_name: str, db: Session = Depends(get_db)):
@@ -166,13 +202,27 @@ async def update_record(request: Request, table_name: str, db: Session = Depends
     form_data = await request.form()
     data_dict = {}
 
+    # 读取JSON文件
+    with open(f'{table_name}.json', 'r') as file:
+        data_json = json.load(file)
+
+    # 创建一个空字典
+    column_dict = {}
+
+    # 遍历JSON数据，并将name属性作为key，对应的JSON数据作为value存入字典
+    for item in data_json:
+        column_dict[item['name']] = item
+        
     table = Table(table_name, metadata, autoload_with=engine)
     primary_key = get_primary_key(table)
     primary_key_value = form_data.get(primary_key)
 
     for key, value in form_data.items():
         if key != primary_key:
-            data_dict[key] = value
+            if column_dict[key]['type'] == 'DATETIME':
+                data_dict[key] = datetime.strptime(value, '%Y-%m-%dT%H:%M')
+            else:
+                data_dict[key] = value
 
     try:
         stmt = update(table).where(getattr(table.c, primary_key) == primary_key_value).values(data_dict)
@@ -213,5 +263,5 @@ def search_records(request: Request, table_name: str, query: str, db: Session = 
     results = db.execute(stmt).fetchall()
     column_names = [column.name for column in table.columns]
     compiled_stmt = stmt.compile(compile_kwargs={"literal_binds": True})
-    logging.info(f"Executed SQL: {compiled_stmt}")
+    #logging.info(f"Executed SQL: {compiled_stmt}")
     return templates.TemplateResponse("search_results.html", {"request": request, "table_name": table_name, "results": results, "column_names": column_names})

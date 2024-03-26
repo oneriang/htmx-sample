@@ -1,0 +1,37 @@
+[
+    {
+        "label": "InvoiceLineId",
+        "name": "InvoiceLineId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "InvoiceId",
+        "name": "InvoiceId",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "TrackId",
+        "name": "TrackId",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "UnitPrice",
+        "name": "UnitPrice",
+        "primary_key": false,
+        "required": true,
+        "type": "NUMERIC(10, 2)"
+    },
+    {
+        "label": "Quantity",
+        "name": "Quantity",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

@@ -1,0 +1,67 @@
+{% block content %}
+<dialog id="{{ id }}-dialog" class="dialog">
+    <div style="display: flex; position: relative; padding: 0 12px; min-height: 50px; width: 100%; align-items: center;">
+        <div class="q-toolbar__title ellipsis">{{ title }}</div>
+        <button onclick="document.querySelector('#{{ id }}-dialog').close()"><span class="mdi mdi-close"></span></button>
+    </div>
+    <form hx-post="/table/{{ table_name }}/{{ id }}" method="dialog">
+        {% for column in columns %}
+            {% if is_all_readonly %}
+                {% set readonly = "readonly" %}
+            {% else %}
+                {% if column["primary_key"] == True %}
+                    {% set readonly = "readonly" %}
+                {% else %}
+                    {% set readonly = "" %}
+                {% endif %}
+            {% endif %}
+            <div class="mb-2">
+                <label for="{{ column["name"] }}">{{ column["label"] }}:</label>
+                {% if  "form_element" in column %}
+                    {% if column["form_element"]["type"] == "select" %}
+                        {% if "options" in column["form_element"] %}
+                            <select {{ readonly }}  name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                                {% if  "is_dict_list" in column["form_element"] and column["form_element"]["is_dict_list"] %}
+                                    {% for o in column["form_element"]["options"] %}
+                                        {% if "label" in o %}
+                                            <option value="{{o["value"]}}">{{o["label"]}}</option>
+                                        {% elif "key" in o %}
+                                            <option value="{{o["value"]}}">{{o["key"]}}</option>
+                                        {% else %}
+                                            <option value="{{o["value"]}}">{{o["value"]}}</option>
+                                        {% endif %}     
+                                    {% endfor %}
+                                {% else %}
+                                    {% for o in column["form_element"]["options"] %}
+                                        <option value="{{o}}">{{o}}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        {% endif %}
+                    {% endif %}
+                {% elif 'INTEGER' in column["type"] %}
+                <input {{ readonly }} type="number" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                {% elif 'NVARCHAR' in column["type"] %}
+                <input {{ readonly }} type="text" name="{{ column["name"] }}" id="{{ column["name"] }}" maxlength="{{ column["length"]}}" required>
+                {% elif 'TEXT' in column["type"] %}
+                <textarea {{ readonly }} name="{{ column["name"] }}" id="{{ column["name"] }}" required></textarea>
+                {% elif 'BOOLEAN' in column["type"] %}
+                <input {{ readonly }} type="checkbox" name="{{ column["name"] }}" id="{{ column["name"] }}">
+                {% elif 'NUMERIC' in column["type"] %}
+                <input {{ readonly }} type="number" name="{{ column["name"] }}" id="{{ column["name"] }}" step="0.01" required>
+                {% elif 'DATETIME' in column["type"] %}
+                <input {{ readonly }} type="datetime-local" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                {% elif 'DATE' in column["type"] %}
+                <input {{ readonly }} type="date" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                {% elif 'BLOB' in column["type"] %}
+                <input {{ readonly }} type="file" name="{{ column["name"] }}" id="{{ column["name"] }}" accept="image/*, application/pdf" required>
+                {% else %}
+                <input {{ readonly }} type="text" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit">{{ button_submit }}</button>
+        <button type="button" class="cancel" onclick="document.querySelector('#{{ id }}-dialog').close()">{{ button_cancel }}</button>
+    </form>
+</dialog>
+{% endblock %}

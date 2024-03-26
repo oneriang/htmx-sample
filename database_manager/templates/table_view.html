@@ -1,31 +1,27 @@
 {% block content %}
-<h2>{{ table_name }}<button onclick="document.querySelector('#insert-dialog').showModal()">Insert</button></h2>
-
-<!-- Search form -->
-<form hx-get="/table/{{ table_name }}" hx-target="#table-container" hx-swap="innerHTML"  class="mb-4">
-  <input type="text" name="query" placeholder="Search...">
-  <button type="submit">Search</button>
-</form>
+<h2>{{ table_name }}</h2>
 
 <div class="topnav">
+    <button onclick="document.querySelector('#insert-dialog').showModal()"><span class="mdi mdi-plus"></span>
+    </button>
     <div class="search-container">
-        <form hx-get="/table/{{ table_name }}" hx-target="#table-container" hx-swap="innerHTML"  class="mb-4" style="display: inline-flex; padding: 0px;">
+        <form hx-get="/table/{{ table_name }}" hx-target="#table-container" hx-swap="innerHTML" hx-indicator="#spinner" class="mb-4" style="display: inline-flex; padding: 0px;">
             <input type="text" name="query" placeholder="Search..." style="margin: 8px;">
-            <button type="submit">Search</button>
+            <button type="submit"><span class="mdi mdi-magnify"></span></button>
         </form>
     </div>
-  </div>
+</div>
 <table>
   <thead>
     <tr>
       <th>Action</th>
-      {% for column_name in column_names %}
+      {% for c in column_info %}
       <th>
         <div style="overflow: hidden; resize: horizontal;">
           <a hx-swap="innerHTML" href="#" hx-target="#table-container"
-            hx-get="/table/{{ table_name }}/?page={{ page }}&per_page={{ per_page }}&sort_column={{ column_name }}&sort_order={% if sort_column == column_name and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
-            {{ column_name }}
-            {% if sort_column == column_name %}
+            hx-get="/table/{{ table_name }}/?page={{ page }}&per_page={{ per_page }}&sort_column={{ c["name"] }}&sort_order={% if sort_column == c["name"] and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+            {{ c["label"] }}
+            {% if sort_column == c["name"] %}
               {% if sort_order == 'asc' %}
               &#8593;
               {% else %}
@@ -43,16 +39,36 @@
     <tr>
       <td>
         <!-- Update button -->
-        <button onclick="openUpdateDialog(this)" {% for column_name in column_names %} data-{{ column_name }}-value="{{ row[column_names.index(column_name)] }}" {% endfor %}>
-          Update
+        <button onclick="openUpdateDialog(this)" 
+            {% for k, v in row.items() %} 
+                {% if v is defined and v is not none %}
+                    {% if v.__class__.__name__ == 'datetime' %} 
+                        data-{{ k }}="{{ v.strftime('%Y-%m-%dT%H:%M') }}"
+                    {% else %}
+                        data-{{ k }}="{{ v }}"
+                    {% endif %}
+                {% endif %}
+            {% endfor %}>
+            <span style="display: none;">Update</span>
+            <span class="mdi mdi-pencil"></span>
         </button>
         <!-- Delete button -->
-        <button onclick="openDeleteDialog(this)" {% for column_name in column_names %} data-{{ column_name }}-value="{{ row[column_names.index(column_name)] }}" {% endfor %}>
-          Delete
+        <button onclick="openDeleteDialog(this)" 
+            {% for k, v in row.items() %} 
+                {% if v is defined and v is not none %}
+                    {% if v.__class__.__name__ == 'datetime' %} 
+                        data-{{ k }}="{{ v.strftime('%Y-%m-%dT%H:%M') }}"
+                    {% else %}
+                        data-{{ k }}="{{ v }}"
+                    {% endif %}
+                {% endif %}
+            {% endfor %}>
+            <span style="display: none;">Delete</span>
+            <span class="mdi mdi-delete"></span>
         </button>
       </td>
-      {% for cell in row %}
-      <td>{{ cell }}</td>
+      {% for k, v in row.items() %}
+      <td>{{ v }}</td>
       {% endfor %}
     </tr>
     {% endfor %}
@@ -73,7 +89,7 @@
     {% endif %}
     <!-- Previous page button -->
     {% if page > 1 %}
-      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Previous</a>
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Previous&laquo;</a>
     {% endif %}
   
     {% for i in range(start_page, end_page + 1) %}
@@ -82,7 +98,7 @@
   
     <!-- Next page button -->
     {% if page < total_pages %}
-      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Next</a>
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Next&raquo;</a>
     {% endif %}
   </div>
 
@@ -100,14 +116,14 @@
   {% endif %}
   <!-- Previous page button -->
   {% if page > 1 %}
-    <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Previous</a>
+    <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Previous&laquo;</a>
   {% endif %}
   {% for i in range(start_page, end_page + 1) %}
     <a href="#" hx-get="/table/{{ table_name }}/?page={{ i }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link{% if i == page %} active{% endif %}">{{ i }}</a>
   {% endfor %}
   <!-- Next page button -->
   {% if page < total_pages %}
-    <a href="#" hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Next</a>
+    <a href="#" hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container" hx-swap="innerHTML" class="page-link">Next&raquo;</a>
   {% endif %}
   <!-- Current page / total pages -->
   <span class="page-link">{{ page }} / {{ total_pages }}</span>
@@ -122,60 +138,34 @@
 </div>
 
 <!-- Insert modal -->
-<dialog id="insert-dialog" class="dialog">
-  <form hx-post="/table/{{ table_name }}/insert" method="dialog">
-    {% for column_name in column_names if column_name != primary_key %}
-      <div class="mb-2">
-        <label for="{{ column_name }}">{{ column_name }}:</label>
-        <input type="text" name="{{ column_name }}" id="{{ column_name }}" required>
-      </div>
-    {% endfor %}
-    <button type="submit">Insert</button>
-    <button type="button" class="cancel" onclick="document.querySelector('#insert-dialog').close()">Cancel</button>
-  </form>
-</dialog>
+{% with table_name=table_name, columns=column_info, id="insert", title="新建", button_submit="確定", button_cancel="Cancel" %} 
+{% include 'dialog_form.html' %}
+{% endwith %}
+
 <!-- Update modal -->
-<dialog id="update-dialog" class="dialog">
-  <form hx-post="/table/{{ table_name }}/update" method="dialog">
-    {% for column_name in column_names %}
-      <div class="mb-2">
-        <label for="{{ column_name }}">{{ column_name }}:</label>
-        <input type="text" name="{{ column_name }}" id="{{ column_name }}" required>
-      </div>
-    {% endfor %}
-    <button type="submit">Update</button>
-    <button type="button" class="cancel" onclick="document.querySelector('#update-dialog').close()">Cancel</button>
-  </form>
-</dialog>
+{% with table_name=table_name, columns=column_info, id="update", title="更新", button_submit="確定", button_cancel="Cancel" %} 
+{% include 'dialog_form.html' %}
+{% endwith %}
+
 <!-- Delete modal -->
-<dialog id="delete-dialog" class="dialog">
-  <form hx-post="/table/{{ table_name }}/delete" method="dialog">
-    {% for column_name in column_names %}
-      <div class="mb-2">
-        <label for="{{ column_name }}">{{ column_name }}:</label>
-        <input readonly type="text" name="{{ column_name }}" id="{{ column_name }}" required>
-      </div>
-    {% endfor %}
-    <button type="submit" style="background-color: red;">Delete</button>
-    <button type="button" class="cancel" onclick="document.querySelector('#delete-dialog').close()">Cancel</button>
-  </form>
-</dialog>
+{% with table_name=table_name, columns=column_info, id="delete", title="削除", button_submit="確定", button_cancel="Cancel", is_all_readonly="readonly" %} 
+{% include 'dialog_form.html' %}
+{% endwith %}
+     
 <script>
   function openUpdateDialog(button) {
+    console.log('openUpdateDialog');
     var updateDialog = document.querySelector('#update-dialog');
-    {% for column_name in column_names %}
-      var columnValue = button.getAttribute('data-{{ column_name }}-value');
-      var columnInput = updateDialog.querySelector('#{{ column_name }}');
-      columnInput.value = columnValue;
+    {% for column in columns %}
+        updateDialog.querySelector('#{{ column.name }}').value = button.getAttribute('data-{{ column.name }}')
     {% endfor %}
     updateDialog.showModal();
   }
   function openDeleteDialog(button) {
+    console.log('openDeleteDialog');
     var deleteDialog = document.querySelector('#delete-dialog');
-    {% for column_name in column_names %}
-      var columnValue = button.getAttribute('data-{{ column_name }}-value');
-      var columnInput = deleteDialog.querySelector('#{{ column_name }}');
-      columnInput.value = columnValue;
+    {% for column in columns %}
+        deleteDialog.querySelector('#{{ column.name }}').value = button.getAttribute('data-{{ column.name }}')
     {% endfor %}
     deleteDialog.showModal();
   }

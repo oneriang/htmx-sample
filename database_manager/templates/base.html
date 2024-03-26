@@ -2,194 +2,614 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Manager</title>
-    <link rel="stylesheet" href="/static/css/mvp.css?1">
-    <script src="/static/js/htmx.org@1.9.10"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database Manager</title>
+  <link rel="stylesheet" href="/static/css/mvp.css?6">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" type="text/css">
+  <script src="/static/js/htmx.org@1.9.10"></script>
 
-    <style>
-        body {
-            font-family: "Lato", sans-serif;
-        }
+  <style>
+    body {
+      font-family: "Lato", sans-serif;
+    }
 
-        .sidenav {
-            height: 100%;
-            width: 0;
-            position: fixed;
-            z-index: 1;
-            top: 0;
-            left: 0;
-            background-color: #111;
-            overflow-x: hidden;
-            transition: 0.5s;
-            padding-top: 60px;
-        }
+    .sidenav {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      background-color: #111;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+    }
 
-        .sidenav a {
-            padding: 8px 8px 8px 32px;
-            text-decoration: none;
-            font-size: 25px;
-            color: #818181;
-            display: block;
-            transition: 0.3s;
-        }
+    .sidenav a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 25px;
+      color: #818181;
+      display: block;
+      transition: 0.3s;
+    }
 
-        .sidenav a:hover {
-            color: #f1f1f1;
-        }
+    .sidenav a:hover {
+      color: #f1f1f1;
+    }
 
-        .sidenav .closebtn {
-            position: absolute;
-            top: 0;
-            right: 25px;
-            font-size: 36px;
-            margin-left: 50px;
-        }
+    .sidenav .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
 
-        #main {
-            transition: margin-left .5s;
-            padding: 16px;
-        }
+    #main {
+      transition: margin-left .5s;
+      padding: 16px;
+    }
 
-        @media screen and (max-height: 450px) {
-            .sidenav {
-                padding-top: 15px;
-            }
+    @media screen and (max-height: 450px) {
+      .sidenav {
+        padding-top: 15px;
+      }
 
-            .sidenav a {
-                font-size: 18px;
-            }
-        }
+      .sidenav a {
+        font-size: 18px;
+      }
+    }
+  </style>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .topnav {
+      overflow: hidden;
+      background-color: #e9e9e9;
+    }
+
+    .topnav a {
+      float: left;
+      display: block;
+      color: black;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+      font-size: 17px;
+    }
+
+    .topnav a:hover {
+      background-color: #ddd;
+      color: black;
+    }
+
+    .topnav a.active {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    .topnav .search-container {
+      float: right;
+    }
+
+    .topnav input[type=text] {
+      padding: 6px;
+      margin-top: 8px;
+      font-size: 17px;
+      border: none;
+    }
+
+    .topnav .search-container button {
+      float: right;
+      /* padding: 6px 10px; */
+      /* margin-top: 8px; */
+      /* margin-right: 16px; */
+      /* background: #ddd; */
+      /* font-size: 17px; */
+      /* border: none; */
+      cursor: pointer;
+    }
+
+    .topnav .search-container button:hover {
+      /* background: #ccc; */
+    }
+
+    @media screen and (max-width: 600px) {
+      /*
+      .topnav .search-container {
+        float: none;
+      }
+      */
+
+      .topnav a,
+      .topnav input[type=text],
+      .topnav .search-container button {
+        float: none;
+        display: block;
+        text-align: left;
+        /*width: 100%;
+        margin: 0;
+        padding: 14px;*/
+      }
+
+      .topnav input[type=text] {
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+
+  <style>
+    .ellipsis {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .q-toolbar__title {
+      flex: 1 1 0%;
+      min-width: 1px;
+      max-width: 100%;
+      font-size: 21px;
+      font-weight: 400;
+      letter-spacing: .01em;
+      padding: 0 12px;
+    }
+  </style>
+
+  <style>
+    body {
+      font-family: "Lato", sans-serif;
+    }
+
+    .sidenav {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      background-color: #111;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+    }
+
+    .sidenav a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 25px;
+      color: #818181;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .sidenav a:hover {
+      color: #f1f1f1;
+    }
+
+    .sidenav .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
+
+    @media screen and (max-height: 450px) {
+      .sidenav {
+        padding-top: 15px;
+      }
+
+      .sidenav a {
+        font-size: 18px;
+      }
+    }
+
+  </style>
+
+  <style>
+    body {
+      font-family: "Lato", sans-serif;
+    }
+    
+    .sidenav-right {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      right: 0;
+      background-color: #111;
+      overflow-x: hidden;
+      transition: 0.5s;
+    }
+    
+    .sidenav-right a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 25px;
+      color: #818181;
+      display: block;
+      transition: 0.3s;
+    }
+    
+    .sidenav-right a:hover {
+      color: #f1f1f1;
+    }
+    
+    .sidenav-right .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
+    
+    @media screen and (max-height: 450px) {
+      .sidenav-right {padding-top: 15px;}
+      .sidenav-right a {font-size: 18px;}
+    }
+    </style>
+
+  <style>
+    body {margin:0;}
+    
+    .navbar {
+      overflow: hidden;
+      background-color: #333;
+      position: fixed;
+      top: 0;
+      width: 100%;
+    }
+    
+    .navbar a {
+      float: left;
+      display: block;
+      color: #f2f2f2;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+      font-size: 17px;
+    }
+
+    .navbar #title {
+      float: left;
+      display: block;
+      color: #f2f2f2;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+      font-size: 17px;
+      font-weight: bold;
+    }
+    
+    .navbar a:hover {
+      background: #ddd;
+      color: black;
+    }
+    
+    .main {
+      padding: 16px;
+      margin-top: 30px;
+      height: 1500px; /* Used in this example to enable scrolling */
+    }
+    /* Change the color of links on hover */
+    .topnav a:hover {
+      background-color: #ddd;
+      color: black;
+    }
+    
+    /* Add a color to the active/current link */
+    .topnav a.active {
+      background-color: #04AA6D;
+      color: white;
+    }
+    
+    /* Right-aligned section inside the top navigation */
+    .topnav-right {
+      float: right;
+    }
+
+    #main {
+      padding: 16px;
+      margin-top: 30px;
+      height: 1500px; /* Used in this example to enable scrolling */
+    }
     </style>
 
     <style>
-        * {box-sizing: border-box;}
-        
-        body {
-          margin: 0;
-          font-family: Arial, Helvetica, sans-serif;
-        }
-        
-        .topnav {
-          overflow: hidden;
-          background-color: #e9e9e9;
-        }
-        
-        .topnav a {
-          float: left;
-          display: block;
-          color: black;
-          text-align: center;
-          padding: 14px 16px;
-          text-decoration: none;
-          font-size: 17px;
-        }
-        
-        .topnav a:hover {
-          background-color: #ddd;
-          color: black;
-        }
-        
-        .topnav a.active {
-          background-color: #2196F3;
-          color: white;
-        }
-        
-        .topnav .search-container {
-          float: right;
-        }
-        
-        .topnav input[type=text] {
-          padding: 6px;
-          margin-top: 8px;
-          font-size: 17px;
-          border: none;
-        }
-        
-        .topnav .search-container button {
-            float: right;
-            /* padding: 6px 10px; */
-            /* margin-top: 8px; */
-            /* margin-right: 16px; */
-            /* background: #ddd; */
-            /* font-size: 17px; */
-            /* border: none; */
-            cursor: pointer;
-          }
-          
-          .topnav .search-container button:hover {
-            /* background: #ccc; */
-          }
-        
-        @media screen and (max-width: 600px) {
-          .topnav .search-container {
-            float: none;
-          }
-          .topnav a, .topnav input[type=text], .topnav .search-container button {
-            float: none;
-            display: block;
-            text-align: left;
-            width: 100%;
-            margin: 0;
-            padding: 14px;
-          }
-          .topnav input[type=text] {
-            border: 1px solid #ccc;  
-          }
-        }
-        </style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      
+      .navbar {
+        overflow: hidden;
+        background-color: #333;
+      }
+      
+      .navbar a {
+        float: left;
+        font-size: 16px;
+        color: white;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+      }
+      
+      .dropdown {
+        float: left;
+        overflow: hidden;
+      }
+      
+      .dropdown .dropbtn {
+        font-size: 16px;  
+        border: none;
+        outline: none;
+        color: white;
+        padding: 14px 16px;
+        background-color: inherit;
+        font-family: inherit;
+        margin: 0;
+      }
+      
+      .navbar a:hover, .dropdown:hover .dropbtn {
+        background-color: red;
+      }
+      
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+      }
+      
+      .dropdown-content a {
+        float: none;
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        text-align: left;
+      }
+      
+      .dropdown-content a:hover {
+        background-color: #ddd;
+      }
+      
+      .dropdown:hover .dropdown-content {
+        display: block;
+      }
 
+
+      .dropdown-content {
+        display: block;
+        position: absolute;
+        background-color: #f9f9f9;
+        width: 100%;
+        left: 0;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+      }
+      
+      .dropdown-content .header {
+        background: red;
+        padding: 16px;
+        color: white;
+      }
+      
+      .dropdown:hover .dropdown-content {
+        display: block;
+      }
+      
+      /* Create three equal columns that floats next to each other */
+      .column {
+        float: left;
+        width: 33.33%;
+        padding: 10px;
+        background-color: #ccc;
+        height: 250px;
+      }
+      
+      .column a {
+        float: none;
+        color: black;
+        padding: 16px;
+        text-decoration: none;
+        display: block;
+        text-align: left;
+      }
+      
+      .column a:hover {
+        background-color: #ddd;
+      }
+      
+      /* Clear floats after the columns */
+      .row:after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+      
+      /* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
+      @media screen and (max-width: 600px) {
+        .column {
+          width: 100%;
+          height: auto;
+        }
+      }
+      
+      
+      .loader {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          display: block;
+          border-top: 3px solid red;
+          border-right: 3px solid transparent;
+          box-sizing: border-box;
+          animation: rotation 1s linear infinite;
+        }
+        
+        @keyframes rotation {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        } 
+
+      </style>
 </head>
 
 <body>
 
-    <div id="mySidenav" class="sidenav">
-        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-        {% for table_name in table_names %}
-
-        <a hx-get="/table/{{ table_name }}" hx-trigger="click" hx-swap="innerHTML" hx-target="#table-container">{{
-            table_name }}</a>
-
-        {% endfor %}
+  <div class="navbar">
+    <a href="#home"><span onclick="toggleNav()" class="mdi mdi-menu"></span></a>
+    <span id="title">Database Manager</span>
+    <div class="topnav-right">
+      <a href="#search" onclick="toggleNavRight()" ><span class="mdi mdi-account"></span>
+      </a>
     </div>
-    <div id="main">
-        <header id="header">
-            <h1>
-                <span style="font-size:30px;cursor:pointer" onclick="toggleNav()">&#9776;</span>
-                <a href="/">Database Manager</a>
-            </h1>
-        </header>
-        {% block content %}{% endblock %}
+  </div>
 
-        <footer>
-            <p>Footer</p>
-        </footer>
+  <div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    {% for table_name in table_names %}
+
+    <a onclick="toggleNav()" 
+      hx-get="/table/{{ table_name }}" 
+      hx-trigger="click" 
+      hx-swap="innerHTML"
+      hx-target="#table-container"
+      hx-indicator="#spinner">{{ table_name }}</a>
+
+    {% endfor %}
+  </div>
+
+  <div id="mySidenavRight" class="sidenav-right">
+    <a href="javascript:void(0)" class="closebtnRight" onclick="closeNavRight()">&times;</a>
+
+    <div class="dropdown-content">
+      <div class="header">
+        <h2>Mega Menu</h2>
+      </div>   
+      <div class="row">
+        <div class="column">
+          <h3>Category 1</h3>
+          <a href="#">Link 1</a>
+          <a href="#">Link 2</a>
+          <a href="#">Link 3</a>
+        </div>
+        <div class="column">
+          <h3>Category 2</h3>
+          <a href="#">Link 1</a>
+          <a href="#">Link 2</a>
+          <a href="#">Link 3</a>
+        </div>
+        <div class="column">
+          <h3>Category 3</h3>
+          <a href="#">Link 1</a>
+          <a href="#">Link 2</a>
+          <a href="#">Link 3</a>
+        </div>
+      </div>
     </div>
 
+  </div>
+  <div id="main">
+    <header id="header" style="margin: 0px;">
+      <!-- <h1>
+        <span style="font-size:30px;cursor:pointer" onclick="toggleNav()">&#9776;</span>
+        <a href="/">Database Manager</a>
+      </h1> -->
+    </header>
+     
+    {% block content %}{% endblock %}
+    
+       <div class="loader htmx-indicator" id="spinner"></div>
+   
+    <footer>
+      <p>Footer</p>
+    </footer>
+  </div>
 
 
 
-    <script>
-        function toggleNav() {
-            if (document.getElementById("mySidenav").style.width === "250px") {
-                closeNav();
-            } else {
-                openNav();
-            }
-        }
 
-        function openNav() {
-            document.getElementById("mySidenav").style.width = "250px";
-            document.getElementById("main").style.marginLeft = "250px";
-        }
+  <script>
+    function toggleNav() {
+      if (document.getElementById("mySidenav").style.width === "250px") {
+        closeNav();
+      } else {
         openNav();
+      }
+    }
 
-        function closeNav() {
-            document.getElementById("mySidenav").style.width = "0";
-            document.getElementById("main").style.marginLeft = "0";
+    function openNav() {
+      document.getElementById("mySidenav").style.width = "250px";
+      // document.getElementById("main").style.marginLeft = "250px";
+      document.addEventListener('click', closeNavOutside);
+    }
+    // openNav();
+
+    function closeNav() {
+      document.getElementById("mySidenav").style.width = "0";
+      // document.getElementById("main").style.marginLeft = "0";
+      document.removeEventListener('click', closeNavOutside);
+    }
+
+    function closeNavOutside(event) {
+      var sidenav = document.getElementById("mySidenav");
+      if (!event.target.matches('#mySidenav') && !event.target.matches('span[onclick="toggleNav()"]')) {
+        if (sidenav.style.width === '250px') {
+          closeNav();
         }
-    </script>
+      }
+    }
+
+    function toggleNavRight() {
+      if (document.getElementById("mySidenavRight").style.width === "250px") {
+        closeNavRight();
+      } else {
+        openNavRight();
+      }
+    }
+
+    function openNavRight() {
+      document.getElementById("mySidenavRight").style.width = "100%";
+      // document.getElementById("main").style.marginLeft = "250px";
+      document.addEventListener('click', closeNavOutside);
+    }
+
+    function closeNavRight() {
+      document.getElementById("mySidenavRight").style.width = "0";
+      // document.getElementById("main").style.marginLeft = "0";
+      document.removeEventListener('click', closeNavOutside);
+    }
+
+    function closeNavOutsideRight(event) {
+      var sidenav = document.getElementById("mySidenavRight");
+      if (!event.target.matches('#mySidenavRight') && !event.target.matches('span[onclick="toggleNavRight()"]')) {
+        if (sidenav.style.width === '250px') {
+          closeNavRight();
+        }
+      }
+    }
+  </script>
 </body>
 
 </html>

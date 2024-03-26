@@ -1,0 +1,134 @@
+[
+    {
+        "label": "EmployeeId",
+        "name": "EmployeeId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "姓",
+        "name": "LastName",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(20)"
+    },
+    {
+        "label": "名",
+        "name": "FirstName",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(20)"
+    },
+    {
+        "label": "职位",
+        "name": "Title",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(30)"
+    },
+    {
+        "label": "ReportsTo",
+        "name": "ReportsTo",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "出生年月日",
+        "name": "BirthDate",
+        "primary_key": false,
+        "required": false,
+        "type": "DATETIME"
+    },
+    {
+        "label": "雇佣日期",
+        "name": "HireDate",
+        "primary_key": false,
+        "required": false,
+        "type": "DATETIME"
+    },
+    {
+        "label": "地址",
+        "name": "Address",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(70)"
+    },
+    {
+        "label": "城市",
+        "name": "City",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)",
+        "form_element": {
+           "type": "select",
+           "options": [
+               {"key": "k1", "value": "a", "label1": "-a-"},
+               {"key": "k2", "value": "b", "label1": "-b-"},
+               {"key": "k3", "value": "c", "label1": "-c-"}
+            ],
+            "is_dict_list": true
+        }
+    },
+    {
+        "label": "省份",
+        "name": "State",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)",
+        "form_element": {
+           "type": "select",
+           "options": [
+               {"key": "1", "value": "a", "label": "-a-"},
+               {"key": "2", "value": "b", "label": "-b-"},
+               {"key": "3", "value": "c", "label": "-c-"}
+            ],
+            "is_dict_list": true
+        }
+    },
+    {
+        "label": "国家",
+        "name": "Country",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)",
+        "data_source": "countries",
+        "form_element": {
+           "type": "select",
+           "options": [
+                "a",
+                "b",
+                "c"
+            ]
+        }   
+    },
+    {
+        "label": "邮编",
+        "name": "PostalCode",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(10)"
+    },
+    {
+        "label": "电话号码",
+        "name": "Phone",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(24)"
+    },
+    {
+        "label": "传真",
+        "name": "Fax",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(24)"
+    },
+    {
+        "label": "电子邮件地址",
+        "name": "Email",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(60)"
+    }
+]
