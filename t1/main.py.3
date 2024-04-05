@@ -1,0 +1,136 @@
+from fastapi import FastAPI
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey, and_
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import select
+import json
+
+app = FastAPI()
+
+# 创建数据库连接
+SQLALCHEMY_DATABASE_URL = "sqlite:///./example.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 创建 metadata
+metadata = MetaData()
+
+# 定义 users 表
+users = Table(
+    "users",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("username", String, index=True),
+    Column("email", String, index=True),
+)
+
+# 定义 posts 表
+posts = Table(
+    "posts",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("title", String),
+    Column("content", String),
+    Column("user_id", Integer, ForeignKey("users.id")),
+)
+
+# 创建数据库表
+metadata.create_all(bind=engine)
+
+# 从 JSON 文件中加载数据
+def load_data_from_json():
+    with open("data.json", "r") as file:
+        return json.load(file)
+
+data = load_data_from_json()
+
+class Transaction:
+    def __init__(self, name, steps):
+        self.name = name
+        self.steps = steps
+
+def execute_step(step, db):
+    action = step["action"]
+    if action == "insert":
+        table = globals()[step["table"]]
+        values = step["values"]
+        db.execute(table.insert().values(**values))
+    elif action == "get":
+        # print(step)
+        table = globals()[step["table"]]
+        fields = step.get("fields", ["*"])
+        # print(fields)
+        select_fields = []
+        for f in fields:
+            t = globals()[f["table"]]
+            c = t.c[f["field"]]
+            select_fields.append(c)
+        query = select(*select_fields)
+        join = step.get("join")
+        # if join:
+        #     for table_name, join_info in join.items():
+        #         join_table = globals()[table_name]
+        #         join_type = join_info["type"]
+        #         join_on = join_info["on"]
+        #         query = query.join(join_table, join_table.c[join_on] == table.c[join_on], isouter=join_type == "left")
+        # is_first = True
+        if join:
+            for j in join:
+                left_table = globals()[j["left_table"]]
+                # if is_first == True:
+                #     query = select(left_table)
+                #     is_first = False
+                right_table = globals()[j["right_table"]]
+                join_type = j["type"]
+                join_on = []
+                for o in j["on"]:
+                    join_on.append(left_table.c[o["left_column"]] == right_table.c[o["right_column"]])
+                query = query.join(right_table, and_(*join_on), isouter=join_type == "left")
+        filter_values = step.get("filter_values", {})
+        print(filter_values)
+        and_filter = []
+        for f in filter_values:
+            print(f)
+            if "and" in f:
+                and_items = f["and"]
+                for and_i in and_items:
+                    print(and_i)
+                    and_i_table = globals()[and_i["table"]]
+                    and_filter.append(and_i_table.c[and_i["field"]] == and_i["value"])
+        # query = query.filter_by(**filter_values)
+        query = query.filter(*and_filter)
+        result = db.execute(query).fetchall()
+        return result
+    # elif action == "get":
+    #     print(step)
+    #     table = globals()[step["table"]]
+    #     fields = step.get("fields", ["*"])
+    #     print(fields)
+    #     query = select([table.c[field] for field in fields])
+    #     join_info = step.get("join")
+    #     if join_info:
+    #         join_table = globals()[join_info[0]["table"]]
+    #         join_type = join_info[0]["type"]
+    #         join_on = join_info[0]["on"]
+    #         query = query.select_from(join(table, join_table, table.c[join_on] == join_table.c[join_on], isouter=join_type == "left"))
+    #     filter_values = step.get("filter_values", {})
+    #     query = query.filter_by(**filter_values)
+    #     result = db.execute(query).fetchall()
+    #     return result
+
+@app.get("/execute_all_transactions/")
+async def execute_all_transactions():
+    db = SessionLocal()
+    try:
+        for transaction_data in data["transactions"]:
+            transaction = Transaction(**transaction_data)
+            for step in transaction.steps:
+                result = execute_step(step, db)
+                print(result)  # 在控制台输出查询结果，方便调试
+    finally:
+        db.close()
+
+    return {"message": "All transactions executed successfully."}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,0 +1,65 @@
+[
+    {
+        "label": "InvoiceId",
+        "name": "InvoiceId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "CustomerId",
+        "name": "CustomerId",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "InvoiceDate",
+        "name": "InvoiceDate",
+        "primary_key": false,
+        "required": true,
+        "type": "DATETIME"
+    },
+    {
+        "label": "BillingAddress",
+        "name": "BillingAddress",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(70)"
+    },
+    {
+        "label": "BillingCity",
+        "name": "BillingCity",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "BillingState",
+        "name": "BillingState",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "BillingCountry",
+        "name": "BillingCountry",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "BillingPostalCode",
+        "name": "BillingPostalCode",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(10)"
+    },
+    {
+        "label": "Total",
+        "name": "Total",
+        "primary_key": false,
+        "required": true,
+        "type": "NUMERIC(10, 2)"
+    }
+]

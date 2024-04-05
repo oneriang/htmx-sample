@@ -1,0 +1,214 @@
+{
+  "tables": [
+    {
+      "name": "users",
+      "fields": [
+        {
+          "name": "id",
+          "type": "integer",
+          "primary_key": true
+        },
+        {
+          "name": "username",
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "posts",
+      "fields": [
+        {
+          "name": "id",
+          "type": "integer",
+          "primary_key": true
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "content",
+          "type": "string"
+        },
+        {
+          "name": "user_id",
+          "type": "integer",
+          "foreign_key": {
+            "table": "users",
+            "field": "id"
+          }
+        }
+      ]
+    }
+  ],
+  "transactions": [
+    {
+      "name": "create_user",
+      "steps": [
+        {
+          "action": "insert",
+          "table": "users",
+          "values": {
+            "username": "John",
+            "email": "john@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_post",
+      "steps": [
+        {
+          "action": "insert",
+          "table": "posts",
+          "values": {
+            "title": "Hello World",
+            "content": "This is my first post!",
+            "user_id": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_user_and_post",
+      "steps": [
+        {
+          "action": "insert",
+          "table": "users",
+          "values": {
+            "username": "Jane",
+            "email": "jane@example.com"
+          }
+        },
+        {
+          "action": "get_last_insert_id",
+          "table": "users"
+        },
+        {
+          "action": "insert1",
+          "table": "posts",
+          "values": {
+            "title": "Greetings",
+            "content": "My first post too!",
+            "user_id": {
+              "ref": "user_id"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "get_user_by_username",
+      "steps": [
+        {
+          "action": "1get",
+          "table": "users",
+          "filter_values": {
+            "username": "John"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_post_title",
+      "steps": [
+        {
+          "action": "update",
+          "table": "posts",
+          "filter_values": {
+            "id": 1
+          },
+          "update_values": {
+            "title": "New Title"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete_user_by_email",
+      "steps": [
+        {
+          "action": "delete1",
+          "table": "users",
+          "filter_values": {
+            "email": "jane@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "name": "get_posts_by_user",
+      "steps": [
+        {
+          "action": "1get",
+          "table": "posts",
+          "join_tables": [
+            {
+              "table": "users",
+              "left_table": "users",
+              "left_column": "id",
+              "right_table": "posts",
+              "right_column": "user_id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "get_posts_with_users",
+      "steps": [
+        {
+          "action": "get",
+          "table": "posts",
+          "join": [
+            {
+              "type": "left",
+              "left_table": "posts",
+              "right_table": "users",
+              "on": [
+                {
+                  "left_column": "user_id",
+                  "right_column": "id"
+                }
+              ]
+            }
+          ],
+          "fields": [
+            {
+              "table": "posts",
+              "field": "id"
+            },
+            {
+              "table": "posts",
+              "field": "title"
+            },
+            {
+              "table": "users",
+              "field": "username"
+            }
+          ],
+          "filter_values": [
+            {
+              "and": [
+                {
+                  "table": "posts",
+                  "field": "id", 
+                  "value": 28
+                },
+                {
+                  "table": "posts",
+                  "field": "title", 
+                  "value": "Hello World"
+                } 
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

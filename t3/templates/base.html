@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI + Htmx Example</title>
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
+    {% include 'header.html' %}
+    <main id="content" hx-target="this">
+        {% block content %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+</body>
+</html>

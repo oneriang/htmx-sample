@@ -1,0 +1,26 @@
+[
+    {
+        "label": "Id",
+        "max_length": null,
+        "name": "id",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Name",
+        "max_length": null,
+        "name": "name",
+        "primary_key": false,
+        "required": false,
+        "type": "VARCHAR"
+    },
+    {
+        "label": "Description",
+        "max_length": null,
+        "name": "description",
+        "primary_key": false,
+        "required": false,
+        "type": "VARCHAR"
+    }
+]

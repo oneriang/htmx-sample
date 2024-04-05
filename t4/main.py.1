@@ -1,0 +1,77 @@
+# main.py (FastAPI 应用程序)
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from starlette.responses import HTMLResponse
+import uuid
+import json
+
+app = FastAPI()
+
+# 连接和会话管理
+sessions = {}
+
+@app.websocket("/signaling")
+async def signaling(websocket: WebSocket):
+    session_id = str(uuid.uuid4())
+    sessions[session_id] = websocket
+    await websocket.accept()
+
+    try:
+        async for message in websocket.iter_text():
+            data = json.loads(message)
+            recipient_id = data.get("to")
+            if recipient_id and recipient_id in sessions:
+                await sessions[recipient_id].send_text(message)
+    except WebSocketDisconnect:
+        del sessions[session_id]
+
+# 提供HTML页面
+@app.get("/")
+async def get():
+    return HTMLResponse('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>WebRTC Chat</title>
+            <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+            <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+        </head>
+        <body>
+            <h1>WebRTC Chat</h1>
+            <div hx-target="this" hx-swap="innerHTML">
+                <input type="text" id="peer-id" placeholder="Enter Peer ID">
+                <button hx-ws="connect:/signaling" hx-trigger="click" hx-headers='{"X-Peer-Id": document.getElementById("peer-id").value}'>Connect</button>
+                <div id="chat-container" style="display: none;">
+                    <input type="text" id="chat-input" placeholder="Type your message">
+                    <button hx-ws="send:/signaling" hx-trigger="click" hx-headers='{"X-Peer-Id": document.getElementById("peer-id").value, "X-Message": document.getElementById("chat-input").value}'>Send</button>
+                    <ul id="messages"></ul>
+                </div>
+            </div>
+            <script>
+                // WebRTC 连接和消息处理逻辑
+                var peer = new Peer();
+                peer.on('open', function(id) {
+                    console.log('My peer ID is: ' + id);
+                });
+                peer.on('connection', function(conn) {
+                    conn.on('data', function(data) {
+                        var li = document.createElement('li');
+                        li.textContent = data;
+                        document.getElementById('messages').appendChild(li);
+                    });
+                });
+
+                document.addEventListener('htmx:wsopen', function(event) {
+                    document.getElementById('chat-container').style.display = 'block';
+                });
+
+                document.addEventListener('htmx:wsMessage', function(event) {
+                    var data = JSON.parse(event.detail.data);
+                    var conn = peer.connect(data.from);
+                    conn.on('open', function() {
+                        conn.send('Hello!');
+                    });
+                });
+            </script>
+        </body>
+        </html>
+    ''')

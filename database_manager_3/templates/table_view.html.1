@@ -1,0 +1,179 @@
+{% block content %}
+<h2>{{ table_name }}<button onclick="document.querySelector('#insert-dialog').showModal()">Insert</button></h2>
+
+<!-- Search form -->
+<form hx-get="/table/{{ table_name }}/search" class="mb-4">
+  <input type="text" name="query" placeholder="Search...">
+  <button type="submit">Search</button>
+</form>
+<table>
+  <thead>
+    <tr>
+      <th>
+        Action
+      </th>
+      {% for column_name in column_names %}
+      <th>
+        <div style="overflow: hidden; resize: horizontal;">
+        <a hx-swap="innerHTML" href="#" hx-target="#table-container"
+          hx-get="/table/{{ table_name }}/?page={{ page }}&per_page={{ per_page }}&sort_column={{ column_name }}&sort_order={% if sort_column == column_name and sort_order == 'asc' %}desc{% else %}asc{% endif %}">{{
+          column_name }}</a>
+          </div>
+        {% if sort_column == column_name %}
+        {% if sort_order == 'asc' %}
+        <i class="bi bi-arrow-up"></i>
+        {% else %}
+        <i class="bi bi-arrow-down"></i>
+        {% endif %}
+        {% endif %}
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in results %}
+    <tr>
+      <td>
+        <!-- Update button -->
+        <button onclick="openUpdateDialog(this)" {% for column_name in column_names %} data-{{ column_name
+          }}-value="{{ row[column_names.index(column_name)] }}" {% endfor %}>
+          Update
+        </button>
+        <!-- Delete button -->
+        <button onclick="openDeleteDialog(this)" {% for column_name in column_names %} data-{{ column_name
+          }}-value="{{ row[column_names.index(column_name)] }}" {% endfor %}>
+          Delete
+        </button>
+      </td>
+      {% for cell in row %}
+      <td>{{ cell }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<!-- Pagination -->
+<div class="pagination">
+  {% set total_pages = total_results // per_page + (total_results % per_page > 0) %}
+  {% set start_page = (page - 2) if (page - 2) > 0 else 1 %}
+  {% set end_page = (page + 2) if (page + 2) <= total_pages else total_pages %} {% if end_page - start_page < 4 %} {% if
+    start_page> 1 %}
+    {% set start_page = (end_page - 4) if (end_page - 4) > 0 else 1 %}
+    {% endif %}
+    {% set end_page = start_page + 4 if start_page + 4 <= total_pages else total_pages %} {% endif %} <!-- Previous page
+      button -->
+      {% if page > 1 %}
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}"
+        hx-target="#table-container" hx-swap="innerHTML" class="page-link">Previous</a>
+      {% endif %}
+      {% for i in range(start_page, end_page + 1) %}
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ i }}&per_page={{ per_page }}" hx-target="#table-container"
+        hx-swap="innerHTML" class="page-link{% if i == page %} active{% endif %}">{{ i }}</a>
+      {% endfor %}
+      <!-- Next page button -->
+      {% if page < total_pages %} <a href="#"
+        hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container"
+        hx-swap="innerHTML" class="page-link">Next</a>
+        {% endif %}
+        <!-- Current page / total pages -->
+        <span class="page-link">{{ page }} / {{ total_pages }}</span>
+        <select name="per_page" hx-get="/table/{{ table_name }}/?page={{ page }}" hx-target="#table-container"
+          hx-swap="innerHTML">
+          <option value="1" {% if per_page==1 %}selected{% endif %}>1 per page</option>
+          <option value="5" {% if per_page==5 %}selected{% endif %}>5 per page</option>
+          <option value="10" {% if per_page==10 %}selected{% endif %}>10 per page</option>
+          <option value="20" {% if per_page==20 %}selected{% endif %}>20 per page</option>
+          <option value="50" {% if per_page==50 %}selected{% endif %}>50 per page</option>
+          <option value="100" {% if per_page==100 %}selected{% endif %}>100 per page</option>
+        </select>
+</div>
+
+
+<!-- Pagination -->
+<div class="pagination">
+  {% set total_pages = total_results // per_page + (total_results % per_page > 0) %}
+
+  {% set start_page = (page - 2) if (page - 2) > 0 else 1 %}
+  {% set end_page = (page + 2) if (page + 2) <= total_pages else total_pages %} {% if end_page - start_page < 4 %} {% if
+    start_page> 1 %}
+    {% set start_page = (end_page - 4) if (end_page - 4) > 0 else 1 %}
+    {% endif %}
+    {% set end_page = start_page + 4 if start_page + 4 <= total_pages else total_pages %} {% endif %} <!-- Previous page
+      button -->
+      {% if page > 1 %}
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ page - 1 }}&per_page={{ per_page }}"
+        hx-target="#table-container" hx-swap="outerHTML" class="page-link">Previous</a>
+      {% endif %}
+
+      {% for i in range(start_page, end_page + 1) %}
+      <a href="#" hx-get="/table/{{ table_name }}/?page={{ i }}&per_page={{ per_page }}" hx-target="#table-container"
+        hx-swap="outerHTML" class="page-link{% if i == page %} active{% endif %}">{{ i }}</a>
+      {% endfor %}
+
+      <!-- Next page button -->
+      {% if page < total_pages %} <a href="#"
+        hx-get="/table/{{ table_name }}/?page={{ page + 1 }}&per_page={{ per_page }}" hx-target="#table-container"
+        hx-swap="outerHTML" class="page-link">Next</a>
+        {% endif %}
+</div>
+
+<!-- Insert modal -->
+<dialog id="insert-dialog" class="dialog">
+  <form hx-post="/table/{{ table_name }}/insert" method="dialog">
+    {% for column_name in column_names if column_name != primary_key %}
+    <div class="mb-2">
+      <label for="{{ column_name }}">{{ column_name }}:</label>
+      <input type="text" name="{{ column_name }}" id="{{ column_name }}" required>
+    </div>
+    {% endfor %}
+    <button type="submit">Insert</button>
+    <button type="button" class="cancel" onclick="document.querySelector('#insert-dialog').close()">Cancel</button>
+  </form>
+</dialog>
+<!-- Update modal -->
+<dialog id="update-dialog" class="dialog">
+  <form hx-post="/table/{{ table_name }}/update" method="dialog">
+    {% for column_name in column_names %}
+    <div class="mb-2">
+      <label for="{{ column_name }}">{{ column_name }}:</label>
+      <input type="text" name="{{ column_name }}" id="{{ column_name }}" required>
+    </div>
+    {% endfor %}
+    <button type="submit">Update</button>
+    <button type="button" class="cancel" onclick="document.querySelector('#update-dialog').close()">Cancel</button>
+  </form>
+</dialog>
+<!-- Delete modal -->
+<dialog id="delete-dialog" class="dialog">
+  <form hx-post="/table/{{ table_name }}/delete" method="dialog">
+    {% for column_name in column_names %}
+    <div class="mb-2">
+      <label for="{{ column_name }}">{{ column_name }}:</label>
+      <input readonly type="text" name="{{ column_name }}" id="{{ column_name }}" required>
+    </div>
+    {% endfor %}
+    <button type="submit">Delete</button>
+    <button type="button" class="cancel" onclick="document.querySelector('#update-dialog').close()">Cancel</button>
+  </form>
+</dialog>
+<script>
+  function openUpdateDialog(button) {
+    var updateDialog = document.querySelector('#update-dialog');
+    {% for column_name in column_names %}
+    var columnValue = button.getAttribute('data-{{ column_name }}-value');
+    var columnInput = updateDialog.querySelector('#{{ column_name }}');
+    columnInput.value = columnValue;
+    {% endfor %}
+    updateDialog.showModal();
+  }
+  function openDeleteDialog(button) {
+    var deleteDialog = document.querySelector('#delete-dialog');
+    {% for column_name in column_names %}
+    var columnValue = button.getAttribute('data-{{ column_name }}-value');
+    var columnInput = deleteDialog.querySelector('#{{ column_name }}');
+    columnInput.value = columnValue;
+    {% endfor %}
+    deleteDialog.showModal();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+[
+    {
+        "label": "TrackId",
+        "name": "TrackId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Name",
+        "name": "Name",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(200)"
+    },
+    {
+        "label": "AlbumId",
+        "name": "AlbumId",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "MediaTypeId",
+        "name": "MediaTypeId",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "GenreId",
+        "name": "GenreId",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Composer",
+        "name": "Composer",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(220)"
+    },
+    {
+        "label": "Milliseconds",
+        "name": "Milliseconds",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Bytes",
+        "name": "Bytes",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "UnitPrice",
+        "name": "UnitPrice",
+        "primary_key": false,
+        "required": true,
+        "type": "NUMERIC(10, 2)"
+    }
+]

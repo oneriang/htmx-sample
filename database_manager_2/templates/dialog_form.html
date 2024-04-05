@@ -1,0 +1,143 @@
+{% block content %}
+<dialog id="{{ id }}-dialog" class="dialog">
+  <div style="display: flex; position: relative; padding: 0 12px; min-height: 50px; width: 100%; align-items: center;">
+    <div class="toolbar_title ellipsis">{{ title }}</div>
+    <button onclick="document.querySelector('#{{ id }}-dialog').close()"><span class="mdi mdi-close"></span></button>
+  </div>
+  <form hx-post="/table/{{ table_name }}/{{ id }}" method="dialog">
+    {% for column in columns %}
+      {% if is_all_readonly %}
+        {% set readonly = "readonly" %}
+      {% else %}
+        {% if column["primary_key"] == True %}
+          {% set readonly = "readonly" %}
+        {% else %}
+          {% set readonly = "" %}
+        {% endif %}
+      {% endif %}
+      <div class="mb-2">
+        <label for="{{ column["name"] }}">{{ column["label"] }}:</label>
+        {% if "form_element" in column %}
+          {% if column["form_element"]["type"] == "select" %}
+            {% if "options" in column["form_element"] %}
+              <div class="select-with-search">
+                <input type="text" class="search-input" placeholder="Search..." onkeyup="filterOptions(this, event)">
+                <select {{ readonly }} name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+                  {% if "is_dict_list" in column["form_element"] and column["form_element"]["is_dict_list"] %}
+                    {% for o in column["form_element"]["options"] %}
+                      {% if "label" in o %}
+                        <option value="{{o["value"]}}">{{o["label"]}}</option>
+                      {% elif "key" in o %}
+                        <option value="{{o["value"]}}">{{o["key"]}}</option>
+                      {% else %}
+                        <option value="{{o["value"]}}">{{o["value"]}}</option>
+                      {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    {% for o in column["form_element"]["options"] %}
+                      <option value="{{o}}">{{o}}</option>
+                    {% endfor %}
+                  {% endif %}
+                </select>
+              </div>
+            {% endif %}
+          {% endif %}
+          {% if column["form_element"]["type"] == "checkbox" %}
+            {% if "options" in column["form_element"] %}
+              {% for o in column["form_element"]["options"] %}
+                <div>
+                  <input {{ readonly }} type="checkbox" name="{{ column["name"] }}" id="{{ column["name"] }}_{{ loop.index }}" value="{{ o }}">
+                  <label for="{{ column["name"] }}_{{ loop.index }}">{{ o }}</label>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+        {% elif 'INTEGER' in column["type"] %}
+          <input {{ readonly }} type="number" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+        {% elif 'NVARCHAR' in column["type"] %}
+          <input {{ readonly }} type="text" name="{{ column["name"] }}" id="{{ column["name"] }}" maxlength="{{ column["max_length"]}}" required>
+          <datalist id="{{ column["name"] }}_list">
+            <!-- Populate options with existing data -->
+          </datalist>
+        {% elif 'TEXT' in column["type"] %}
+          <textarea {{ readonly }} name="{{ column["name"] }}" id="{{ column["name"] }}" required></textarea>
+        {% elif 'BOOLEAN' in column["type"] %}
+          <input {{ readonly }} type="checkbox" name="{{ column["name"] }}" id="{{ column["name"] }}">
+        {% elif 'NUMERIC' in column["type"] %}
+          <input {{ readonly }} type="number" name="{{ column["name"] }}" id="{{ column["name"] }}" step="0.01" required>
+        {% elif 'DATETIME' in column["type"] %}
+          <input {{ readonly }} type="datetime-local" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+        {% elif 'DATE' in column["type"] %}
+          <input {{ readonly }} type="date" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+        {% elif 'BLOB' in column["type"] %}
+          <input {{ readonly }} type="file" name="{{ column["name"] }}" id="{{ column["name"] }}" accept="image/*, application/pdf" required>
+        {% else %}
+          <input {{ readonly }} type="text" name="{{ column["name"] }}" id="{{ column["name"] }}" required>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit">{{ button_submit }}</button>
+    <button type="button" class="cancel" onclick="document.querySelector('#{{ id }}-dialog').close()">{{ button_cancel }}</button>
+  </form>
+</dialog>
+{% endblock %}
+
+<script>
+  function filterOptions(input, event) {
+    const select = input.nextElementSibling;
+    const filter = input.value.toUpperCase();
+    const options = select.options;
+
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      const text = option.textContent.toUpperCase();
+      if (text.indexOf(filter) > -1) {
+        option.style.display = "";
+      } else {
+        option.style.display = "none";
+      }
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      let highlightedOption;
+      for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+        if (option.style.display !== "none") {
+          option.selected = false;
+          highlightedOption = option;
+          break;
+        }
+      }
+
+      while (true) {
+        if (event.key === "ArrowDown") {
+          highlightedOption = highlightedOption.nextElementSibling;
+        } else {
+          highlightedOption = highlightedOption.previousElementSibling;
+        }
+
+        if (!highlightedOption || highlightedOption.style.display === "none") {
+          break;
+        }
+
+        highlightedOption.selected = true;
+      }
+    }
+  }
+
+  //// Populate datalist with existing data
+  //const datalists = document.querySelectorAll('datalist');
+  //datalists.forEach(datalist => {
+  //  const columnName = datalist.id.replace('_list', '');
+  //  fetch(`/table/{{ table_name }}/distinct/${columnName}`)
+  //    .then(response => response.json())
+  //    .then(data => {
+  //      data.forEach(value => {
+  //        const option = document.createElement('option');
+  //        option.value = value;
+  //        datalist.appendChild(option);
+  //      });
+  //    })
+  //    .catch(error => console.error(error));
+  //});
+</script>

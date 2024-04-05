@@ -1,0 +1,16 @@
+[
+    {
+        "label": "PlaylistId",
+        "name": "PlaylistId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "TrackId",
+        "name": "TrackId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

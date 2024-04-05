@@ -1,0 +1,145 @@
+from fastapi import FastAPI
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey, select
+from sqlalchemy.orm import sessionmaker
+import json
+
+app = FastAPI()
+
+# 创建数据库连接
+SQLALCHEMY_DATABASE_URL = "sqlite:///./example.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 创建 metadata
+metadata = MetaData()
+
+# 定义 users 表
+users = Table(
+    "users",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("username", String, index=True),
+    Column("email", String, index=True),
+)
+
+# 定义 posts 表
+posts = Table(
+    "posts",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("title", String),
+    Column("content", String),
+    Column("user_id", Integer, ForeignKey("users.id")),
+)
+
+# 创建数据库表
+metadata.create_all(bind=engine)
+
+# 从 JSON 文件中加载数据
+def load_data_from_json():
+    with open("data.json", "r") as file:
+        return json.load(file)
+
+data = load_data_from_json()
+
+class Transaction:
+    def __init__(self, name, steps):
+        self.name = name
+        self.steps = steps
+
+def execute_step(step, db):
+    action = step["action"]
+    if action == "insert":
+        table = globals()[step["table"]]
+        values = step["values"]
+        # 如果值中有引用，则替换为对应的值
+        for key, value in values.items():
+            if isinstance(value, dict) and "ref" in value:
+                values[key] = db.query(globals()[value["ref"]["table"]]).filter_by(**{value["ref"]["field"]: value["ref"]["value"]}).first().id
+        db.execute(table.insert().values(**values))
+    # elif action == "get1":
+    #     print("get1")
+    #     table = globals()[step["table"]]
+    #     query = db.query(table)
+    #     if "join" in step:
+    #         join_table = globals()[step["join"]["table"]]
+    #         condition = step["join"]["condition"]
+    #         query = query.join(join_table, condition)
+    #     if "select" in step:
+    #         query = query.with_entities(*[globals()[col.split(".")[0]].c[col.split(".")[1]] for col in step["select"]])
+    #     filter_values = step.get("filter_values", {})
+    #     result = query.filter_by(**filter_values).all()
+    #     print(result)
+    #     return result
+    # # 在 execute_step 函数中修改如下部分：
+    # elif action == "get2":
+    #     print("get2")
+    #     table = globals()[step["table"]]
+    #     query = db.query(table)
+    #     if "join" in step:
+    #         join_table = globals()[step["join"]["table"]]
+    #         print("join_table")
+    #         print(join_table)
+    #         condition = eval(step["join"]["condition"])  # 使用 eval 将字符串转换为表达式
+    #         print("condition")
+    #         print(condition)
+    #         query = query.join(join_table, condition)
+    #         print("query")
+    #         print(query)
+    #     if "select" in step:
+    #         query = query.with_entities(*[globals()[col.split(".")[0]].c[col.split(".")[1]] for col in step["select"]])
+    #         print("query")
+    #         print(query)
+    #     filter_values = step.get("filter_values", {})
+    #     result = query.filter_by(**filter_values).all()
+    #     return result
+    elif action == "get":
+        print('get')
+        '''
+        u = Table('users', metadata, autoload_with=engine)
+        print(u)
+        p = Table('posts', metadata, autoload_with=engine)
+        print(p)
+        stmt = select(u).join(p, u.c['id'] == p.c.user_id)
+        results = db.execute(stmt).mappings().all()
+        for result in results:
+            print(result)
+        return
+        '''
+        table = globals()[step["table"]]
+        join_tables = step.get("join_tables", [])
+        for join_table in join_tables:
+            table = table.join(globals()[join_table["table"]], globals()[join_table["left_table"]].c[join_table["left_column"]] == globals()[join_table["right_table"]].c[join_table["right_column"]])
+        filter_values = step.get("filter_values", {})
+        result = db.query(table).filter_by(**filter_values).all()
+        return result
+    elif action == "update":
+        table = globals()[step["table"]]
+        filter_values = step.get("filter_values", {})
+        update_values = step.get("update_values", {})
+        db.query(table).filter_by(**filter_values).update(update_values)
+    elif action == "delete":
+        table = globals()[step["table"]]
+        filter_values = step.get("filter_values", {})
+        db.query(table).filter_by(**filter_values).delete()
+    db.commit()
+
+@app.get("/execute_all_transactions/")
+async def execute_all_transactions():
+    db = SessionLocal()
+    try:
+        for transaction_data in data["transactions"]:
+            transaction = Transaction(**transaction_data)
+            for step in transaction.steps:
+                execute_step(step, db)
+    except Exception as e:
+        db.rollback()
+        return {"message": f"Transaction execution failed. Reason: {str(e)}"}
+    finally:
+        db.close()
+
+    return {"message": "All transactions executed successfully."}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

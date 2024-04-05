@@ -1,0 +1,30 @@
+[
+    {
+        "label": "AlbumId",
+        "name": "AlbumId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Title",
+        "name": "Title",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(160)"
+    },
+    {
+        "label": "ArtistId",
+        "name": "ArtistId",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "Column1",
+        "name": "Column1",
+        "primary_key": false,
+        "required": false,
+        "type": "BLOB"
+    }
+]

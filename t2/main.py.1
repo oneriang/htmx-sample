@@ -1,0 +1,44 @@
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey
+from sqlalchemy.orm import sessionmaker
+
+# 创建一个数据库引擎
+engine = create_engine('sqlite:///:memory:', echo=True)
+
+# 创建一个元数据对象
+metadata = MetaData()
+
+# 定义两个表
+users = Table('users', metadata,
+              Column('id', Integer, primary_key=True),
+              Column('name', String),
+              Column('fullname', String))
+
+addresses = Table('addresses', metadata,
+                  Column('id', Integer, primary_key=True),
+                  Column('user_id', None, ForeignKey('users.id')),
+                  Column('email_address', String, nullable=False))
+
+# 创建表格
+metadata.create_all(engine)
+
+# 插入一些数据
+conn = engine.connect()
+conn.execute(users.insert(), [
+    {'name': 'John', 'fullname': 'John Doe'},
+    {'name': 'Susan', 'fullname': 'Susan Johnson'},
+])
+
+conn.execute(addresses.insert(), [
+    {'user_id': 1, 'email_address': 'john@example.com'},
+    {'user_id': 2, 'email_address': 'susan@example.com'},
+])
+
+# 创建一个会话
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# 进行join查询
+result = session.query(users, addresses).join(addresses, users.c.id == addresses.c.user_id).all()
+
+for row in result:
+    print(row)

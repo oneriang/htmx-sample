@@ -1,0 +1,93 @@
+[
+    {
+        "label": "CustomerId",
+        "name": "CustomerId",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "FirstName",
+        "name": "FirstName",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "LastName",
+        "name": "LastName",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(20)"
+    },
+    {
+        "label": "Company",
+        "name": "Company",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(80)"
+    },
+    {
+        "label": "Address",
+        "name": "Address",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(70)"
+    },
+    {
+        "label": "City",
+        "name": "City",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "State",
+        "name": "State",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "Country",
+        "name": "Country",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(40)"
+    },
+    {
+        "label": "PostalCode",
+        "name": "PostalCode",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(10)"
+    },
+    {
+        "label": "Phone",
+        "name": "Phone",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(24)"
+    },
+    {
+        "label": "Fax",
+        "name": "Fax",
+        "primary_key": false,
+        "required": false,
+        "type": "NVARCHAR(24)"
+    },
+    {
+        "label": "Email",
+        "name": "Email",
+        "primary_key": false,
+        "required": true,
+        "type": "NVARCHAR(60)"
+    },
+    {
+        "label": "SupportRepId",
+        "name": "SupportRepId",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    }
+]

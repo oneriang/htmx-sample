@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="container" style="position: relative; width: 100%; min-height: 100%;">
+  <h2>Welcome to the Database Manager</h2>
+  <p>Please select a table from the navigation bar to view its data.</p>
+  <div style="position: relative;">
+    <div id="table-container"></div>
+    <div class="loading-overlay my-indicator" id="my-indicator">
+      <div class="loading-spinner" style="vertical-align: middle;"></div>
+    </div>
+  </div>
+</article>
+{% endblock %}

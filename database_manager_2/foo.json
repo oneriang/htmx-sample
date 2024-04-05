@@ -1,0 +1,16 @@
+[
+    {
+        "label": "bar",
+        "name": "bar",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "baz",
+        "name": "baz",
+        "primary_key": false,
+        "required": false,
+        "type": "VARCHAR(20)"
+    }
+]
