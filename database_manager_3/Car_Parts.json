@@ -1,0 +1,44 @@
+[
+    {
+        "label": "part_id",
+        "name": "part_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "part_name",
+        "name": "part_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(100)"
+    },
+    {
+        "label": "manufacture_plant_id",
+        "name": "manufacture_plant_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "manufacture_start_date",
+        "name": "manufacture_start_date",
+        "primary_key": false,
+        "required": true,
+        "type": "DATE"
+    },
+    {
+        "label": "manufacture_end_date",
+        "name": "manufacture_end_date",
+        "primary_key": false,
+        "required": false,
+        "type": "DATE"
+    },
+    {
+        "label": "part_recall",
+        "name": "part_recall",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    }
+]

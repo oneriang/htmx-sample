@@ -1,0 +1,30 @@
+[
+    {
+        "label": "id",
+        "name": "id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "タイトル",
+        "name": "title",
+        "primary_key": false,
+        "required": false,
+        "type": "TEXT"
+    },
+    {
+        "label": "コンテンツ",
+        "name": "content",
+        "primary_key": false,
+        "required": false,
+        "type": "TEXT"
+    },
+    {
+        "label": "ユーザーID",
+        "name": "user_id",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    }
+]

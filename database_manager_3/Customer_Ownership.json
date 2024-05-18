@@ -1,0 +1,44 @@
+[
+    {
+        "label": "customer_id",
+        "name": "customer_id",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "vin",
+        "name": "vin",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "purchase_date",
+        "name": "purchase_date",
+        "primary_key": false,
+        "required": true,
+        "type": "DATE"
+    },
+    {
+        "label": "purchase_price",
+        "name": "purchase_price",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "warantee_expire_date",
+        "name": "warantee_expire_date",
+        "primary_key": false,
+        "required": false,
+        "type": "DATE"
+    },
+    {
+        "label": "dealer_id",
+        "name": "dealer_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

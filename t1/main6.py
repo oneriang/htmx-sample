@@ -2,27 +2,25 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, and_, or_
-from sqlalchemy.exc import SQLAlchemyError
 import json
-import logging
-
-# 设置日志记录
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# 常量定义
-SQLALCHEMY_DATABASE_URL = "sqlite:///../t1/example.db"
 
 app = FastAPI()
 
 # 创建数据库连接
+# データベース接続を作成する
+# 데이터베이스 연결 생성
+SQLALCHEMY_DATABASE_URL = "sqlite:///./example.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 创建 metadata
+# メタデータを作成する
+# 메타데이터 생성
 metadata = MetaData()
 
-# 定义数据库表
+# 定义 users 表
+# usersテーブルを定義する
+# users 테이블 정의
 users = Table(
     "users",
     metadata,
@@ -31,6 +29,9 @@ users = Table(
     Column("email", String, index=True),
 )
 
+# 定义 posts 表
+# postsテーブルを定義する
+# posts 테이블 정의
 posts = Table(
     "posts",
     metadata,
@@ -41,19 +42,16 @@ posts = Table(
 )
 
 # 创建数据库表
+# データベーステーブルを作成する
+# 데이터베이스 테이블 생성
 metadata.create_all(bind=engine)
 
 # 从 JSON 文件中加载数据
+# JSONファイルからデータをロードする
+# JSON 파일에서 데이터 로드
 def load_data_from_json():
-    try:
-        with open("data.json", "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        logger.error("data.json file not found.")
-        return None
-    except json.JSONDecodeError:
-        logger.error("Error decoding JSON data.")
-        return None
+    with open("data.json", "r") as file:
+        return json.load(file)
 
 data = load_data_from_json()
 
@@ -61,6 +59,9 @@ class Transaction:
     """
     Represents a transaction that consists of a sequence of steps.
     """
+    # 表示由一系列步骤组成的事务。
+    # トランザクションは、一連のステップで構成されています。
+    # 거래는 일련의 단계로 구성됩니다.
     def __init__(self, name, steps):
         self.name = name
         self.steps = steps
@@ -68,46 +69,55 @@ class Transaction:
 def execute_step(step, db):
     """
     Execute a single step in the transaction.
+
+    Args:
+        step (dict): A dictionary representing the step to be executed.
+        db (Session): The SQLAlchemy database session.
+
+    Returns:
+        list: A list of result mappings if the step is a "get" action.
+
+    Raises:
+        ValueError: If the action specified in the step is not supported.
     """
+    # 执行事务中的单个步骤。
+    # トランザクションの単一ステップを実行します。
+    # 트랜잭션의 단일 단계를 실행합니다.
+    
     action = step["action"]
-    try:
-        if action == "insert":
-            table = globals()[step["table"]]
-            values = step["values"]
-            result = db.execute(table.insert().values(**values))
-            return result.rowcount
-        elif action == "update":
-            table = globals()[step["table"]]
-            values = step["values"]
-            filters = build_filter_clauses(step.get("filter_values", []), table)
-            result = db.execute(table.update().where(*filters).values(**values))
-            return result.rowcount
-        elif action == "delete":
-            table = globals()[step["table"]]
-            filters = build_filter_clauses(step.get("filter_values", []), table)
-            result = db.execute(table.delete().where(*filters))
-            return result.rowcount
-        elif action == "get":
-            table = globals()[step["table"]]
-            query = build_query(step, table)
-            result = db.execute(query).mappings().all()
-            return result
-        else:
-            raise ValueError(f"Unsupported action: {action}")
-    except Exception as e:
-        logger.error(f"Error executing step: {e}")
-        raise e
-
-def build_filter_clauses(filter_values, table):
+    if action == "insert":
+        table = globals()[step["table"]]
+        values = step["values"]
+        result = db.execute(table.insert().values(**values))
+        return result.rowcount
+    elif action == "update":
+        table = globals()[step["table"]]
+        values = step["values"]
+        filters = build_filters(step.get("filter_values", []), table)
+        result = db.execute(table.update().where(*filters).values(**values))
+        return result.rowcount
+    elif action == "delete":
+        table = globals()[step["table"]]
+        filters = build_filters(step.get("filter_values", []), table)
+        result = db.execute(table.delete().where(*filters))
+        return result.rowcount
+    elif action == "get":
+        table = globals()[step["table"]]
+        query = build_query(step, table)
+        result = db.execute(query).mappings().all()
+        return result
+    else:
+        raise ValueError(f"Unsupported action: {action}")
+def build_filters(filter_values, table):
     """
     Build SQLAlchemy filter expressions based on the given filter_values.
-    """
-    filters = build_filter_expressions(filter_values, table)
-    return filters
 
-def build_filter_expressions(filter_values, table):
-    """
-    Build SQLAlchemy filter expressions based on the given filter_values.
+    Args:
+        filter_values (list): A list of filter dictionaries.
+        table (Table): The SQLAlchemy table object.
+
+    Returns:
+        list: A list of SQLAlchemy filter expressions.
     """
     filters = []
     for f in filter_values:
@@ -130,12 +140,23 @@ def build_filter_expressions(filter_values, table):
             column = table.c[field]
             filters.append(handle_operator(column, operator, value))
 
-    return filters
-
+    return filters        
+    
 def build_query(step, table):
     """
     Build a SQLAlchemy query object based on the given step and table.
+
+    Args:
+        step (dict): A dictionary representing the step to be executed.
+        table (Table): The SQLAlchemy table object.
+
+    Returns:
+        Query: The constructed SQLAlchemy query object.
     """
+    # 根据给定的步骤和表构建 SQLAlchemy 查询对象。
+    # 与えられたステップとテーブルに基づいて SQLAlchemy クエリオブジェクトを構築します。
+    # 주어진 단계와 테이블을 기반으로 SQLAlchemy 쿼리 개체를 작성합니다.
+
     query = None
     
     if step.get("fields"):
@@ -172,8 +193,35 @@ def build_query(step, table):
 def apply_filters(query, filter_values, table):
     """
     Apply filters to the given query based on the filter_values.
+
+    Args:
+        query (Query): The SQLAlchemy query object to be filtered.
+        filter_values (list): A list of filter dictionaries.
+        table (Table): The SQLAlchemy table object.
+
+    Returns:
+        Query: The filtered SQLAlchemy query object.
     """
-    and_filters = build_filter_expressions(filter_values, table)
+    # 根据 filter_values 对给定的查询应用过滤器。
+    # filter_valuesに基づいて、与えられたクエリにフィルターを適用します。
+    # filter_values를 기반으로 주어진 쿼리에 필터를 적용합니다.
+
+    and_filters = []
+    for f in filter_values:
+        if "type" in f:
+            condition_type = f["type"]
+            if condition_type == "and":
+                and_items = f.get("conditions", [])
+                and_filters.extend(handle_conditions(and_items, table))
+            elif condition_type == "or":
+                or_items = f.get("conditions", [])
+                or_filters = handle_conditions(or_items, table)
+                and_filters.append(or_(*or_filters))
+            else:
+                raise ValueError(f"Unsupported condition type: {condition_type}")
+        else:
+            raise ValueError("Condition type is not specified.")
+
     if and_filters:
         query = query.filter(*and_filters)
 
@@ -182,7 +230,18 @@ def apply_filters(query, filter_values, table):
 def handle_conditions(conditions, table):
     """
     Handle the given conditions and construct SQLAlchemy filter expressions.
+
+    Args:
+        conditions (list): A list of condition dictionaries.
+        table (Table): The SQLAlchemy table object.
+
+    Returns:
+        list: A list of SQLAlchemy filter expressions.
     """
+    # 处理给定的条件，并构建 SQLAlchemy 过滤器表达式。
+    # 与えられた条件を処理し、SQLAlchemyフィルター式を構築します。
+    # 주어진 조건을 처리하고 SQLAlchemy 필터 식을 작성합니다.
+
     filters = []
     for condition in conditions:
         if "type" in condition:
@@ -210,6 +269,9 @@ def convert_value(column_type, value):
     """
     Convert the value to the appropriate data type based on the column type.
     """
+    # 根据列类型将值转换为适当的数据类型。
+    # カラムの種類に基づいて値を適切なデータ型に変換します。
+    # 열 유형을 기반으로 값을 적절한 데이터 유형으로 변환합니다.
     if column_type.python_type == int:
         return int(value)
     elif column_type.python_type == float:
@@ -221,6 +283,9 @@ def handle_operator(column, operator, value):
     """
     Handle different operators and return the corresponding filter expression.
     """
+    # 处理不同的运算符并返回相应的过滤器表达式。
+    # 異なる演算子を処理し、対応するフィルター式を返します。
+    # 다른 연산자를 처리하고 해당 필터 식을 반환합니다.
     if operator == "eq":
         return column == value
     elif operator == "ne":
@@ -252,25 +317,16 @@ def handle_operator(column, operator, value):
 async def execute_all_transactions():
     db = SessionLocal()
     try:
-        if data:
-            with db.begin():
-                for transaction_data in data["transactions"]:
-                    transaction = Transaction(**transaction_data)
-                    for step in transaction.steps:
-                        try:
-                            result = execute_step(step, db)
-                            logger.info(result)
-                        except Exception as e:
-                            logger.error(f"Error executing step: {e}")
-                            raise e
-        else:
-            logger.error("No data found in data.json file.")
-    except SQLAlchemyError as e:
-        logger.error(f"Error executing transactions: {e}")
-        db.rollback()
-    except Exception as e:
-        logger.error(f"Unexpected error executing transactions: {e}")
-        db.rollback()
+        for transaction_data in data["transactions"]:
+            transaction = Transaction(**transaction_data)
+            for step in transaction.steps:
+                try:
+                    result = execute_step(step, db)
+                    print(result)  # 在控制台输出查询结果，方便调试
+                    # コンソールに検索結果を出力して、デバッグを容易にします。
+                    # 콘솔에 검색 결과를 출력하여 디버깅을 용이하게 합니다.
+                except Exception as e:
+                    print(f"Error executing step: {e}")
     finally:
         db.close()
 
@@ -278,4 +334,4 @@ async def execute_all_transactions():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8082)
+    uvicorn.run(app, host="0.0.0.0", port=9000)

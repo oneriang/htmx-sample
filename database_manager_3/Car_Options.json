@@ -1,0 +1,58 @@
+[
+    {
+        "label": "option_set_id",
+        "name": "option_set_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "model_id",
+        "name": "model_id",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "engine_id",
+        "name": "engine_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "transmission_id",
+        "name": "transmission_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "chassis_id",
+        "name": "chassis_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "premium_sound_id",
+        "name": "premium_sound_id",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "color",
+        "name": "color",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(30)"
+    },
+    {
+        "label": "option_set_price",
+        "name": "option_set_price",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

@@ -1,0 +1,23 @@
+[
+    {
+        "label": "dealer_id",
+        "name": "dealer_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "dealer_name",
+        "name": "dealer_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(50)"
+    },
+    {
+        "label": "dealer_address",
+        "name": "dealer_address",
+        "primary_key": false,
+        "required": false,
+        "type": "VARCHAR(100)"
+    }
+]

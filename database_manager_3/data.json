@@ -35,7 +35,7 @@
           ]
         },
         {
-          "action": "delete",
+          "action": "delete1",
           "table": "posts",
           "filter_values": [
             {

@@ -1,0 +1,58 @@
+[
+    {
+        "label": "customer_id",
+        "name": "customer_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "first_name",
+        "name": "first_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(50)"
+    },
+    {
+        "label": "last_name",
+        "name": "last_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(50)"
+    },
+    {
+        "label": "gender",
+        "name": "gender",
+        "primary_key": false,
+        "required": false,
+        "type": "NUMERIC"
+    },
+    {
+        "label": "household_income",
+        "name": "household_income",
+        "primary_key": false,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "birthdate",
+        "name": "birthdate",
+        "primary_key": false,
+        "required": true,
+        "type": "DATE"
+    },
+    {
+        "label": "phone_number",
+        "name": "phone_number",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "email",
+        "name": "email",
+        "primary_key": false,
+        "required": false,
+        "type": "VARCHAR(128)"
+    }
+]

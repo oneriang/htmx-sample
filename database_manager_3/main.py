@@ -12,6 +12,8 @@ import logging
 import types
 from datetime import datetime
 import pycountry
+import transaction_module  # 导入事务处理模块
+
 
 app = FastAPI()
 
@@ -22,7 +24,8 @@ templates = Jinja2Templates(directory="templates")
 #logging.basicConfig(level=logging.INFO)
 #logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
 
-DATABASE_URL = "sqlite:///./my_database.db"
+DATABASE_URL = "sqlite:///./Car_Database.db"
+#DATABASE_URL = "sqlite:///../t1/example.db"
 engine = create_engine(DATABASE_URL, echo=True)
 metadata = MetaData()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -278,3 +281,21 @@ def search_records(request: Request, table_name: str, query: str, db: Session = 
     compiled_stmt = stmt.compile(compile_kwargs={"literal_binds": True})
     #logging.info(f"Executed SQL: {compiled_stmt}")
     return templates.TemplateResponse("search_results.html", {"request": request, "table_name": table_name, "results": results, "column_names": column_names})
+
+@app.get("/execute_all_transactions/")
+async def execute_all_transactions():
+    db = SessionLocal()
+    try:
+        transaction_module.execute_all_transactions(db)  # 调用事务处理模块的函数
+    except Exception as e:
+        logger.error(f"Unexpected error executing transactions: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+    return {"message": "All transactions executed successfully."}
+    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+

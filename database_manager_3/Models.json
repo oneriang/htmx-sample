@@ -1,0 +1,30 @@
+[
+    {
+        "label": "model_id",
+        "name": "model_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "model_name",
+        "name": "model_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(50)"
+    },
+    {
+        "label": "model_base_price",
+        "name": "model_base_price",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "brand_id",
+        "name": "brand_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

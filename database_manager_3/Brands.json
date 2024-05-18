@@ -1,0 +1,16 @@
+[
+    {
+        "label": "brand_id",
+        "name": "brand_id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "brand_name",
+        "name": "brand_name",
+        "primary_key": false,
+        "required": true,
+        "type": "VARCHAR(50)"
+    }
+]

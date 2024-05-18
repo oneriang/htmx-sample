@@ -1,0 +1,16 @@
+[
+    {
+        "label": "dealer_id",
+        "name": "dealer_id",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "brand_id",
+        "name": "brand_id",
+        "primary_key": true,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

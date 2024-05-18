@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebRTC Voice Message</title>
+</head>
+<body>
+  <h1>WebRTC Voice Message</h1>
+
+  <div>
+    <button id="recordBtn">Start Recording</button>
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+
+  <div>
+    <audio id="playbackAudio" controls></audio>
+  </div>
+
+  <script>
+    const recordBtn = document.getElementById('recordBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const playbackAudio = document.getElementById('playbackAudio');
+
+    let mediaRecorder;
+    let recordedChunks = [];
+    let peerConnection;
+
+    // 获取麦克风权限
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        // 创建 MediaRecorder 对象
+        mediaRecorder = new MediaRecorder(stream);
+
+        // 监听 dataavailable 事件,获取录制的音频数据
+        mediaRecorder.addEventListener('dataavailable', event => {
+          recordedChunks.push(event.data);
+        });
+
+        // 监听 stop 事件,准备发送录制的音频数据
+        mediaRecorder.addEventListener('stop', () => {
+          sendBtn.disabled = false;
+        });
+
+        // 创建 WebRTC 连接
+        createWebRTCConnection(stream);
+      })
+      .catch(error => {
+        console.error('Error accessing microphone:', error);
+      });
+
+    // 开始/停止录制
+    recordBtn.addEventListener('click', () => {
+      if (mediaRecorder.state === 'inactive') {
+        mediaRecorder.start();
+        recordBtn.textContent = 'Stop Recording';
+      } else {
+        mediaRecorder.stop();
+        recordBtn.textContent = 'Start Recording';
+      }
+    });
+
+    // 发送录制的音频数据
+    sendBtn.addEventListener('click', () => {
+      const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+      sendAudioViaPeerConnection(audioBlob);
+      recordedChunks = [];
+      sendBtn.disabled = true;
+    });
+
+    function createWebRTCConnection(stream) {
+      peerConnection = new RTCPeerConnection();
+
+      // 将麦克风流添加到 WebRTC 连接中
+      stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+      });
+
+      // 监听远程音频流
+      peerConnection.addEventListener('track', event => {
+        playbackAudio.srcObject = event.streams[0];
+      });
+
+      // 创建 SDP offer 并发送
+      peerConnection.createOffer()
+        .then(offer => peerConnection.setLocalDescription(offer))
+        .then(() => {
+          // 在这里发送 SDP offer 给对方
+          console.log('SDP offer sent:', peerConnection.localDescription);
+        })
+        .catch(error => {
+          console.error('Error creating SDP offer:', error);
+        });
+
+      // 监听远程 SDP answer 并设置
+      peerConnection.addEventListener('signalingstatechange', () => {
+        if (peerConnection.signalingState === 'have-remote-offer') {
+          peerConnection.setRemoteDescription(peerConnection.remoteDescription)
+            .then(() => peerConnection.createAnswer())
+            .then(answer => peerConnection.setLocalDescription(answer))
+            .then(() => {
+              // 在这里发送 SDP answer 给对方
+              console.log('SDP answer sent:', peerConnection.localDescription);
+            })
+            .catch(error => {
+              console.error('Error creating SDP answer:', error);
+            });
+        }
+      });
+    }
+
+    function sendAudioViaPeerConnection(audioBlob) {
+      const audioTrack = new MediaStreamTrack(audioBlob, { kind: 'audio' });
+      peerConnection.addTrack(audioTrack, new MediaStream([audioTrack]));
+    }
+  </script>
+</body>
+</html>

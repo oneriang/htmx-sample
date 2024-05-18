@@ -1,0 +1,37 @@
+[
+    {
+        "label": "vin",
+        "name": "vin",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "model_id",
+        "name": "model_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "option_set_id",
+        "name": "option_set_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    },
+    {
+        "label": "manufactured_date",
+        "name": "manufactured_date",
+        "primary_key": false,
+        "required": true,
+        "type": "DATE"
+    },
+    {
+        "label": "manufactured_plant_id",
+        "name": "manufactured_plant_id",
+        "primary_key": false,
+        "required": true,
+        "type": "INTEGER"
+    }
+]

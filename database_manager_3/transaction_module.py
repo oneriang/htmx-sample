@@ -249,8 +249,11 @@ def handle_operator(column, operator, value):
         raise ValueError(f"Unsupported operator: {operator}")
 
 @app.get("/execute_all_transactions/")
-async def execute_all_transactions():
-    db = SessionLocal()
+async def execute_all_transactions(db):
+    if db:
+        pass
+    else:
+        db = SessionLocal()
     try:
         if data:
             with db.begin():

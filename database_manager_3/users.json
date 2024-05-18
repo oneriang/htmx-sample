@@ -1,0 +1,23 @@
+[
+    {
+        "label": "id",
+        "name": "id",
+        "primary_key": true,
+        "required": false,
+        "type": "INTEGER"
+    },
+    {
+        "label": "username",
+        "name": "username",
+        "primary_key": false,
+        "required": false,
+        "type": "TEXT"
+    },
+    {
+        "label": "email",
+        "name": "email",
+        "primary_key": false,
+        "required": false,
+        "type": "TEXT"
+    }
+]
