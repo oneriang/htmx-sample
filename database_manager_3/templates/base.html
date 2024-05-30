@@ -5,7 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Database Manager</title>
-  <link rel="stylesheet" href="/static/css/mvp.css?6">
+  <!-- 
+    <link rel="stylesheet" href="/static/css/water.css">
+  -->
+  
+  <link rel="stylesheet" href="/static/css/mvp.css?6"> 
   <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet"
     type="text/css">
   <script src="/static/js/htmx.org@1.9.10"></script>
@@ -121,16 +125,6 @@
       font-size: 17px;
     }
 
-    .topnav a:hover {
-      background-color: #ddd;
-      color: black;
-    }
-
-    .topnav a.active {
-      background-color: #2196F3;
-      color: white;
-    }
-
     .topnav .search-container {
       float: right;
     }
@@ -194,6 +188,7 @@
       position: fixed;
       top: 0;
       width: 100%;
+      z-index: 10;
     }
 
     .navbar a {

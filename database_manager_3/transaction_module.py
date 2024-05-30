@@ -1,79 +1,89 @@
-from fastapi import FastAPI
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select, and_, or_
-from sqlalchemy.exc import SQLAlchemyError
-import json
-import logging
+from fastapi import FastAPI  # 导入 FastAPI 框架，用于构建 API
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey  # 导入 SQLAlchemy 相关模块
+from sqlalchemy.orm import sessionmaker  # 导入 sessionmaker，用于创建数据库会话
+from sqlalchemy.sql import select, and_, or_  # 导入 SQLAlchemy 的查询构建模块
+from sqlalchemy.exc import SQLAlchemyError  # 导入 SQLAlchemy 的异常处理模块
+import json  # 导入 json 模块，用于处理 JSON 文件
+import logging  # 导入 logging 模块，用于日志记录
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 常量定义
-SQLALCHEMY_DATABASE_URL = "sqlite:///../t1/example.db"
+# # 定义数据库 URL 常量
+# SQLALCHEMY_DATABASE_URL = "sqlite:///./Chinook1.db"
 
-app = FastAPI()
+# # 创建 FastAPI 应用实例
+# app = FastAPI()
 
-# 创建数据库连接
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# # 创建数据库连接引擎
+# engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 创建 metadata
-metadata = MetaData()
+# # 创建 Metadata 实例
+# metadata = MetaData()
 
-# 定义数据库表
-users = Table(
-    "users",
-    metadata,
-    Column("id", Integer, primary_key=True, index=True),
-    Column("username", String, index=True),
-    Column("email", String, index=True),
-)
+# # 定义 users 表
+# users = Table(
+#     "users",
+#     metadata,
+#     Column("id", Integer, primary_key=True, index=True),  # 定义 id 列，为主键并建立索引
+#     Column("username", String, index=True),  # 定义 username 列，并建立索引
+#     Column("email", String, index=True),  # 定义 email 列，并建立索引
+# )
 
-posts = Table(
-    "posts",
-    metadata,
-    Column("id", Integer, primary_key=True, index=True),
-    Column("title", String),
-    Column("content", String),
-    Column("user_id", Integer, ForeignKey("users.id")),
-)
+# # 定义 posts 表
+# posts = Table(
+#     "posts",
+#     metadata,
+#     Column("id", Integer, primary_key=True, index=True),  # 定义 id 列，为主键并建立索引
+#     Column("title", String),  # 定义 title 列
+#     Column("content", String),  # 定义 content 列
+#     Column("user_id", Integer, ForeignKey("users.id")),  # 定义 user_id 列，外键关联到 users 表
+# )
 
-# 创建数据库表
-metadata.create_all(bind=engine)
+# # 创建数据库表
+# metadata.create_all(bind=engine)
 
-# 从 JSON 文件中加载数据
+# 从 JSON 文件中加载数据的函数
 def load_data_from_json():
     try:
-        with open("data.json", "r") as file:
+        with open("chinook.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
-        logger.error("data.json file not found.")
+        logger.error("chinook.json 文件未找到。")
         return None
     except json.JSONDecodeError:
-        logger.error("Error decoding JSON data.")
+        logger.error("解析 JSON 数据时出错。")
         return None
 
+# 加载数据
 data = load_data_from_json()
 
+# 事务类，表示一个包含多个步骤的事务
 class Transaction:
     """
-    Represents a transaction that consists of a sequence of steps.
+    表示一个包含多个步骤的事务。
     """
     def __init__(self, name, steps):
         self.name = name
         self.steps = steps
 
+# 执行单个事务步骤的函数
 def execute_step(step, db):
     """
-    Execute a single step in the transaction.
+    执行事务中的单个步骤。
     """
     action = step["action"]
+    print(action)
     try:
         if action == "insert":
-            table = globals()[step["table"]]
+            print(step["table"])
+            # table = globals()[step["table"]]
+            table = Table(step["table"], metadata, autoload_with=engine)
+            print(table)
             values = step["values"]
+            print(values)
             result = db.execute(table.insert().values(**values))
             return result.rowcount
         elif action == "update":
@@ -93,21 +103,23 @@ def execute_step(step, db):
             result = db.execute(query).mappings().all()
             return result
         else:
-            raise ValueError(f"Unsupported action: {action}")
+            raise ValueError(f"不支持的操作: {action}")
     except Exception as e:
-        logger.error(f"Error executing step: {e}")
+        logger.error(f"执行步骤时出错: {e}")
         raise e
 
+# 构建过滤条件的函数
 def build_filter_clauses(filter_values, table):
     """
-    Build SQLAlchemy filter expressions based on the given filter_values.
+    基于给定的过滤值构建 SQLAlchemy 过滤表达式。
     """
     filters = build_filter_expressions(filter_values, table)
     return filters
 
+# 构建过滤表达式的函数
 def build_filter_expressions(filter_values, table):
     """
-    Build SQLAlchemy filter expressions based on the given filter_values.
+    基于给定的过滤值构建 SQLAlchemy 过滤表达式。
     """
     filters = []
     for f in filter_values:
@@ -122,7 +134,7 @@ def build_filter_expressions(filter_values, table):
                 or_filters = handle_conditions(or_items, table)
                 filters.append(or_(*or_filters))
             else:
-                raise ValueError(f"Unsupported condition type: {condition_type}")
+                raise ValueError(f"不支持的条件类型: {condition_type}")
         else:
             field = f["field"]
             operator = f["operator"]
@@ -132,9 +144,10 @@ def build_filter_expressions(filter_values, table):
 
     return filters
 
+# 构建查询的函数
 def build_query(step, table):
     """
-    Build a SQLAlchemy query object based on the given step and table.
+    基于给定的步骤和表构建 SQLAlchemy 查询对象。
     """
     query = None
     
@@ -169,9 +182,10 @@ def build_query(step, table):
 
     return query
 
+# 应用过滤条件的函数
 def apply_filters(query, filter_values, table):
     """
-    Apply filters to the given query based on the filter_values.
+    根据过滤值将过滤条件应用到查询中。
     """
     and_filters = build_filter_expressions(filter_values, table)
     if and_filters:
@@ -179,9 +193,10 @@ def apply_filters(query, filter_values, table):
 
     return query
 
+# 处理条件的函数
 def handle_conditions(conditions, table):
     """
-    Handle the given conditions and construct SQLAlchemy filter expressions.
+    处理给定的条件并构建 SQLAlchemy 过滤表达式。
     """
     filters = []
     for condition in conditions:
@@ -196,7 +211,7 @@ def handle_conditions(conditions, table):
                 or_filters = handle_conditions(or_items, table)
                 filters.append(or_(*or_filters))
             else:
-                raise ValueError(f"Unsupported condition type: {condition_type}")
+                raise ValueError(f"不支持的条件类型: {condition_type}")
         else:
             field = condition["field"]
             operator = condition["operator"]
@@ -206,9 +221,10 @@ def handle_conditions(conditions, table):
 
     return filters
 
+# 转换值类型的函数
 def convert_value(column_type, value):
     """
-    Convert the value to the appropriate data type based on the column type.
+    根据列类型将值转换为适当的数据类型。
     """
     if column_type.python_type == int:
         return int(value)
@@ -217,9 +233,10 @@ def convert_value(column_type, value):
     else:
         return value
 
+# 处理操作符的函数
 def handle_operator(column, operator, value):
     """
-    Handle different operators and return the corresponding filter expression.
+    处理不同的操作符并返回相应的过滤表达式。
     """
     if operator == "eq":
         return column == value
@@ -246,10 +263,11 @@ def handle_operator(column, operator, value):
     elif operator == "is_not_null":
         return column.isnot(None)
     else:
-        raise ValueError(f"Unsupported operator: {operator}")
+        raise ValueError(f"不支持的操作符: {operator}")
 
-@app.get("/execute_all_transactions/")
-async def execute_all_transactions(db):
+# FastAPI 路由，用于执行所有事务
+# @app.get("/execute_all_transactions/")
+def execute_all_transactions(db):
     if db:
         pass
     else:
@@ -261,24 +279,27 @@ async def execute_all_transactions(db):
                     transaction = Transaction(**transaction_data)
                     for step in transaction.steps:
                         try:
+                            print("a")
+                            print(db)
                             result = execute_step(step, db)
                             logger.info(result)
                         except Exception as e:
-                            logger.error(f"Error executing step: {e}")
+                            logger.error(f"执行步骤时出错: {e}")
                             raise e
         else:
-            logger.error("No data found in data.json file.")
+            logger.error("在 data.json 文件中未找到数据。")
     except SQLAlchemyError as e:
-        logger.error(f"Error executing transactions: {e}")
+        logger.error(f"执行事务时出错: {e}")
         db.rollback()
     except Exception as e:
-        logger.error(f"Unexpected error executing transactions: {e}")
+        logger.error(f"执行事务时发生意外错误: {e}")
         db.rollback()
     finally:
         db.close()
+    print("所有事务已成功执行。")
+    return {"message": "所有事务已成功执行。"}
 
-    return {"message": "All transactions executed successfully."}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8082)
+# # 启动 FastAPI 应用
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8082)

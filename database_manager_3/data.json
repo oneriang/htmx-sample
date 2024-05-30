@@ -1,124 +1,164 @@
 {
-  "transactions": [
+  "transactions": [ 
     {
-      "name": "Transaction 1",
+      "name": "Insert New Artist, Album and Track",
       "steps": [
         {
           "action": "insert",
-          "table": "users",
+          "table": "Artist",
           "values": {
-            "username": "user1",
-            "email": "user1@example.com"
+            "Name": "New Complex Artist"
           }
         },
         {
           "action": "insert",
-          "table": "posts",
+          "table": "Album",
           "values": {
-            "title": "Post 1",
-            "content": "This is the first post.",
-            "user_id": 1
+            "Title": "New Complex Album",
+            "ArtistId": 276
           }
         },
         {
-          "action": "update",
-          "table": "users",
+          "action": "insert",
+          "table": "Track",
           "values": {
-            "email": "updated_user1@example.com"
+            "Name": "New Complex Track",
+            "AlbumId": 348,
+            "MediaTypeId": 1,
+            "GenreId": 1,
+            "Composer": "Complex Composer",
+            "Milliseconds": 300000,
+            "Bytes": 10000000,
+            "UnitPrice": 1.99
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Album Title",
+      "steps": [
+        {
+          "action": "update",
+          "table": "Album",
+          "values": {
+            "Title": "Updated Album Title"
           },
           "filter_values": [
             {
-              "field": "username",
+              "field": "AlbumId",
               "operator": "eq",
-              "value": "user1"
-            }
-          ]
-        },
-        {
-          "action": "delete1",
-          "table": "posts",
-          "filter_values": [
-            {
-              "field": "title",
-              "operator": "eq",
-              "value": "Post 1"
-            }
-          ]
-        },
-        {
-          "action": "get",
-          "table": "users",
-          "fields": [
-            {
-              "field": "username"
-            },
-            {
-              "field": "email"
-            }
-          ],
-          "filter_values": [
-            {
-              "field": "username",
-              "operator": "eq",
-              "value": "user1"
+              "value": 1
             }
           ]
         }
       ]
     },
     {
-      "name": "Transaction 2",
+      "name": "Delete Old Track",
       "steps": [
         {
-          "action": "insert",
-          "table": "users",
-          "values": {
-            "username": "user2",
-            "email": "user2@example.com"
-          }
-        },
-        {
-          "action": "insert",
-          "table": "posts",
-          "values": {
-            "title": "Post 2",
-            "content": "This is the second post.",
-            "user_id": 2
-          }
-        },
+          "action": "delete",
+          "table": "Track",
+          "filter_values": [
+            {
+              "field": "TrackId",
+              "operator": "eq",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Get Customer Purchased Tracks",
+      "steps": [
         {
           "action": "get",
-          "table": "posts",
+          "table": "Invoice",
           "fields": [
             {
-              "field": "title"
+              "field": "FirstName",
+              "table": "Customer"
             },
             {
-              "field": "content"
+              "field": "LastName",
+              "table": "Customer"
             },
             {
-              "table": "users",
-              "field": "username"
+              "field": "Title",
+              "table": "Album"
+            },
+            {
+              "field": "Name",
+              "table": "Track"
+            },
+            {
+              "field": "Name",
+              "table": "Artist"
             }
           ],
           "join": [
             {
-              "left_table": "posts",
-              "right_table": "users",
-              "type": "left",
+              "left_table": "Invoice",
+              "right_table": "InvoiceLine",
+              "type": "inner",
               "on": [
                 {
-                  "left_column": "user_id",
-                  "right_column": "id"
+                  "left_column": "InvoiceId",
+                  "right_column": "InvoiceId"
+                }
+              ]
+            },
+            {
+              "left_table": "InvoiceLine",
+              "right_table": "Track",
+              "type": "inner",
+              "on": [
+                {
+                  "left_column": "TrackId",
+                  "right_column": "TrackId"
+                }
+              ]
+            },
+            {
+              "left_table": "Track",
+              "right_table": "Album",
+              "type": "inner",
+              "on": [
+                {
+                  "left_column": "AlbumId",
+                  "right_column": "AlbumId"
+                }
+              ]
+            },
+            {
+              "left_table": "Album",
+              "right_table": "Artist",
+              "type": "inner",
+              "on": [
+                {
+                  "left_column": "ArtistId",
+                  "right_column": "ArtistId"
+                }
+              ]
+            },
+            {
+              "left_table": "Invoice",
+              "right_table": "Customer",
+              "type": "inner",
+              "on": [
+                {
+                  "left_column": "CustomerId",
+                  "right_column": "CustomerId"
                 }
               ]
             }
           ],
           "filter_values": [
             {
-              "field": "title",
+              "field": "Invoice.CustomerId",
               "operator": "eq",
-              "value": "Post 2"
+              "value": 1
             }
           ]
         }

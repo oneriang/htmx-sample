@@ -4,6 +4,13 @@
 <article class="container" style="position: relative; width: 100%; min-height: 100%;">
   <h2>Welcome to the Database Manager</h2>
   <p>Please select a table from the navigation bar to view its data.</p>
+  <a href="#" hx-get="/execute_all_transactions" 
+  hx-target="#execute_all_transactions" 
+  hx-swap="innerHTML" 
+  class="page-link">execute_all_transactions</a>
+  <div id="execute_all_transactions">
+
+  </div>
   <div style="position: relative;">
     <div id="table-container">
     </div>
