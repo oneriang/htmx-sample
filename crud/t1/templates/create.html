@@ -1,0 +1,11 @@
+<!-- templates/create.html -->
+<form hx-post="{{ url_for('create_item', table_name=table_name) }}" hx-target="#items" hx-swap="beforeend">
+    {% for column in columns %}
+    {% if column.name != 'id' %}
+    <label>{{ column.name }}:
+        <input type="text" name="{{ column.name }}" required>
+    </label><br>
+    {% endif %}
+    {% endfor %}
+    <button type="submit">Create</button>
+</form>

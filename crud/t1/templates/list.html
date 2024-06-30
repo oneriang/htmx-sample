@@ -1,0 +1,22 @@
+<!-- templates/list.html -->
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ table_name }} List</h1>
+<table>
+    <thead>
+        <tr>
+            {% for column in columns %}
+            <th>{{ column.name }}</th>
+            {% endfor %}
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="items">
+        {% for item in items %}
+        {% include "item_row.html" %}
+        {% endfor %}
+    </tbody>
+</table>
+<button hx-get="{{ url_for('create_item', table_name=table_name) }}" hx-target="#create-form">Create New</button>
+<div id="create-form"></div>
+{% endblock %}

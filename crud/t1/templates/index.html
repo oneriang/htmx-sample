@@ -1,0 +1,10 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+{% block content %}
+<h1>Database Tables</h1>
+<ul>
+    {% for table in tables %}
+    <li><a href="{{ url_for('list_items', table_name=table) }}">{{ table }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

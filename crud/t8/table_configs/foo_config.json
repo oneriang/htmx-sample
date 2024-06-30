@@ -1,0 +1,19 @@
+{
+  "table_name": "foo",
+  "columns": [
+    {
+      "name": "bar",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "baz",
+      "type": "VARCHAR(20)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

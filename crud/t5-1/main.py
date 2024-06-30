@@ -1,0 +1,180 @@
+# main.py
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, inspect
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Dict, Any
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Database connection configuration
+DATABASE_URL = "sqlite:///./Chinook.db"  # 使用您自己的数据库 URL
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+metadata = MetaData()
+
+# 反射现有的数据库表
+metadata.reflect(bind=engine)
+
+def get_primary_key(table):
+    return next(iter(table.primary_key.columns)).name
+
+def get_table_names():
+    inspector = inspect(engine)
+    return inspector.get_table_names()
+
+@app.get("/")
+async def read_root(request: Request):
+    tables = get_table_names()
+    return templates.TemplateResponse("all_in_one.html", {"request": request, "tables": tables}, block_name="index")
+ 
+from fastapi import Query
+from sqlalchemy import or_
+from sqlalchemy import func, select
+from fastapi.templating import Jinja2Templates
+import math
+
+templates = Jinja2Templates(directory="templates")
+
+# 添加 min 函数到模板上下文
+templates.env.globals['min'] = min
+
+@app.get("/table/{table_name}")
+async def read_table(request: Request, table_name: str, page: int = 1, search: str = '', page_size: int = 10):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    primary_key = get_primary_key(table)
+    offset = (page - 1) * page_size
+    
+    query = select(table.columns)  # 修改此行以传递表的所有列
+    
+    if search:
+        search_columns = [getattr(table.c, col).ilike(f"%{search}%") for col in table.columns.keys()]
+        query = query.where(or_(*search_columns))
+    
+    with SessionLocal() as session:
+        count_query = select(func.count()).select_from(query.alias())
+        total_items = session.execute(count_query).scalar()
+        result = session.execute(query.offset(offset).limit(page_size)).fetchall()
+        columns = table.columns.keys()
+        
+    total_pages = (total_items + page_size - 1) // page_size
+    
+    return templates.TemplateResponse("all_in_one.html", {
+        "request": request,
+        "table_name": table_name,
+        "columns": columns,
+        "rows": result,
+        "primary_key": primary_key,
+        "page": page,
+        "page_size": page_size,
+        "total_items": total_items,
+        "total_pages": total_pages,
+        "search": search,
+        "is_table": True,
+    }, block_name="table")
+
+
+@app.get("/create/{table_name}")
+async def create_form(request: Request, table_name: str):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    columns = [col.name for col in table.columns if col.name != get_primary_key(table)]
+    return templates.TemplateResponse("all_in_one.html", {
+        "request": request, 
+        "table_name": table_name, 
+        "columns": columns, 
+        "is_create_form": True
+    }, block_name="create_form")
+
+@app.post("/create/{table_name}")
+async def create_item(table_name: str, request: Request):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    form_data = await request.form()
+    data = {key: value for key, value in form_data.items() if key in table.columns.keys()}
+    
+    try:
+        with SessionLocal() as session:
+            stmt = insert(table).values(**data)
+            session.execute(stmt)
+            session.commit()
+        return {"success": True, "message": "Item created successfully"}
+    except SQLAlchemyError as e:
+        return {"success": False, "message": str(e)}
+
+@app.get("/edit/{table_name}/{id}")
+async def edit_form(request: Request, table_name: str, id: str):
+    print(table_name)
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    primary_key = get_primary_key(table)
+    
+    with SessionLocal() as session:
+        stmt = select(table).where(getattr(table.c, primary_key) == id)
+        result = session.execute(stmt).fetchone()._asdict()
+
+    print(result)
+    
+    if result:
+        return templates.TemplateResponse("all_in_one.html", {
+            "request": request,
+            "table_name": table_name,
+            "id": id,
+            "item": dict(result),
+            "primary_key": primary_key,
+            "is_edit_form": True
+        }, block_name="edit_form")
+    raise HTTPException(status_code=404, detail="Item not found")
+
+@app.post("/edit/{table_name}/{id}")
+async def edit_item(table_name: str, id: str, request: Request):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    primary_key = get_primary_key(table)
+    form_data = await request.form()
+    data = {key: value for key, value in form_data.items() if key in table.columns.keys()}
+    
+    try:
+        with SessionLocal() as session:
+            stmt = update(table).where(getattr(table.c, primary_key) == id).values(**data)
+            session.execute(stmt)
+            session.commit()
+        return {"success": True, "message": "Item updated successfully"}
+    except SQLAlchemyError as e:
+        return {"success": False, "message": str(e)}
+
+@app.post("/delete/{table_name}/{id}")
+async def delete_item(table_name: str, id: str):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table = metadata.tables[table_name]
+    primary_key = get_primary_key(table)
+    
+    try:
+        with SessionLocal() as session:
+            stmt = delete(table).where(getattr(table.c, primary_key) == id)
+            session.execute(stmt)
+            session.commit()
+        return {"success": True, "message": "Item deleted successfully"}
+    except SQLAlchemyError as e:
+        return {"success": False, "message": str(e)}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

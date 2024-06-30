@@ -1,0 +1,68 @@
+{
+  "table_name": "Invoice",
+  "columns": [
+    {
+      "name": "InvoiceId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "CustomerId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "InvoiceDate",
+      "type": "DATETIME",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "date"
+    },
+    {
+      "name": "BillingAddress",
+      "type": "NVARCHAR(70)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "BillingCity",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "BillingState",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "BillingCountry",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "BillingPostalCode",
+      "type": "NVARCHAR(10)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Total",
+      "type": "NUMERIC(10, 2)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

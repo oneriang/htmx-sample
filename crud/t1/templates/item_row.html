@@ -1,0 +1,10 @@
+<!-- templates/item_row.html -->
+<tr>
+    {% for column in columns %}
+    <td>{{ item[column.name] }}</td>
+    {% endfor %}
+    <td>
+        <button hx-get="{{ url_for('update_item', table_name=table_name) }}" hx-target="closest tr">Edit</button>
+        <button hx-delete="{{ url_for('delete_item', table_name=table_name ) }}" hx-target="closest tr" hx-confirm="Are you sure?">Delete</button>
+    </td>
+</tr>

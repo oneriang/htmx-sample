@@ -1,0 +1,33 @@
+{
+  "table_name": "Album",
+  "columns": [
+    {
+      "name": "AlbumId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "Title",
+      "type": "NVARCHAR(160)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "ArtistId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "Column1",
+      "type": "BLOB",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+<!-- templates/edit_form.html -->
+<h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
+<form id="myForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#target">
+    {% for column, value in item.items() %}
+    <div class="mb-4">
+        <label for="{{ column }}" class="block text-sm font-bold mb-2">{{ column }}</label>
+        <input type="text" id="{{ column }}" name="{{ column }}" value="{{ value }}" {% if column == primary_key %}readonly{% endif %}
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    {% endfor %}
+    <div class="flex justify-end">
+        <button type="button" onclick="hideModal()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+        <button type="submit" onclick="hideEditModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+    </div>
+    <div style="display: none;" id="target">
+    </div>
+    
+    <script>
+        
+
+        function hideEditModal() {
+            // document.getElementById('modal').style.display = 'none';
+            // document.getElementById('btn-table-refresh').click();
+        }
+
+        
+    </script>
+    
+    <script>
+  document.getElementById('myForm').addEventListener('htmx:beforeRequest', function(evt) {
+    console.log('Before request');
+    // 在请求发送之前执行的代码
+  });
+
+  document.getElementById('myForm').addEventListener('htmx:responseError', function(evt) {
+    console.log('Response error');
+    // 在响应出错时执行的代码
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+  });
+</script>
+
+<script>
+  document.getElementById('myForm').addEventListener('htmx:afterRequest', function(evt) {
+    console.log('Request completed');
+    // 在请求完成后执行的代码
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+  });
+</script>
+</form>

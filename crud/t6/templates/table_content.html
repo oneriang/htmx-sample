@@ -1,0 +1,46 @@
+<!-- templates/table_content.html -->
+<table class="mt-4 w-full">
+    <thead>
+        <tr>
+            {% for column in columns %}
+            <th class="border px-4 py-2">{{ column }}</th>
+            {% endfor %}
+            <th class="border px-4 py-2">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            {% for column in columns %}
+            <td class="border px-4 py-2">{{ row[column] }}</td>
+            {% endfor %}
+            <td class="border px-4 py-2">
+                <button hx-get="/edit/{{ table_name }}/{{ row[primary_key] }}" 
+                        hx-target="#edit-content" 
+                        class="text-blue-500 hover:underline">Edit</button>
+                <button hx-delete="/delete/{{ table_name }}/{{ row[primary_key] }}"
+                        hx-confirm="Are you sure you want to delete this item?"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        class="text-red-500 hover:underline">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="mt-4 flex justify-between items-center">
+    <p>Showing {{ (page - 1) * page_size + 1 }} to {{ min(page * page_size, total_items) }} of {{ total_items }} records</p>
+    <div>
+        {% if page > 1 %}
+        <button hx-get="/table_content/{{ table_name }}?page={{ page - 1 }}&search={{ search }}" 
+                hx-target="#table-content" 
+                class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
+        {% endif %}
+        {% if page < total_pages %}
+        <button hx-get="/table_content/{{ table_name }}?page={{ page + 1 }}&search={{ search }}" 
+                hx-target="#table-content" 
+                class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+        {% endif %}
+    </div>
+</div>

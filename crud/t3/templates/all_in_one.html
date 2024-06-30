@@ -1,0 +1,112 @@
+<!-- templates/all_in_one.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Generic CRUD App{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
+
+{% block index %}
+    <h1 class="text-2xl font-bold mb-4">Tables</h1>
+    <ul class="list-disc list-inside">
+        {% for table in tables %}
+        <li><a href="/table/{{ table }}" class="text-blue-500 hover:underline">{{ table }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+{% block table %}
+    <h1 class="text-2xl font-bold mb-4">{{ table_name }}</h1>
+    <a href="/create/{{ table_name }}" class="bg-green-500 text-white px-4 py-2 rounded">Create New</a>
+    
+    <!-- 添加搜索表单 -->
+    <form action="/table/{{ table_name }}" method="get" class="my-4">
+        <input type="text" name="search" value="{{ search }}" placeholder="搜索..." class="border rounded px-2 py-1">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded">搜索</button>
+    </form>
+    
+    <table class="mt-4 w-full">
+        <thead>
+            <tr>
+                {% for column in columns %}
+                <th class="border px-4 py-2">{{ column }}</th>
+                {% endfor %}
+                <th class="border px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for column in columns %}
+                <td class="border px-4 py-2">{{ row[column] }}</td>
+                {% endfor %}
+                <td class="border px-4 py-2">
+                    <a href="/edit/{{ table_name }}/{{ row[primary_key] }}" class="text-blue-500 hover:underline">Edit</a>
+                    <button hx-post="/delete/{{ table_name }}/{{ row[primary_key] }}"
+                            hx-confirm="Are you sure you want to delete this item?"
+                            hx-target="closest tr"
+                            hx-swap="outerHTML"
+                            class="text-red-500 hover:underline">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+<!-- 添加分页控件 -->
+<div class="mt-4 flex justify-between items-center">
+    {% if page and page_size and total_items %}
+    <p>显示 {{ (page - 1) * page_size + 1 }} 到 {{ min(page * page_size, total_items) }} 的 {{ total_items }} 条记录</p>
+    <div>
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}&search={{ search or '' }}" class="bg-blue-500 text-white px-4 py-2 rounded">上一页</a>
+        {% endif %}
+        {% if page < total_pages %}
+        <a href="?page={{ page + 1 }}&search={{ search or '' }}" class="bg-blue-500 text-white px-4 py-2 rounded">下一页</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <p>无分页信息可用</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block create_form %}
+    <h1 class="text-2xl font-bold mb-4">Create {{ table_name }}</h1>
+    <form hx-post="/create/{{ table_name }}" hx-swap="outerHTML">
+        {% for column in columns %}
+        <div class="mb-4">
+            <label for="{{ column }}" class="block text-sm font-bold mb-2">{{ column }}</label>
+            <input type="text" id="{{ column }}" name="{{ column }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        {% endfor %}
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Create</button>
+    </form>
+{% endblock %}
+
+{% block edit_form %}
+    <h1 class="text-2xl font-bold mb-4">Edit {{ table_name }}</h1>
+    <form hx-post="/edit/{{ table_name }}/{{ id }}" hx-swap="outerHTML">
+        {% if item %}
+            {% for column, value in item.items() %}
+            <div class="mb-4">
+                <label for="{{ column }}" class="block text-sm font-bold mb-2">{{ column }}</label>
+                <input type="text" id="{{ column }}" name="{{ column }}" value="{{ value }}" {% if column == primary_key %}readonly{% endif %}
+                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            {% endfor %}
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+        {% else %}
+            <p class="text-red-500">Item not found</p>
+        {% endif %}
+    </form>
+{% endblock %}

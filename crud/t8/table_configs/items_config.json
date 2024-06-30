@@ -1,0 +1,26 @@
+{
+  "table_name": "items",
+  "columns": [
+    {
+      "name": "id",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "name",
+      "type": "VARCHAR",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "description",
+      "type": "VARCHAR",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

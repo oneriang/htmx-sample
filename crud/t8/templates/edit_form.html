@@ -1,0 +1,211 @@
+<!-- templates/edit_form.html
+<h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
+<form id="myForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#target">
+    {% for column, value in item.items() %}
+    <div class="mb-4">
+        <label for="{{ column }}" class="block text-sm font-bold mb-2">{{ column }}</label>
+        <input type="text" id="{{ column }}" name="{{ column }}" value="{{ value }}" {% if column == primary_key %}readonly{% endif %}
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    {% endfor %}
+    <div class="flex justify-end">
+        <button type="button" onclick="hideModal()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+        <button type="submit" onclick="hideEditModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+    </div>
+    <div style="display: none;" id="target">
+    </div>
+    
+    <script>
+        
+
+        function hideEditModal() {
+            // document.getElementById('modal').style.display = 'none';
+            // document.getElementById('btn-table-refresh').click();
+        }
+
+        
+    </script>
+    
+    <script>
+  document.getElementById('myForm').addEventListener('htmx:beforeRequest', function(evt) {
+    console.log('Before request');
+    // 在请求发送之前执行的代码
+  });
+
+  document.getElementById('myForm').addEventListener('htmx:responseError', function(evt) {
+    console.log('Response error');
+    // 在响应出错时执行的代码
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+  });
+</script>
+
+<script>
+  document.getElementById('myForm').addEventListener('htmx:afterRequest', function(evt) {
+    console.log('Request completed');
+    // 在请求完成后执行的代码
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+  });
+</script>
+</form>
+ -->
+ 
+ <!-- templates/edit_form.html
+<h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
+<form id="editForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#table-content">
+    <div id="formFields"></div>
+    <div class="flex justify-end mt-4">
+        <button type="button" onclick="hideModal()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+    </div>
+</form>
+
+<script>
+async function fetchFormConfig(tableName) {
+    const response = await fetch(`/form_config/${tableName}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch form configuration');
+    }
+    return response.json();
+}
+
+async function fetchRecordData(tableName, id) {
+    const response = await fetch(`/record/${tableName}/${id}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch record data');
+    }
+    return response.json();
+}
+
+function generateFormFields(config, data) {
+    const formFields = document.getElementById('formFields');
+    formFields.innerHTML = '';
+
+    config.fields.forEach(field => {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.className = 'mb-4';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', field.name);
+        label.className = 'block text-sm font-bold mb-2';
+        label.textContent = field.label;
+        fieldContainer.appendChild(label);
+
+        let input;
+        switch(field.type) {
+            case 'checkbox':
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                break;
+            case 'date':
+                input = document.createElement('input');
+                input.type = 'date';
+                break;
+            default:
+                input = document.createElement('input');
+                input.type = field.type;
+        }
+
+        input.id = field.name;
+        input.name = field.name;
+        input.className = 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline';
+        
+        if (field.required) input.required = true;
+        if (field.readonly) input.readOnly = true;
+
+        if (data && data[field.name] !== undefined) {
+            if (field.type === 'checkbox') {
+                input.checked = data[field.name];
+            } else if (field.type === 'date') {
+                // 确保日期格式正确 (YYYY-MM-DD)
+                const date = new Date(data[field.name]);
+                input.value = date.toISOString().split('T')[0];
+            } else {
+                input.value = data[field.name];
+            }
+        }
+
+        fieldContainer.appendChild(input);
+        formFields.appendChild(fieldContainer);
+    });
+}
+
+document.addEventListener('htmx:afterSwap', async function(evt) {
+    if (evt.detail.target.id === 'modal-content') {
+        const urlParts = evt.detail.pathInfo.path.split('/');
+        const tableName = urlParts[urlParts.length - 2];
+        const id = urlParts[urlParts.length - 1];
+        try {
+            const [config, data] = await Promise.all([
+                fetchFormConfig(tableName),
+                fetchRecordData(tableName, id)
+            ]);
+            generateFormFields(config, data);
+        } catch (error) {
+            console.error('Error setting up form:', error);
+            // 在这里你可能想要显示一个错误消息给用户
+        }
+    }
+});
+
+document.getElementById('editForm').addEventListener('htmx:beforeRequest', function(evt) {
+    console.log('Before request');
+});
+
+document.getElementById('editForm').addEventListener('htmx:afterRequest', function(evt) {
+    console.log('Request completed');
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+});
+</script>
+ -->
+ 
+<!-- templates/edit_form.html -->
+<h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
+<form id="myForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#target">
+    {% for column in table_config['columns'] %}
+    <div class="mb-4">
+        <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+            {% if column['label'] %}
+                {{ column['label'] }}
+            {% else %}
+                {{ column['name'] }}
+            {% endif %}
+        </label>
+        {% if column['input_type'] == 'text' %}
+        <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {% if column['primary_key'] %}readonly{% endif %}
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        {% elif column['input_type'] == 'number' %}
+        <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {% if column['primary_key'] %}readonly{% endif %}
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        {% elif column['input_type'] == 'date' %}
+        <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {% if column['primary_key'] %}readonly{% endif %}
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        {% elif column['input_type'] == 'checkbox' %}
+        <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if item[column['name']] %}checked{% endif %} {% if column['primary_key'] %}disabled{% endif %}
+               class="mr-2 leading-tight">
+        {% elif column['input_type'] == 'select' %}
+        <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% for option in column['options'] %}
+            <option value="{{ option }}" {% if item[column['name']] == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="flex justify-end">
+        <button type="button" onclick="hideModal()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+    </div>
+    <div style="display: none;" id="target"></div>
+</form>
+
+<script>
+  document.getElementById('myForm').addEventListener('htmx:afterRequest', function(evt) {
+    console.log('Request completed');
+    document.getElementById('btn-table-refresh').click();
+    hideModal();
+  });
+</script>

@@ -1,0 +1,18 @@
+<!-- templates/update.html -->
+<tr>
+    <form hx-post="{{ url_for('update_item', table_name=table_name, id=item.id) }}" hx-target="closest tr" hx-swap="outerHTML">
+        {% for column in columns %}
+        <td>
+            {% if column.name != 'id' %}
+            <input type="text" name="{{ column.name }}" value="{{ item[column.name] }}" required>
+            {% else %}
+            {{ item[column.name] }}
+            {% endif %}
+        </td>
+        {% endfor %}
+        <td>
+            <button type="submit">Save</button>
+            <button hx-get="{{ url_for('list_items', table_name=table_name) }}" hx-target="closest tr" hx-swap="outerHTML">Cancel</button>
+        </td>
+    </form>
+</tr>
