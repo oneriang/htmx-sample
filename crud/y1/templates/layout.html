@@ -1,0 +1,34 @@
+{# templates/layout.html #}
+
+{# 递归渲染组件的宏 #}
+{% macro render_component(component) %}
+    {% if component.type == "container" %}
+        <div class="{{ component.class }}">
+            {% for child in component.children %}
+                {{ render_component(child) }}
+            {% endfor %}
+        </div>
+    {% elif component.type == "card" %}
+        {% include "components/card.html" %}
+    {% elif component.type == "form" %}
+        {% include "components/form.html" %}
+    {% elif component.type == "datatable" %}
+        {% include "components/datatable.html" %}
+    {% elif component.type == "drawer" %}
+        {% include "components/drawer.html" %}
+    {% else %}
+        <div class="error">Unknown component type: {{ component.type }}</div>
+    {% endif %}
+{% endmacro %}
+
+{# 渲染主要内容 #}
+<main class="flex-1 overflow-y-auto p-4">
+    {{ render_component(components.main) }}
+</main>
+
+{# 渲染所有抽屉 #}
+{% for component_name, component in components.items() %}
+    {% if component.type == "drawer" %}
+        {{ render_component(component) }}
+    {% endif %}
+{% endfor %}

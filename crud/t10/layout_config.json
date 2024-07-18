@@ -1,0 +1,75 @@
+{
+  "search_form": {
+    "layout": "grid",
+    "columns": {
+      "default": 1,
+      "md": 2,
+      "lg": 3
+    },
+    "gap": 4,
+    "padding": {
+      "x": 8,
+      "y": 6
+    },
+    "margin_bottom": 4,
+    "background": "stone-50",
+    "shadow": "md",
+    "rounded": true
+  },
+  "form_fields": {
+    "margin_bottom": 4,
+    "label": {
+      "text_color": "gray-700",
+      "font_size": "sm",
+      "font_weight": "bold",
+      "margin_bottom": 2
+    },
+    "input": {
+      "appearance": "none",
+      "border": true,
+      "rounded": true,
+      "width": "full",
+      "padding": {
+        "x": 3,
+        "y": 2
+      },
+      "text_color": "gray-700",
+      "focus": {
+        "outline": "none",
+        "shadow": "outline"
+      }
+    }
+  },
+  "buttons": {
+    "search": {
+      "background": "blue-500",
+      "hover_background": "blue-700",
+      "text_color": "white",
+      "font_weight": "bold",
+      "padding": {
+        "x": 4,
+        "y": 2
+      },
+      "rounded": true,
+      "focus": {
+        "outline": "none",
+        "shadow": "outline"
+      }
+    },
+    "reset": {
+      "background": "gray-500",
+      "hover_background": "gray-700",
+      "text_color": "white",
+      "font_weight": "bold",
+      "padding": {
+        "x": 4,
+        "y": 2
+      },
+      "rounded": true,
+      "focus": {
+        "outline": "none",
+        "shadow": "outline"
+      }
+    }
+  }
+}

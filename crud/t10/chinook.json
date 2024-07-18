@@ -1,0 +1,20 @@
+{
+  "transactions": [
+    {
+      "name": "Delete Invoice",
+      "steps": [
+        {
+          "action": "delete",
+          "table": "Invoice",
+          "filter_values": [
+            {
+              "field": "InvoiceId",
+              "operator": "eq",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

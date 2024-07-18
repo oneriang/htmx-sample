@@ -1,0 +1,25 @@
+<div class="card w-full bg-base-100 shadow-xl mb-4">
+    <div class="card-body">
+        <h2 class="card-title">{{ component.title }}</h2>
+        <div class="overflow-x-auto">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        {% for column in component.columns %}
+                            <th>{{ column|capitalize }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in component.data %}
+                        <tr>
+                            {% for column in component.columns %}
+                                <td>{{ row[column] }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

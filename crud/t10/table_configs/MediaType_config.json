@@ -1,0 +1,19 @@
+{
+  "table_name": "MediaType",
+  "columns": [
+    {
+      "name": "MediaTypeId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "Name",
+      "type": "NVARCHAR(120)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

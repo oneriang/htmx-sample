@@ -1,0 +1,79 @@
+{
+  "layout": {
+    "container": {
+      "max_width": "7xl",
+      "margin": "auto",
+      "padding": {
+        "x": 4,
+        "y": 6
+      }
+    },
+    "grid": {
+      "columns": {
+        "default": 1,
+        "md": 2,
+        "lg": 3
+      },
+      "gap": 6
+    }
+  },
+  "header": {
+    "title": {
+      "text_color": "gray-900",
+      "font_size": "3xl",
+      "font_weight": "bold",
+      "margin_bottom": 4
+    },
+    "subtitle": {
+      "text_color": "gray-600",
+      "font_size": "xl",
+      "margin_bottom": 6
+    }
+  },
+  "card": {
+    "background": "white",
+    "shadow": "md",
+    "rounded": true,
+    "padding": {
+      "x": 6,
+      "y": 4
+    },
+    "title": {
+      "text_color": "gray-800",
+      "font_size": "xl",
+      "font_weight": "semibold",
+      "margin_bottom": 2
+    },
+    "content": {
+      "text_color": "gray-600"
+    }
+  },
+  "chart": {
+    "height": 64,
+    "width": "full"
+  },
+  "button": {
+    "primary": {
+      "background": "blue-500",
+      "hover_background": "blue-600",
+      "text_color": "white",
+      "font_weight": "medium",
+      "padding": {
+        "x": 4,
+        "y": 2
+      },
+      "rounded": true
+    },
+    "secondary": {
+      "background": "gray-200",
+      "hover_background": "gray-300",
+      "text_color": "gray-800",
+      "font_weight": "medium",
+      "padding": {
+        "x": 4,
+        "y": 2
+      },
+      "rounded": true
+    }
+  }
+}

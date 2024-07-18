@@ -1,0 +1,411 @@
+'''
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+import yaml
+from pydantic import BaseModel
+from typing import Dict, Any, List, Union
+from jinja2 import Template
+'''
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+import yaml
+from pydantic import BaseModel, Field
+from typing import Dict, Any, List, Union, Optional
+from jinja2 import Template
+
+app = FastAPI()
+
+# HTML templates as Python strings
+BASE_HTML = """
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="drawer">
+        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content">
+            {% for component in components %}
+                {{ component | safe }}
+            {% endfor %}
+        </div> 
+        <div class="drawer-side">
+            <label for="my-drawer" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                <!-- Sidebar content here -->
+                <li><a>Sidebar Item 1</a></li>
+                <li><a>Sidebar Item 2</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Modal functionality
+            const modalButtons = document.querySelectorAll('[data-modal-target]');
+            modalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modalId = button.getAttribute('data-modal-target');
+                    const modal = document.getElementById(modalId);
+                    if (modal) {
+                        modal.showModal();
+                    }
+                });
+            });
+
+            const closeButtons = document.querySelectorAll('.modal .close-modal');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.close();
+                    }
+                });
+            });
+
+            // Drawer functionality
+            const drawerButtons = document.querySelectorAll('[data-drawer-target]');
+            drawerButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const drawerId = button.getAttribute('data-drawer-target');
+                    const drawer = document.getElementById(drawerId);
+                    if (drawer) {
+                        drawer.checked = !drawer.checked;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+"""
+
+HTML_TEMPLATES = {
+    'container': '''
+        <div class="container mx-auto p-4 {{ attributes.class.value }}">
+            {% for child in children %}
+                {{ child | safe }}
+            {% endfor %}
+        </div>
+    ''',
+    'card': '''
+        <div class="card {{ attributes.class.value }}">
+            <div class="card-body">
+                <h2 class="card-title">{{ attributes.title.value }}</h2>
+                <p>{{ attributes.content.value }}</p>
+                {% for child in children %}
+                    {{ child | safe }}
+                {% endfor %}
+            </div>
+        </div>
+    ''',
+    'table': '''
+        <div class="overflow-x-auto">
+            <table class="table {{ attributes.class.value }}">
+                <thead>
+                    <tr>
+                        {% for header in attributes.headers.value %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attributes.rows.value %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    ''',
+    'form': '''
+        <form class="{{ attributes.class.value }}">
+            {% for field in attributes.fields.value %}
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ field.label }}</span>
+                    </label>
+                    <input type="{{ field.type }}" name="{{ field.name }}" class="input input-bordered">
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary mt-4">{{ attributes.submit_text.value }}</button>
+        </form>
+    ''',
+    'navbar': '''
+        <div class="navbar bg-base-100 {{ attributes.class.value }}">
+            <div class="flex-1">
+                <a class="btn btn-ghost normal-case text-xl">{{ attributes.title.value }}</a>
+            </div>
+            <div class="flex-none">
+                <ul class="menu menu-horizontal px-1">
+                    {% for item in attributes.menu_items.value %}
+                        <li><a href="{{ item.link }}">{{ item.text }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    ''',
+    'button': '''
+        <button class="btn {{ attributes.class.value }}" 
+                {% if attributes.modal_target and attributes.modal_target.value %}data-modal-target="{{ attributes.modal_target.value }}"{% endif %}
+                {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}>
+            {{ attributes.text.value }}
+        </button>
+    ''',
+    'grid': '''
+        <div class="grid grid-cols-{{ attributes.columns.value }} gap-4 {{ attributes.class.value }}">
+            {% for child in children %}
+                <div class="col-span-1">{{ child | safe }}</div>
+            {% endfor %}
+        </div>
+    ''',
+    'alert': '''
+        <div role="alert" class="alert {{ attributes.class.value }}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ attributes.message.value }}</span>
+        </div>
+    ''',
+    'tabs': '''
+        <div class="tabs {{ attributes.class.value }}">
+            {% for tab in attributes.tabs.value %}
+                <a class="tab {{ 'tab-active' if loop.first else '' }}">{{ tab }}</a>
+            {% endfor %}
+        </div>
+    ''',
+    'modal': '''
+        <dialog id="{{ attributes.id.value }}" class="modal">
+            <form method="dialog" class="modal-box">
+                <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+                <p class="py-4">{{ attributes.content.value }}</p>
+                <div class="modal-action">
+                    <button class="btn close-modal">Close</button>
+                </div>
+            </form>
+        </dialog>
+    ''',
+    'drawer': '''
+        <div class="drawer drawer-{{ attributes.side.value }}">
+            <input id="{{ attributes.id.value }}" type="checkbox" class="drawer-toggle" /> 
+            <div class="drawer-content">
+                {% for child in children %}
+                    {{ child | safe }}
+                {% endfor %}
+            </div> 
+            <div class="drawer-side">
+                <label for="{{ attributes.id.value }}" class="drawer-overlay"></label>
+                <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                    {% for item in attributes.menu_items.value %}
+                        <li><a>{{ item }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    '''
+}
+
+# Updated Pydantic models
+class ComponentAttribute(BaseModel):
+    type: str
+    value: Optional[Union[str, int, float, bool, List, Dict]] = None
+
+class Component(BaseModel):
+    type: str
+    attributes: Dict[str, ComponentAttribute] = Field(default_factory=dict)
+    children: List['Component'] = Field(default_factory=list)
+
+class Page(BaseModel):
+    title: str
+    components: List[Component]
+
+
+# YAML configuration as a Python string
+YAML_CONFIG = """
+title: Enhanced Dashboard with Drawers
+components:
+  - type: navbar
+    attributes:
+      title: 
+        type: string
+        value: My Dashboard
+      class:
+        type: string
+        value: mb-4
+      menu_items:
+        type: list
+        value:
+          - {text: Home, link: "#"}
+          - {text: About, link: "#about"}
+          - {text: Contact, link: "#contact"}
+  - type: drawer
+    attributes:
+      id:
+        type: string
+        value: my-drawer
+      side:
+        type: string
+        value: left
+      menu_items:
+        type: list
+        value:
+          - Sidebar Item 1
+          - Sidebar Item 2
+          - Sidebar Item 3
+    children:
+      - type: container
+        attributes:
+          class:
+            type: string
+            value: ""
+        children:
+          - type: grid
+            attributes:
+              columns:
+                type: int
+                value: 3
+              class:
+                type: string
+                value: gap-4 gap-12
+            children:
+              - type: card
+                attributes:
+                  title: 
+                    type: string
+                    value: User Information
+                  content:
+                    type: string
+                    value: Welcome, John Doe!
+                  class:
+                    type: string
+                    value: bg-primary text-primary-content
+              - type: card
+                attributes:
+                  title: 
+                    type: string
+                    value: Quick Stats
+                  content:
+                    type: string
+                    value: Here are your key metrics
+                  class:
+                    type: string
+                    value: bg-secondary text-secondary-content
+              - type: card
+                attributes:
+                  title: 
+                    type: string
+                    value: Notifications
+                  content:
+                    type: string
+                    value: You have 3 new messages
+                  class:
+                    type: string
+                    value: bg-accent text-accent-content
+          - type: alert
+            attributes:
+              message:
+                type: string
+                value: This is an important system message!
+              class:
+                type: string
+                value: alert-info my-4
+          - type: tabs
+            attributes:
+              tabs:
+                type: list
+                value: ["Overview", "Details", "Settings"]
+              class:
+                type: string
+                value: mb-4
+          - type: table
+            attributes:
+              headers:
+                type: list
+                value: ["Name", "Age", "City"]
+              rows:
+                type: list
+                value:
+                  - ["John Doe", "30", "New York"]
+                  - ["Jane Smith", "25", "London"]
+                  - ["Bob Johnson", "35", "Paris"]
+              class:
+                type: string
+                value: table-zebra
+          - type: form
+            attributes:
+              fields:
+                type: list
+                value:
+                  - {name: username, type: text, label: Username}
+                  - {name: email, type: email, label: Email}
+                  - {name: password, type: password, label: Password}
+              submit_text:
+                type: string
+                value: Sign Up
+              class:
+                type: string
+                value: mt-4
+          - type: button
+            attributes:
+              text:
+                type: string
+                value: Open Modal
+              class:
+                type: string
+                value: btn-secondary mt-4
+              modal_target:
+                type: string
+                value: my_modal
+          - type: modal
+            attributes:
+              id:
+                type: string
+                value: my_modal
+              title:
+                type: string
+                value: Important Information
+              content:
+                type: string
+                value: This is some important information in a modal dialog.
+          - type: button
+            attributes:
+              text:
+                type: string
+                value: Toggle Left Drawer
+              class:
+                type: string
+                value: btn-primary mt-4
+              drawer_target:
+                type: string
+                value: my-drawer
+"""
+
+def load_page_config() -> Page:
+    config = yaml.safe_load(YAML_CONFIG)
+    return Page(**config)
+
+def generate_html(component: Component) -> str:
+    template = Template(HTML_TEMPLATES.get(component.type, ''))
+    rendered_children = [generate_html(child) for child in component.children]
+    return template.render(attributes=component.attributes, children=rendered_children)
+
+@app.get("/", response_class=HTMLResponse)
+async def render_page(request: Request):
+    page_config = load_page_config()
+    rendered_components = [generate_html(component) for component in page_config.components]
+    
+    template = Template(BASE_HTML)
+    return template.render(
+        page_title=page_config.title,
+        components=rendered_components
+    )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

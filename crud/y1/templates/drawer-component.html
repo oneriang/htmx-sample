@@ -1,0 +1,11 @@
+{# templates/components/drawer.html #}
+<div class="drawer drawer-end">
+  <input id="{{ component.id }}" type="checkbox" class="drawer-toggle" />
+  <div class="drawer-side {% if component.position in ['top', 'bottom'] %}fixed {% if component.position == 'top' %}top-0{% else %}bottom-0{% endif %} left-0 right-0 h-[30vh]{% endif %}">
+    <label for="{{ component.id }}" class="drawer-overlay"></label>
+    <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+      <h3 class="font-bold text-lg">{{ component.title }}</h3>
+      <p>{{ component.content }}</p>
+    </ul>
+  </div>
+</div>

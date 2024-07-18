@@ -1,0 +1,20 @@
+columns:
+- input_type: number
+  label: id
+  name: id
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: name
+  name: name
+  nullable: true
+  primary_key: 0
+  type: VARCHAR
+- input_type: text
+  label: description
+  name: description
+  nullable: true
+  primary_key: 0
+  type: VARCHAR
+table_name: items

@@ -1,0 +1,111 @@
+{
+  "table_name": "Employee",
+  "columns": [
+    {
+      "name": "EmployeeId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "LastName",
+      "type": "NVARCHAR(20)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "FirstName",
+      "type": "NVARCHAR(20)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Title",
+      "type": "NVARCHAR(30)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "ReportsTo",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "BirthDate",
+      "type": "DATETIME",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "date"
+    },
+    {
+      "name": "HireDate",
+      "type": "DATETIME",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "date"
+    },
+    {
+      "name": "Address",
+      "type": "NVARCHAR(70)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "City",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "select",
+      "options": ["a", "b", "c"]
+    },
+    {
+      "name": "State",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Country",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "PostalCode",
+      "type": "NVARCHAR(10)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Phone",
+      "type": "NVARCHAR(24)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Fax",
+      "type": "NVARCHAR(24)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Email",
+      "type": "NVARCHAR(60)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

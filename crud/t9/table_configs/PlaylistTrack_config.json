@@ -1,0 +1,19 @@
+{
+  "table_name": "PlaylistTrack",
+  "columns": [
+    {
+      "name": "PlaylistId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "TrackId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 2,
+      "input_type": "number"
+    }
+  ]
+}

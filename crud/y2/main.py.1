@@ -1,0 +1,160 @@
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+import yaml
+from pydantic import BaseModel
+from typing import Dict, Any, List, Union
+from jinja2 import Template
+
+app = FastAPI()
+
+# HTML templates as Python strings
+BASE_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">{{ page_title }}</h1>
+        {% for component in components %}
+            {{ component | safe }}
+        {% endfor %}
+    </div>
+</body>
+</html>
+"""
+
+HTML_TEMPLATES = {
+    'card': '''
+        <div class="card {{ attributes.class.value }}">
+            <div class="card-body">
+                <h2 class="card-title">{{ attributes.title.value }}</h2>
+                <p>{{ attributes.content.value }}</p>
+                {% for child in children %}
+                    {{ child | safe }}
+                {% endfor %}
+            </div>
+        </div>
+    ''',
+    'table': '''
+        <table class="table {{ attributes.class.value }}">
+            <thead>
+                <tr>
+                    {% for header in attributes.headers.value %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attributes.rows.value %}
+                    <tr>
+                        {% for cell in row %}
+                            <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    ''',
+    'form': '''
+        <form class="{{ attributes.class.value }}">
+            {% for field in attributes.fields.value %}
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ field.label }}</span>
+                    </label>
+                    <input type="{{ field.type }}" name="{{ field.name }}" class="input input-bordered">
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary mt-4">{{ attributes.submit_text.value }}</button>
+        </form>
+    '''
+}
+
+# Pydantic models
+class ComponentAttribute(BaseModel):
+    type: str
+    value: Union[str, int, float, bool, List, Dict]
+
+class Component(BaseModel):
+    type: str
+    attributes: Dict[str, ComponentAttribute]
+    children: List['Component'] = []
+
+class Page(BaseModel):
+    title: str
+    components: List[Component]
+
+# YAML configuration as a Python string
+YAML_CONFIG = """
+title: Dashboard
+components:
+  - type: card
+    attributes:
+      title: 
+        type: string
+        value: User Information
+      content:
+        type: string
+        value: Welcome, John Doe!
+      class:
+        type: string
+        value: bg-primary text-primary-content
+  - type: table
+    attributes:
+      headers:
+        type: list
+        value: ["Name", "Age", "City"]
+      rows:
+        type: list
+        value:
+          - ["John Doe", "30", "New York"]
+          - ["Jane Smith", "25", "London"]
+      class:
+        type: string
+        value: table-zebra
+  - type: form
+    attributes:
+      fields:
+        type: list
+        value:
+          - {name: username, type: text, label: Username}
+          - {name: email, type: email, label: Email}
+          - {name: password, type: password, label: Password}
+      submit_text:
+        type: string
+        value: Sign Up
+      class:
+        type: string
+        value: form-control
+"""
+
+def load_page_config() -> Page:
+    config = yaml.safe_load(YAML_CONFIG)
+    return Page(**config)
+
+def generate_html(component: Component) -> str:
+    template = Template(HTML_TEMPLATES.get(component.type, ''))
+    rendered_children = [generate_html(child) for child in component.children]
+    return template.render(attributes=component.attributes, children=rendered_children)
+
+@app.get("/", response_class=HTMLResponse)
+async def render_page(request: Request):
+    page_config = load_page_config()
+    rendered_components = [generate_html(component) for component in page_config.components]
+    
+    template = Template(BASE_HTML)
+    return template.render(
+        page_title=page_config.title,
+        components=rendered_components
+    )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

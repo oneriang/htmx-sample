@@ -1,0 +1,40 @@
+{
+  "table_name": "InvoiceLine",
+  "columns": [
+    {
+      "name": "InvoiceLineId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "InvoiceId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "TrackId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "UnitPrice",
+      "type": "NUMERIC(10, 2)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Quantity",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+columns:
+- input_type: number
+  label: MediaTypeId
+  name: MediaTypeId
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: Name
+  name: Name
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(120)
+table_name: MediaType

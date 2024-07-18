@@ -1,0 +1,26 @@
+columns:
+- input_type: number
+  label: AlbumId
+  name: AlbumId
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: Title
+  name: Title
+  nullable: false
+  primary_key: 0
+  type: NVARCHAR(160)
+- input_type: number
+  label: ArtistId
+  name: ArtistId
+  nullable: false
+  primary_key: 0
+  type: INTEGER
+- input_type: text
+  label: Column1
+  name: Column1
+  nullable: true
+  primary_key: 0
+  type: BLOB
+table_name: Album

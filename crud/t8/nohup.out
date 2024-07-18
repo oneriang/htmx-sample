@@ -207,3 +207,39 @@ INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
 INFO:     Finished server process [237466]
 INFO:     Stopping reloader process [237464]
+INFO:     Will watch for changes in these directories: ['/root/ws/htmx-sample/crud/t8']
+WARNING:  "workers" flag is ignored when reloading is enabled.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [258013] using WatchFiles
+INFO:     Started server process [258015]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [258015]
+INFO:     Stopping reloader process [258013]
+INFO:     Will watch for changes in these directories: ['/root/ws/htmx-sample/crud/t8']
+WARNING:  "workers" flag is ignored when reloading is enabled.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [287742] using WatchFiles
+INFO:     Started server process [287744]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [287744]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [290053]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Started server process [290056]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [290056]
+INFO:     Stopping reloader process [287742]

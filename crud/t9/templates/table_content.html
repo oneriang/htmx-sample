@@ -1,0 +1,282 @@
+<!-- templates/table_content.html -->
+<style>
+    .sticky-left {
+        position: sticky;
+        left: 0;
+        background-color: white;
+        z-index: 1;
+    }
+
+    .sticky-left-shadow {
+        box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .delete-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .delete-modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 400px;
+    }
+
+    .error-message {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: .25rem;
+    }
+</style>
+
+<style>
+    .sort-icon {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        margin-left: 5px;
+        vertical-align: middle;
+        border-right: 4px solid transparent;
+        border-left: 4px solid transparent;
+    }
+
+    .sort-asc .sort-icon {
+        border-bottom: 4px solid #333;
+    }
+
+    .sort-desc .sort-icon {
+        border-top: 4px solid #333;
+    }
+</style>
+
+<style>
+    .search-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-form input,
+    .search-form select {
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+</style>
+
+<div id="error-container" class="error-message" style="display: none;"></div>
+<form hx-get="/table_content/{{ table_name }}" hx-target="#table-content" hx-swap="innerHTML" id="form-filter"
+    class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for column in table_config['columns'] %}
+        {% if not column.get('is_hidden', False) %}
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ column['name'] }}">
+                {{ column.get('label', column['name']) }}:
+            </label>
+            {% set input_type = column.get('input_type', 'text') %}
+            {% if input_type == 'text' %}
+            <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}"
+                value="{{ search_params.get(column['name'], '') }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif input_type == 'number' %}
+            <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}"
+                value="{{ search_params.get(column['name'], '') }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif input_type in ['date', 'datetime'] %}
+            <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}"
+                value="{{ search_params.get(column['name'], '') }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif input_type == 'checkbox' %}
+            <select id="{{ column['name'] }}" name="{{ column['name'] }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">All</option>
+                <option value="true" {% if search_params.get(column['name'])=='true' %}selected{% endif %}>Yes</option>
+                <option value="false" {% if search_params.get(column['name'])=='false' %}selected{% endif %}>No</option>
+            </select>
+            {% elif input_type == 'select' and column.get('options') %}
+            <select id="{{ column['name'] }}" name="{{ column['name'] }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">All</option>
+                {% for option in column['options'] %}
+                <option value="{{ option }}" {% if search_params.get(column['name'])==option %}selected{% endif %}>{{
+                    option }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}"
+                value="{{ search_params.get(column['name'], '') }}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <input type="hidden" name="page" value="1">
+    <input type="hidden" name="sort_column" value="{{ sort_column }}">
+    <input type="hidden" name="sort_direction" value="{{ sort_direction }}">
+    <div class="flex items-center justify-between">
+        <button type="submit"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Search
+        </button>
+        <button id="resetButton" type="button" onclick="resetForm()"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Reset
+        </button>
+    </div>
+</form>
+
+<div class="overflow-x-auto mt-4">
+    <table class="min-w-full bg-white border-collapse">
+        <thead>
+            <tr>
+                <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
+                {% for column in table_config['columns'] %}
+                {% if not column['is_hidden'] %}
+                <th class="border px-4 py-2">
+                    <div style="overflow: hidden; resize: horizontal;">
+                        <a href="#"
+                            hx-get="/table_content/{{ table_name }}?page={{ page }}&search={{ search }}&sort_column={{ column['name'] }}&sort_direction={% if sort_column == column['name'] and sort_direction == 'asc' %}desc{% else %}asc{% endif %}"
+                            hx-target="#table-content"
+                            class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}">
+                            {{ column['label'] or column['name'] }}
+                            <span class="sort-icon"></span>
+                        </a>
+                    </div>
+                </th>
+                {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr class="hover:bg-gray-100">
+                <td class="border px-4 py-2 sticky-left sticky-left-shadow">
+                    <button hx-get="/edit/{{ table_name }}/{{ row[primary_key] }}" hx-target="#modal-content"
+                        hx-trigger="click" onclick="showModal()" class="text-blue-500 hover:underline">Edit</button>
+                    <button onclick="showDeleteModal('{{ table_name }}', '{{ row[primary_key] }}')"
+                        class="text-red-500 hover:underline">Delete</button>
+                </td>
+                {% for column in table_config['columns'] %}
+                {% if not column['is_hidden'] %}
+                <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 flex justify-between items-center">
+    <p>Showing {{ (page - 1) * page_size + 1 }} to {{ min(page * page_size, total_items) }} of {{ total_items }} records
+    </p>
+    <div class="flex space-x-2">
+        {% if page > 1 %}
+        <button
+            hx-get="/table_content/{{ table_name }}?page={{ page - 1 }}&sort_column={{ sort_column }}&sort_direction={{ sort_direction }}{% for key, value in search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+            hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
+        {% endif %}
+        {% if page < total_pages %} <button
+            hx-get="/table_content/{{ table_name }}?page={{ page + 1 }}&sort_column={{ sort_column }}&sort_direction={{ sort_direction }}{% for key, value in search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+            hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+            {% endif %}
+            <button
+                hx-get="/table_content/{{ table_name }}?page={{ page }}&sort_column={{ sort_column }}&sort_direction={{ sort_direction }}{% for key, value in search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                hx-target="#table-content" id="btn-table-refresh"
+                class="bg-blue-500 text-white px-4 py-2 rounded">Refresh</button>
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+        <p>Are you sure you want to delete this item?</p>
+        <div class="mt-4 flex justify-end">
+            <button onclick="hideDeleteModal()"
+                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Cancel</button>
+            <button id="confirmDelete"
+                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete</button>
+        </div>
+        <div class="invisible" id="delete-hx-target"></div>
+    </div>
+</div>
+
+<script>
+    function showDeleteModal(tableName, id) {
+        document.getElementById('deleteModal').style.display = 'block';
+        const confirmDelete = document.getElementById('confirmDelete');
+        confirmDelete.setAttribute('hx-delete', `/delete/${tableName}/${id}`);
+        confirmDelete.setAttribute('hx-target', '#delete-hx-target');
+        htmx.process(confirmDelete);
+
+        document.getElementById('confirmDelete').addEventListener('htmx:afterRequest', function (evt) {
+            console.log('Request completed');
+            hideDeleteModal();
+            // 在请求完成后执行的代码
+            document.getElementById('btn-table-refresh').click();
+
+        });
+    }
+
+    function hideDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    document.body.addEventListener('htmx:responseError', function (evt) {
+        const errorContainer = document.getElementById('error-container');
+        errorContainer.textContent = 'An error occurred: ' + evt.detail.error;
+        errorContainer.style.display = 'block';
+        setTimeout(() => {
+            errorContainer.style.display = 'none';
+        }, 5000);
+    });
+
+    function resetForm(e) {
+        console.log(arguments);
+
+        const form = document.getElementById('form-filter');
+        form.reset();
+        const inputs = form.querySelectorAll('input:not([type="hidden"]), select');
+        inputs.forEach(input => {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        });
+
+        const sortColumnInput = form.querySelector('input[name="sort_column"]');
+        const sortDirectionInput = form.querySelector('input[name="sort_direction"]');
+        if (sortColumnInput) sortColumnInput.value = '';
+        if (sortDirectionInput) sortDirectionInput.value = '';
+
+        // Trigger form submission to reload data
+        htmx.trigger(form, 'submit');
+    }
+
+    // // Initialize on DOMContentLoaded
+    // document.addEventListener('DOMContentLoaded', initializeResetButton);
+
+    // // Initialize on htmx:afterSwap
+    // document.body.addEventListener('htmx:afterSwap', initializeResetButton);
+
+</script>

@@ -368,11 +368,14 @@
             <tr>
                 <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
                 {% for column in table_config['columns'] %}
-                {% if column['label'] %}
-                    <th class="border px-4 py-2">{{ column['label'] }}</th>
-                {% else %}
-                    <th class="border px-4 py-2">{{ column['name'] }}</th>
-                {% endif %}
+                    {% if column['is_hidden'] %}
+                    {% else %}
+                        {% if column['label'] %}
+                            <th class="border px-4 py-2"><div style="overflow: hidden; resize: horizontal;">{{ column['label'] }}</div></th>
+                        {% else %}
+                            <th class="border px-4 py-2"><div style="overflow: hidden; resize: horizontal;">{{ column['name'] }}</div></th>
+                        {% endif %}
+                    {% endif %}
                 {% endfor %}
             </tr>
         </thead>
@@ -389,7 +392,14 @@
                             class="text-red-500 hover:underline">Delete</button>
                 </td>
                 {% for column in table_config['columns'] %}
-                <td class="border px-4 py-2">{{ row[column['name']] }}</td>
+                    {% if column['is_hidden'] %}
+                    {% else %}
+                        {% if row[column['name']] %}
+                            <td class="border px-4 py-2">{{ row[column['name']] }}</td>
+                        {% else %}
+                            <td class="border px-4 py-2"></td>
+                        {% endif %}
+                    {% endif %}
                 {% endfor %}
             </tr>
             {% endfor %}

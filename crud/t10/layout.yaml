@@ -1,0 +1,70 @@
+# layout.yaml
+
+components:
+  # Main content
+  main:
+    type: container
+    class: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4
+    children:
+      - type: card
+        title: Welcome
+        content: Welcome to your dashboard!
+
+      - type: container
+        class: col-span-1 md:col-span-2
+        children:
+          - type: datatable
+            title: User List
+            data:
+              - id: 1
+                name: John Doe
+                email: john@example.com
+              - id: 2
+                name: Jane Smith
+                email: jane@example.com
+            columns:
+              - id
+              - name
+              - email
+
+      - type: form
+        title: Contact Us
+        fields:
+          - label: Name
+            type: text
+            name: name
+          - label: Email
+            type: email
+            name: email
+          - label: Message
+            type: textarea
+            name: message
+
+  # Drawers
+  left_drawer:
+    type: drawer
+    id: left-drawer
+    position: left
+    title: Left Menu
+    content: This is the left drawer content.
+
+  right_drawer:
+    type: drawer
+    id: right-drawer
+    position: right
+    title: Right Menu
+    content: This is the right drawer content.
+
+  top_drawer:
+    type: drawer
+    id: top-drawer
+    position: top
+    title: Top Menu
+    content: This is the top drawer content.
+
+  bottom_drawer:
+    type: drawer
+    id: bottom-drawer
+    position: bottom
+    title: Bottom Menu
+    content: This is the bottom drawer content.

@@ -1,0 +1,14 @@
+columns:
+- input_type: number
+  label: PlaylistId
+  name: PlaylistId
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: number
+  label: TrackId
+  name: TrackId
+  nullable: false
+  primary_key: 2
+  type: INTEGER
+table_name: PlaylistTrack

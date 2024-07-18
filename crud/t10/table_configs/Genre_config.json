@@ -1,0 +1,21 @@
+{
+  "table_name": "Genre",
+  "columns": [
+    {
+      "name": "GenreId",
+      "label": "ジャンル",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "Name",
+      "label": "名称",
+      "type": "NVARCHAR(120)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

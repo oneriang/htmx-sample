@@ -1,0 +1,68 @@
+{
+  "table_name": "Track",
+  "columns": [
+    {
+      "name": "TrackId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "Name",
+      "type": "NVARCHAR(200)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "AlbumId",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "MediaTypeId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "GenreId",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "Composer",
+      "type": "NVARCHAR(220)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Milliseconds",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "Bytes",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    },
+    {
+      "name": "UnitPrice",
+      "type": "NUMERIC(10, 2)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    }
+  ]
+}

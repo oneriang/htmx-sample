@@ -1,0 +1,96 @@
+{
+  "table_name": "Customer",
+  "columns": [
+    {
+      "name": "CustomerId",
+      "type": "INTEGER",
+      "nullable": false,
+      "primary_key": 1,
+      "input_type": "number"
+    },
+    {
+      "name": "FirstName",
+      "type": "NVARCHAR(40)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "LastName",
+      "type": "NVARCHAR(20)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Company",
+      "type": "NVARCHAR(80)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Address",
+      "type": "NVARCHAR(70)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "City",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "State",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Country",
+      "type": "NVARCHAR(40)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "PostalCode",
+      "type": "NVARCHAR(10)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Phone",
+      "type": "NVARCHAR(24)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Fax",
+      "type": "NVARCHAR(24)",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "Email",
+      "type": "NVARCHAR(60)",
+      "nullable": false,
+      "primary_key": 0,
+      "input_type": "text"
+    },
+    {
+      "name": "SupportRepId",
+      "type": "INTEGER",
+      "nullable": true,
+      "primary_key": 0,
+      "input_type": "number"
+    }
+  ]
+}

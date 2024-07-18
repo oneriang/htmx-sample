@@ -1,0 +1,25 @@
+[
+    {
+        "type": "card",
+        "title": "Welcome",
+        "content": "Welcome to your dashboard!"
+    },
+    {
+        "type": "form",
+        "title": "Contact Us",
+        "fields": [
+            {"label": "Name", "type": "text", "name": "name"},
+            {"label": "Email", "type": "email", "name": "email"},
+            {"label": "Message", "type": "textarea", "name": "message"}
+        ]
+    },
+    {
+        "type": "datatable",
+        "title": "User List",
+        "data": [
+            {"id": 1, "name": "John Doe", "email": "john@example.com"},
+            {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
+        ],
+        "columns": ["id", "name", "email"]
+    }
+]

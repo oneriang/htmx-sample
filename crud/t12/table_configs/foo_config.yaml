@@ -1,0 +1,14 @@
+columns:
+- input_type: number
+  label: bar
+  name: bar
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: text
+  label: baz
+  name: baz
+  nullable: true
+  primary_key: 0
+  type: VARCHAR(20)
+table_name: foo
