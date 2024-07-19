@@ -92,7 +92,7 @@ HTML_TEMPLATES = {
     ''',
     'list': '''
         <ul class="menu bg-base-200 w-56 rounded-box">
-            {% for item in values %}
+            {% for item in value %}
                 <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
             {% endfor %}
         </ul>
@@ -308,115 +308,150 @@ HTML_TEMPLATES = {
 
 # YAML configuration as a Python string
 YAML_CONFIG = """
-  title: Responsive Dashboard with Drawers
-  components:
-    - type: navbar
-      attributes:
-        title: 
-          type: string
-          value: My Dashboard
-        class:
-          type: string
-          value: mb-4
-        menu_items:
-          type: list
-          value:
-            - {text: Home, link: "#"}
-            - {text: About, link: "#about"}
-            - {text: Contact, link: "#contact"}
-    - type: container
-      attributes:
-        class:
-          type: string
-          value: "px-4 py-8"
-      children:
-        - type: list
-          get_values: getTables
-        - type: data-table
-          get_configs: get_configs
-          get_data: get_table_data_params
-        - type: form
-          attributes:
-            class:
-              type: string
-              value: mt-4 max-w-md mx-auto
-            fields:
-              type: list
-              value:
-                - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
-                - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
-                - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
-                - {name: age, type: number, label: Age, placeholder: Enter your age}
-                - {name: birthdate, type: date, label: Birth Date}
-                - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
-                - name: country
-                  type: select
-                  label: Country
-                  required: true
-                  options:
-                    - {value: us, label: United States}
-                    - {value: uk, label: United Kingdom}
-                    - {value: ca, label: Canada}
-                - name: newsletter
-                  type: checkbox
-                  label: Subscribe to newsletter
-                  checkboxLabel: Yes, I want to receive updates
-                - name: gender
-                  type: radio
-                  label: Gender
-                  options:
-                    - {value: male, label: Male}
-                    - {value: female, label: Female}
-                    - {value: other, label: Other}
-                - name: profile_picture
-                  type: file
-                  label: Profile Picture
-                  helpText: Please upload an image file (JPG, PNG)
-            submit_text:
-              type: string
-              value: Register
-        - type: form
-          attributes:
-            id: 
-              type: string
-              value: genre
-            class:
-              type: string
-              value: mt-4 max-w-md mx-auto
-            fields:
-              type: list
-              value:
-                - {name: GenreId, type: number, label: ジャンルID, placeholder: , required: true, disabled: true}
-                - {name: Name, type: text, label: ジャンル名称, placeholder: , required: true, readonly: true}
-            submit_text:
-              type: string
-              value: Register
+title: Responsive Dashboard with Drawers
+component_definitions:
+  navbar:
+    id: main_navbar
+    type: navbar
+    attributes:
+      title: 
+        type: string
+        value: My Dashboard
+      class:
+        type: string
+        value: mb-4
+      menu_items:
+        type: list
+        value:
+          - {text: Home, link: "#"}
+          - {text: About, link: "#about"}
+          - {text: Contact, link: "#contact"}
+  
+  table_list:
+    id: table_list
+    type: list
+    value: getTables
+
+  data_table:
+    id: main_data_table
+    type: data-table
+    config: get_configs
+    data: get_table_data_params
+
+  registration_form:
+    id: registration_form
+    type: form
+    attributes:
+      class:
+        type: string
+        value: mt-4 max-w-md mx-auto
+      fields:
+        type: list
+        value:
+          - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
+          - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
+          - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
+          - {name: age, type: number, label: Age, placeholder: Enter your age}
+          - {name: birthdate, type: date, label: Birth Date}
+          - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
+          - name: country
+            type: select
+            label: Country
+            required: true
+            options:
+              - {value: us, label: United States}
+              - {value: uk, label: United Kingdom}
+              - {value: ca, label: Canada}
+          - name: newsletter
+            type: checkbox
+            label: Subscribe to newsletter
+            checkboxLabel: Yes, I want to receive updates
+          - name: gender
+            type: radio
+            label: Gender
+            options:
+              - {value: male, label: Male}
+              - {value: female, label: Female}
+              - {value: other, label: Other}
+          - name: profile_picture
+            type: file
+            label: Profile Picture
+            helpText: Please upload an image file (JPG, PNG)
+      submit_text:
+        type: string
+        value: Register
+
+components:
+  - $ref: main_navbar
+  - type: container
+    attributes:
+      class:
+        type: string
+        value: "px-4 py-8"
+    children:
+      - $ref: table_list
+      - $ref: main_data_table
+      - $ref: registration_form
+      - type: form
+        attributes:
+          id: 
+            type: string
+            value: genre
+          class:
+            type: string
+            value: mt-4 max-w-md mx-auto
+          fields:
+            type: list
+            value:
+              - {name: GenreId, type: number, label: ジャンルID, placeholder: , required: true, disabled: true}
+              - {name: Name, type: text, label: ジャンル名称, placeholder: , required: true, readonly: true}
+          submit_text:
+            type: string
+            value: Register
 """
+
 
 import pprint
 
-def load_page_config() -> Dict[str, Any]:
+def load_page_config1() -> Dict[str, Any]:
     return yaml.safe_load(YAML_CONFIG)
 
+
+component_dict = {}
+
+def load_page_config() -> Dict[str, Any]:
+    config = yaml.safe_load(YAML_CONFIG)
+    global component_dict
+    # 创建一个组件字典，用于存储预定义的组件
+    component_dict = {comp['id']: comp for comp in config.get('component_definitions', {}).values()}
+    
+    # 递归函数，用于解析组件引用
+    def resolve_component(comp):
+        if isinstance(comp, dict) and '$ref' in comp:
+            return component_dict[comp['$ref']]
+        elif isinstance(comp, dict) and 'children' in comp:
+            comp['children'] = [resolve_component(child) for child in comp['children']]
+        return comp
+    
+    # 解析所有组件引用
+    config['components'] = [resolve_component(comp) for comp in config['components']]
+    
+    return config
+    
 def generate_html(component: Dict[str, Any]) -> str:
 
-    if component.get('get_configs'):
-        component['configs'] = globals()[component['get_configs']]()
-        print(component['configs'])
-        
-    if component.get('get_data'):
-        component['data'] = globals()[component['get_data']]()
-
-    if component.get('get_values'):
-        component['values'] = globals()[component['get_values']]()
+    for key in ['config', 'data', 'value']:
+        if key in component:
+            if globals()[component[key]]:
+                component[key] = globals()[component[key]]()
 
     template = Template(HTML_TEMPLATES.get(component['type'], ''))
     rendered_children = [generate_html(child) for child in component.get('children', [])]
     return template.render(
       attributes=component.get('attributes', {}), 
-      configs=component.get('configs', {}), 
+      configs=component.get('config', {}), 
       data=component.get('data', {}), 
-      values=component.get('values', []), 
+      value=component.get('value', []), 
       children=rendered_children,
       min=min)
 
@@ -443,6 +478,19 @@ async def render_page(request: Request):
     template = Template(BASE_HTML)
     return template.render(
         page_title=page_config['title'],
+        components=rendered_components,
+        min=min
+    )
+
+@app.get("/component", response_class=HTMLResponse)
+async def rendered_component(request: Request):
+    global component_dict
+    load_page_config()
+    #print(component_dict)
+    rendered_components = [generate_html(component_dict['main_data_table'])]
+    print(rendered_components)
+    template = Template(BASE_HTML)
+    return template.render(
         components=rendered_components,
         min=min
     )
