@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Union, Optional
 from jinja2 import Template
 
+import gv as gv
 
 app = FastAPI()
 
@@ -98,7 +99,7 @@ HTML_TEMPLATES = {
         </ul>
     ''',
     'data-table': '''
-      <div class="overflow-x-auto mt-4" id="table-content" hx-get="/table_data/{{ table_name }}" hx-trigger="load">
+      <div class="overflow-x-auto mt-4" id="table-content">
       {{ configs.table_name }}
           <table class="min-w-full bg-white border-collapse">
               <thead>
@@ -109,7 +110,7 @@ HTML_TEMPLATES = {
                       <th class="border px-4 py-2">
                           <div style="overflow: hidden; resize: horizontal;">
                               <a href="#"
-                                  hx-get="/table_data/{{ configs.table_name }}?page={{ page }}&search={{ search }}&sort_column={{ column['name'] }}&sort_direction={% if sort_column == column['name'] and sort_direction == 'asc' %}desc{% else %}asc{% endif %}"
+                                  hx-get="/component?component_id={{configs.component_id}}&page={{ page }}&search={{ search }}&sort_column={{ column['name'] }}&sort_direction={% if sort_column == column['name'] and sort_direction == 'asc' %}desc{% else %}asc{% endif %}"
                                   hx-target="#table-content"
                                   class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}">
                                   {{ column['label'] or column['name'] }}
@@ -145,61 +146,20 @@ HTML_TEMPLATES = {
             <div class="flex space-x-2">
                 {% if data.page > 1 %}
                 <button
-                    hx-get="/table_data/{{ configs.table_name }}?page={{ data.page - 1 }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                    hx-get="/component?component_id={{configs.component_id}}&page={{ data.page - 1 }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
                     hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
                 {% endif %}
                 {% if data.page < data.total_pages %} <button
-                    hx-get="/table_data/{{ configs.table_name }}?page={{ data.page + 1 }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                    hx-get="/component?component_id={{configs.component_id}}&page={{ data.page + 1 }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
                     hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
                     {% endif %}
                     <button
-                        hx-get="/table_data/{{ configs.table_name }}?page={{ data.page }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                        hx-get="/component?component_id={{configs.component_id}}&page={{ data.page }}&sort_column={{ data.sort_column }}&sort_direction={{ data.sort_direction }}{% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
                         hx-target="#table-content" id="btn-table-refresh"
                         class="bg-blue-500 text-white px-4 py-2 rounded">Refresh</button>
             </div>
           </div>
         </div>
-    ''',
-    'data-table1': '''
-      <table class="min-w-full bg-white border-collapse">
-          <thead>
-              <tr>
-                  <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
-                  {% for column in table_config['columns'] %}
-                  {% if not column['is_hidden'] %}
-                  <th class="border px-4 py-2">
-                      <div style="overflow: hidden; resize: horizontal;">
-                          <a href="#"
-                              hx-get="/table_data/{{ table_name }}?page={{ page }}&search={{ search }}&sort_column={{ column['name'] }}&sort_direction={% if sort_column == column['name'] and sort_direction == 'asc' %}desc{% else %}asc{% endif %}"
-                              hx-target="#table-content"
-                              class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}">
-                              {{ column['label'] or column['name'] }}
-                              <span class="sort-icon"></span>
-                          </a>
-                      </div>
-                  </th>
-                  {% endif %}
-                  {% endfor %}
-              </tr>
-          </thead>
-          <tbody>
-              {% for row in rows %}
-              <tr class="hover:bg-gray-100">
-                  <td class="border px-4 py-2 sticky-left sticky-left-shadow">
-                      <button hx-get="/edit/{{ table_name }}/{{ row[primary_key] }}" hx-target="#modal-content"
-                          hx-trigger="click" onclick="showModal()" class="text-blue-500 hover:underline">Edit</button>
-                      <button onclick="showDeleteModal('{{ table_name }}', '{{ row[primary_key] }}')"
-                          class="text-red-500 hover:underline">Delete</button>
-                  </td>
-                  {% for column in table_config['columns'] %}
-                  {% if not column['is_hidden'] %}
-                  <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
-                  {% endif %}
-                  {% endfor %}
-              </tr>
-              {% endfor %}
-          </tbody>
-      </table>
     ''',
     'table': '''
         <div class="overflow-x-auto">
@@ -472,6 +432,8 @@ def getTables():
 
 @app.get("/page", response_class=HTMLResponse)
 async def render_page(request: Request):
+    gv.request = request
+
     page_config = load_page_config()
     rendered_components = [generate_html(component) for component in page_config['components']]
 
@@ -484,11 +446,21 @@ async def render_page(request: Request):
 
 @app.get("/component", response_class=HTMLResponse)
 async def rendered_component(request: Request):
+    
+    query_params = dict(request.query_params)
+
+    if 'component_id' not in query_params:
+        return ''
+    
+    gv.request = request
     global component_dict
+    
+    component_id = query_params['component_id']
+    
     load_page_config()
     #print(component_dict)
-    rendered_components = [generate_html(component_dict['main_data_table'])]
-    print(rendered_components)
+    rendered_components = [generate_html(component_dict[component_id])]
+    # print(rendered_components)
     template = Template(BASE_HTML)
     return template.render(
         components=rendered_components,
@@ -552,16 +524,27 @@ def generate_all_table_configs(engine):
     for table_name in inspector.get_table_names():
         generate_table_config(engine, table_name)
 
-
-
 # Generate table configurations
 generate_all_table_configs(engine)
 
 def get_table_config(table_name=None):
+
+    request = gv.request
+    
+    search_params = {}
+    if request:
+      # Get all query parameters
+      search_params = dict(request.query_params)
+      if 'table_name' in search_params:
+        table_name = search_params['table_name']
+        
     if table_name is None:
       table_name = 'Genre'
+      
     with open(f'table_configs/{table_name}_config.yaml', 'r') as f:
-        return yaml.safe_load(f)
+        configs = yaml.safe_load(f)
+        configs['component_id'] = 'main_data_table'
+        return configs
 
 def get_primary_key(table):
     return next(iter(table.primary_key.columns)).name
@@ -632,8 +615,36 @@ def get_table_data_params(
     sort_column: str | None = None,
     sort_direction: str = 'asc'
 ):
+    if request is None:
+        request = gv.request
+    
+    search_params = {}
+    if request:
+      # Get all query parameters
+      search_params = dict(request.query_params)
+      # Remove known parameters
+
+      if 'page' in search_params:
+        page = int(search_params['page'])
+
+      if 'page_size' in search_params:
+        page_size = int(search_params['page_size'])
+      
+      if 'sort_column' in search_params:
+        sort_column = search_params['sort_column']
+
+      if 'sort_direction' in search_params:
+        sort_direction = search_params['sort_direction']
+
+      if 'table_name' in search_params:
+        table_name = search_params['table_name']
+
+      for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
+          search_params.pop(param, None)
+
     if table_name is None:
       table_name = 'Genre'
+
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -644,14 +655,6 @@ def get_table_data_params(
     
     query = select(table.columns)
     
-    search_params = {}
-    if request:
-      # Get all query parameters
-      search_params = dict(request.query_params)
-      # Remove known parameters
-      for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
-          search_params.pop(param, None)
-      
     # Apply search filters for each column based on JSON configuration
     for column_config in table_config['columns']:
         if column_config['name'] in search_params:
