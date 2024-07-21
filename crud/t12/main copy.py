@@ -10,10 +10,6 @@ from sqlalchemy.sql.sqltypes import String, Integer, DateTime, Date, Boolean, En
 from sqlalchemy import inspect, String, Integer, Float, DateTime, Date, Boolean, Enum
 from sqlalchemy.orm import class_mapper
 
-from sqlalchemy import inspect
-from sqlalchemy.orm import class_mapper
-from sqlalchemy.sql.sqltypes import String, Integer, Boolean, DateTime, Date
-
 from typing import List, Dict, Any
 import yaml
 import os
@@ -48,7 +44,6 @@ metadata = MetaData()
 # Reflect existing database tables
 metadata.reflect(bind=engine)
 
-component_dict = {}
 
 # HTML templates as Python strings
 BASE_HTML = """
@@ -114,24 +109,16 @@ HTML_TEMPLATES = {
                       {% if not column['is_hidden'] %}
                       <th class="border px-4 py-2">
                           <div style="overflow: hidden; resize: horizontal;">
-                            <a href="#"
-                            hx-get="{{- '/component?' -}}
-                            {{- 'component_id=' ~ configs.component_id -}}&
-                            {{- 'page=' ~ page -}}&
-                            {{- 'search=' ~ search -}}&
-                            {{- 'sort_column=' ~ column['name'] -}}&
-                            {{- 'sort_direction=' -}}
-                            {%- if sort_column == column['name'] and sort_direction == 'asc' -%}
-                                {{- 'desc' -}}
-                            {%- else -%}
-                                {{- 'asc' -}}
-                            {%- endif -%}"
-                            hx-target="#table-content"
-                            class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}"
-                            >
-                                {{ column['label'] or column['name'] }}
-                                <span class="sort-icon"></span>
-                            </a>
+                              <a href="#"
+                                  hx-get="/component?component_id={{configs.component_id}}\
+                                    &page={{ page }}\
+                                    &search={{ search }}\
+                                    &sort_column={{ column['name'] }}&sort_direction={% if sort_column == column['name'] and sort_direction == 'asc' %}desc{% else %}asc{% endif %}"
+                                  hx-target="#table-content"
+                                  class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}">
+                                  {{ column['label'] or column['name'] }}
+                                  <span class="sort-icon"></span>
+                              </a>
                           </div>
                       </th>
                       {% endif %}
@@ -157,65 +144,37 @@ HTML_TEMPLATES = {
               </tbody>
           </table>
           <div class="mt-4 flex justify-between items-center">
-            <p>Showing 
-                {{ (data.page - 1) * data.page_size + 1 }} 
-                to 
-                {{ min(data.page * data.page_size, data.total_items) }} 
-                of 
-                {{ data.total_items }} 
-                records
+            <p>Showing {{ (data.page - 1) * data.page_size + 1 }} to {{ min(data.page * data.page_size, data.total_items) }} of {{ data.total_items }} records
             </p>
             <div class="flex space-x-2">
                 {% if data.page > 1 %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page - 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Previous
-                    </button>
+                <button
+                    hx-get="/component?component_id={{configs.component_id}}
+                        &page={{ data.page - 1 }}
+                        &page_size={{ data.page_size }}
+                        &sort_column={{ data.sort_column }}
+                        &sort_direction={{ data.sort_direction }}
+                        {% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                    hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
                 {% endif %}
-                {% if data.page < data.total_pages %} 
+                {% if data.page < data.total_pages %} <button
+                    hx-get="/component?component_id={{configs.component_id}}
+                        &page={{ data.page + 1 }}
+                        &page_size={{ data.page_size }}
+                        &sort_column={{ data.sort_column }}
+                        &sort_direction={{ data.sort_direction }}
+                        {% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                    hx-target="#table-content" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+                    {% endif %}
                     <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page + 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Next
-                    </button>
-                {% endif %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ data.page -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        id="btn-table-refresh"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Refresh
-                    </button>
+                        hx-get="/component?component_id={{configs.component_id}}
+                            &page={{ data.page }}
+                            &page_size={{ data.page_size }}
+                            &sort_column={{ data.sort_column }}
+                            &sort_direction={{ data.sort_direction }}
+                            {% for key, value in data.search_params.items() %}&{{ key }}={{ value }}{% endfor %}"
+                        hx-target="#table-content" id="btn-table-refresh"
+                        class="bg-blue-500 text-white px-4 py-2 rounded">Refresh</button>
             </div>
           </div>
         </div>
@@ -428,6 +387,15 @@ components:
             type: string
             value: Register
 """
+
+
+import pprint
+
+def load_page_config1() -> Dict[str, Any]:
+    return yaml.safe_load(YAML_CONFIG)
+
+
+component_dict = {}
 
 def load_page_config() -> Dict[str, Any]:
     config = yaml.safe_load(YAML_CONFIG)
@@ -645,6 +613,17 @@ def apply_search_filter(query, table, column_config, value):
         elif input_type == 'select':
             return query.where(column == value)
     return query
+
+@app.get("/table_data/{table_name}")
+def get_table_data(
+    request: Request = None, 
+    table_name: str = None, 
+    page: int = 1, 
+    page_size: int = 2,
+    sort_column: str | None = None,
+    sort_direction: str = 'asc'
+):
+  pass
 
 def get_table_data_params(
     request: Request = None, 
@@ -899,6 +878,10 @@ async def delete_item(table_name: str, id: str):
         return "Item deleted successfully"
     except SQLAlchemyError as e:
         return {"success": False, "message": str(e)}
+
+from sqlalchemy import inspect
+from sqlalchemy.orm import class_mapper
+from sqlalchemy.sql.sqltypes import String, Integer, Boolean, DateTime, Date
 
 def get_column_type(column_type):
     if isinstance(column_type, String):
