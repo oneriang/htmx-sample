@@ -99,7 +99,19 @@ HTML_TEMPLATES = {
     'list': '''
         <ul class="menu bg-base-200 w-56 rounded-box">
             {% for item in value %}
-                <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
+                {% if item.get %}
+                    <li>
+                        <a href="#"
+                            hx-get="{{- '/component?' -}}
+                            {{- 'table_name=' ~ item.text -}}&
+                            {{- 'component_id=' ~ item.component_id -}}"
+                            hx-target="#table-content"
+                            >
+                                {{ item.text }}
+                            </a>
+                {% else %}
+                    <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
+                {% endif %}
             {% endfor %}
         </ul>
     ''',
@@ -329,7 +341,7 @@ HTML_TEMPLATES = {
 YAML_CONFIG = """
 title: Responsive Dashboard with Drawers
 component_definitions:
-  navbar:
+  main_navbar:
     id: main_navbar
     type: navbar
     attributes:
@@ -350,8 +362,13 @@ component_definitions:
     id: table_list
     type: list
     value: getTables
+    
+  table_list1:
+    id: table_list1
+    type: list
+    value: getTables1
 
-  data_table:
+  main_data_table:
     id: main_data_table
     type: data-table
     config: get_configs
@@ -409,6 +426,7 @@ components:
         value: "px-4 py-8"
     children:
       - $ref: table_list
+      - $ref: table_list1
       - $ref: main_data_table
       - $ref: registration_form
       - type: form
@@ -479,6 +497,19 @@ def getTables():
             }
         )
     return values
+
+def getTables1():
+    tables = get_table_names()
+    values = []
+    for t in tables:
+        values.append(
+            {
+                'component_id': 'main_data_table',
+                'text': t
+            }
+        )
+    return values
+
 
 @app.get("/page", response_class=HTMLResponse)
 async def render_page(request: Request):
