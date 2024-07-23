@@ -59,13 +59,59 @@ BASE_HTML = """
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>{{ page_title }}</title>
       <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-      <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
-      <script src="https://cdn.tailwindcss.com"></script>
+     
+      
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+<script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
     {% for component in components %}
         {{ component | safe }}
     {% endfor %}
+    <style>
+        .modal1 {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content1 {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+    </style>
+    <!-- Modal -->
+        <div id="modal" class="modal">
+            <div id="modal-content" class="modal-content">
+                <!-- Form content will be loaded here -->
+            </div>
+        </div>
+        
+<script>
+        function showModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function hideModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        document.body.addEventListener('htmx:afterSwap', function (event) {
+            if (event.detail.target.id === 'table-content') {
+                hideModal();
+            }
+        });
+    </script>
   </body>
   </html>
 """
@@ -154,9 +200,9 @@ HTML_TEMPLATES = {
                   {% for row in data.rows %}
                   <tr class="hover:bg-gray-100">
                       <td class="border px-4 py-2 sticky-left sticky-left-shadow">
-                          <button hx-get="/edit/{{ configs.table_name }}/{{ row[primary_key] }}" hx-target="#modal-content"
+                          <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                               hx-trigger="click" onclick="showModal()" class="text-blue-500 hover:underline">Edit</button>
-                          <button onclick="showDeleteModal('{{ configs.table_name }}', '{{ row[primary_key] }}')"
+                          <button onclick="showDeleteModal('{{ configs.table_name }}', '{{ row[data.primary_key] }}')"
                               class="text-red-500 hover:underline">Delete</button>
                       </td>
                       {% for column in configs.columns %}
@@ -325,11 +371,16 @@ HTML_TEMPLATES = {
         </button>
     ''',
     'modal': '''
-        <dialog id="{{ attributes.id.value }}" class="modal">
+        <button class="btn" onclick="{{ attributes.id.value }}.showModal()">open modal</button>
+        <dialog id="{{ attributes.id.value }}" class="modal modal-open1">
             <form method="dialog" class="modal-box">
                 <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
                 <p class="py-4">{{ attributes.content.value }}</p>
                 <div class="modal-action">
+                <form method="dialog">
+        <!-- if there is a button in form, it will close the modal -->
+        <button class="btn">Close</button>
+      </form>
                     <button class="btn close-modal">Close</button>
                 </div>
             </form>
@@ -373,6 +424,20 @@ component_definitions:
     type: data-table
     config: get_configs
     data: get_table_data_params
+    
+  modal1:
+    id: modal1
+    type: modal
+    attributes: 
+      id:
+        type: string
+        value: modal1
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
 
   registration_form:
     id: registration_form
@@ -425,8 +490,9 @@ components:
         type: string
         value: "px-4 py-8"
     children:
-      - $ref: table_list
-      - $ref: table_list1
+      - $ref: modal1
+      #- $ref: table_list
+      #- $ref: table_list1
       - $ref: main_data_table
       - $ref: registration_form
       - type: form
@@ -858,8 +924,8 @@ async def create_item(table_name: str, request: Request):
     except SQLAlchemyError as e:
         return {"success": False, "message": str(e)}
 
-@app.get("/edit/{table_name}/{id}")
-async def edit_form(request: Request, table_name: str, id: str, page: int = 1, search: str = '', page_size: int = 10):
+@app.get("/edit1/{table_name}/{id}")
+async def edit_form1(request: Request, table_name: str, id: str, page: int = 1, search: str = '', page_size: int = 10):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -884,6 +950,63 @@ async def edit_form(request: Request, table_name: str, id: str, page: int = 1, s
             "page": page,
             "page_size": page_size,
             "search": search,
+            "table_config": table_config
+        })
+    raise HTTPException(status_code=404, detail="Item not found")
+
+
+    return ''
+
+@app.get("/edit")
+async def edit_form(request: Request):
+    gv.request = request
+
+    search_params = {}
+
+    table_name = None
+    id = None
+
+    if request:
+      
+      search_params = dict(request.query_params)
+
+      if 'table_name' in search_params:
+        table_name = search_params['table_name']
+
+      if 'id' in search_params:
+        id = search_params['id']
+
+      for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
+          search_params.pop(param, None)
+
+    if table_name is None:
+      table_name = 'Genre'
+    
+    if id is None:
+      id = 22
+
+    table_config = get_table_config(table_name)
+    print(table_config)
+    
+    table = metadata.tables[table_name]
+    print(table)
+
+    primary_key = get_primary_key(table)
+    print(primary_key)
+    
+    with SessionLocal() as session:
+        stmt = select(table).where(getattr(table.c, primary_key) == id)
+        result = session.execute(stmt).fetchone()._asdict()
+    
+    data = dict(result)
+    
+    if result:
+        return templates.TemplateResponse("edit_form.html", {
+            "request": request,
+            "table_name": table_name,
+            "id": id,
+            "item": data,
+            "primary_key": primary_key,
             "table_config": table_config
         })
     raise HTTPException(status_code=404, detail="Item not found")
