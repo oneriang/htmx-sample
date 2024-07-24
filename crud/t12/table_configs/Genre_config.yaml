@@ -12,3 +12,4 @@ columns:
   primary_key: 0
   type: NVARCHAR(120)
 table_name: Genre
+component_edit_id: form_edit

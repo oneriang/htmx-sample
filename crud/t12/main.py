@@ -90,20 +90,14 @@ BASE_HTML = """
             max-width: 500px;
         }
     </style>
-    <!-- Modal -->
-        <div id="modal" class="modal">
-            <div id="modal-content" class="modal-content">
-                <!-- Form content will be loaded here -->
-            </div>
-        </div>
-        
-<script>
+
+    <script>
         function showModal() {
-            document.getElementById('modal').style.display = 'block';
+            document.getElementById('modal_form').showModal();
         }
 
         function hideModal() {
-            document.getElementById('modal').style.display = 'none';
+            document.getElementById('modal_form').close();
         }
 
         document.body.addEventListener('htmx:afterSwap', function (event) {
@@ -201,7 +195,9 @@ HTML_TEMPLATES = {
                   <tr class="hover:bg-gray-100">
                       <td class="border px-4 py-2 sticky-left sticky-left-shadow">
                           <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
-                              hx-trigger="click" onclick="showModal()" class="text-blue-500 hover:underline">Edit</button>
+                              hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
+                          <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                              hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
                           <button onclick="showDeleteModal('{{ configs.table_name }}', '{{ row[data.primary_key] }}')"
                               class="text-red-500 hover:underline">Delete</button>
                       </td>
@@ -364,28 +360,93 @@ HTML_TEMPLATES = {
         </div>
     ''',
     'button': '''
-        <button class="btn {{ attributes.class.value }}" 
+        <button class="btn {{ attributes.class.value if attributes.class and attributes.class.value else '' }}" 
                 {% if attributes.modal_target and attributes.modal_target.value %}data-modal-target="{{ attributes.modal_target.value }}"{% endif %}
-                {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}>
+                {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}
+                {% if attributes.onclick and attributes.onclick.value %}onclick="{{ attributes.onclick.value }}"{% endif %}>
             {{ attributes.text.value }}
         </button>
     ''',
-    'modal': '''
-        <button class="btn" onclick="{{ attributes.id.value }}.showModal()">open modal</button>
-        <dialog id="{{ attributes.id.value }}" class="modal modal-open1">
-            <form method="dialog" class="modal-box">
+    'modal_message': '''
+         <dialog id="{{ attributes.id.value }}" class="modal">
+            <div method="dialog" class="modal-box">
                 <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
                 <p class="py-4">{{ attributes.content.value }}</p>
                 <div class="modal-action">
-                <form method="dialog">
-        <!-- if there is a button in form, it will close the modal -->
-        <button class="btn">Close</button>
-      </form>
-                    <button class="btn close-modal">Close</button>
+                  <form method="dialog">
+                    <button class="btn">Close</button>
+                  </form>
                 </div>
-            </form>
+            </div>
         </dialog>
     ''',
+    'modal_form': '''
+         <dialog id="{{ attributes.id.value }}" class="modal">
+            <div method="dialog" class="modal-box">
+                <div id="modal-content" class="modal-content">
+                <!-- Form content will be loaded here -->
+                </div>
+            </div>
+         </div>
+    ''',
+    'form_edit': '''
+        <!-- templates/edit_form.html -->
+        <h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
+        <form id="myForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#target">
+            {% for column in table_config['columns'] %}
+            {% if column['is_hidden'] %}
+            {% else %}
+            <div class="mb-4">
+                <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+                    {% if column['label'] %}
+                    {{ column['label'] }}
+                    {% else %}
+                    {{ column['name'] }}
+                    {% endif %}
+                </label>
+                {% if column['input_type'] == 'text' %}
+                <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
+                    if column['primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'number' %}
+                <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
+                    if column['primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'date' %}
+                <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
+                    if column['primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'checkbox' %}
+                <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if item[column['name']]
+                    %}checked{% endif %} {% if column['primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+                {% elif column['input_type'] == 'select' %}
+                <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    {% for option in column['options'] %}
+                    <option value="{{ option }}" {% if item[column['name']]==option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+            <div class="flex justify-end">
+                <button type="button" onclick="hideModal()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+            </div>
+            <div style="display: none;" id="target"></div>
+        </form>
+
+        <script>
+            document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
+                console.log('Request completed');
+                document.getElementById('btn-table-refresh').click();
+                hideModal();
+            });
+        </script>
+    '''
 }
 
 # YAML configuration as a Python string
@@ -424,20 +485,52 @@ component_definitions:
     type: data-table
     config: get_configs
     data: get_table_data_params
-    
-  modal1:
-    id: modal1
-    type: modal
+  
+  button:
+    id: button
+    type: button
     attributes: 
       id:
         type: string
-        value: modal1
+        value: button
+      text:
+        type: string
+        value: ok
+      onclick:
+        type: string
+        value: modal_message.showModal()
+        
+  modal_message:
+    id: modal_message
+    type: modal_message
+    attributes:
+      id:
+        type: string
+        value: modal_message
       title:
         type: string
         value: modal
       content:
         type: string
         value: aaaaa
+        
+  modal_form:
+    id: modal_form
+    type: modal_form
+    attributes:
+      id:
+        type: string
+        value: modal_form
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
+        
+  form_edit:
+    id: form_edit
+    type: form_edit
 
   registration_form:
     id: registration_form
@@ -490,7 +583,9 @@ components:
         type: string
         value: "px-4 py-8"
     children:
-      - $ref: modal1
+      - $ref: button
+      - $ref: modal_message
+      - $ref: modal_form
       #- $ref: table_list
       #- $ref: table_list1
       - $ref: main_data_table
@@ -605,9 +700,9 @@ async def rendered_component(request: Request):
     component_id = query_params['component_id']
     
     load_page_config()
-    #print(component_dict)
+    
     rendered_components = [generate_html(component_dict[component_id])]
-    # print(rendered_components)
+    
     template = Template(BASE_HTML)
     return template.render(
         components=rendered_components,
@@ -986,6 +1081,7 @@ async def edit_form(request: Request):
       id = 22
 
     table_config = get_table_config(table_name)
+    print('table_config')
     print(table_config)
     
     table = metadata.tables[table_name]
@@ -1000,7 +1096,10 @@ async def edit_form(request: Request):
     
     data = dict(result)
     
+    query_params = dict(request.query_params)
+
     if result:
+        '''
         return templates.TemplateResponse("edit_form.html", {
             "request": request,
             "table_name": table_name,
@@ -1009,6 +1108,33 @@ async def edit_form(request: Request):
             "primary_key": primary_key,
             "table_config": table_config
         })
+        '''
+        
+        global component_dict
+        
+        component_id = None
+    
+        if 'component_id' in query_params:
+          component_id = query_params['component_id']
+        
+        if component_id is None:
+          component_id = 'form_edit'
+          
+        load_page_config()
+        
+        rendered_components = [generate_html(component_dict[component_id])]
+        
+        template = Template(BASE_HTML)
+        return template.render(
+            components=rendered_components,
+            min=min,
+            table_name=table_name,
+            id=id,
+            item=data,
+            primary_key=primary_key,
+            table_config=table_config
+        )
+        
     raise HTTPException(status_code=404, detail="Item not found")
 
 @app.post("/edit/{table_name}/{id}")
