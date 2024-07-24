@@ -391,9 +391,9 @@ HTML_TEMPLATES = {
     ''',
     'form_edit': '''
         <!-- templates/edit_form.html -->
-        <h2 class="text-xl font-bold mb-4">Edit {{ table_name }}</h2>
-        <form id="myForm" hx-post="/edit/{{ table_name }}/{{ id }}" hx-target="#target">
-            {% for column in table_config['columns'] %}
+        <h2 class="text-xl font-bold mb-4">Edit {{ configs.table_name }}</h2>
+        <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
+            {% for column in configs.table_config['columns'] %}
             {% if column['is_hidden'] %}
             {% else %}
             <div class="mb-4">
@@ -405,25 +405,25 @@ HTML_TEMPLATES = {
                     {% endif %}
                 </label>
                 {% if column['input_type'] == 'text' %}
-                <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
-                    if column['primary_key'] %}readonly{% endif %}
+                <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 {% elif column['input_type'] == 'number' %}
-                <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
-                    if column['primary_key'] %}readonly{% endif %}
+                <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 {% elif column['input_type'] == 'date' %}
-                <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ item[column['name']] }}" {%
-                    if column['primary_key'] %}readonly{% endif %}
+                <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 {% elif column['input_type'] == 'checkbox' %}
-                <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if item[column['name']]
-                    %}checked{% endif %} {% if column['primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+                <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
+                    %}checked{% endif %} {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
                 {% elif column['input_type'] == 'select' %}
-                <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
+                <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                     {% for option in column['options'] %}
-                    <option value="{{ option }}" {% if item[column['name']]==option %}selected{% endif %}>{{ option }}</option>
+                    <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
                     {% endfor %}
                 </select>
                 {% endif %}
@@ -630,7 +630,7 @@ def load_page_config() -> Dict[str, Any]:
 def generate_html(component: Dict[str, Any]) -> str:
 
     for key in ['config', 'data', 'value']:
-        if key in component:
+        if key in component and type(component[key]) is str:
             if globals()[component[key]]:
                 component[key] = globals()[component[key]]()
 
@@ -1049,10 +1049,7 @@ async def edit_form1(request: Request, table_name: str, id: str, page: int = 1, 
         })
     raise HTTPException(status_code=404, detail="Item not found")
 
-
-    return ''
-
-@app.get("/edit")
+@app.get("/edit", response_class=HTMLResponse)
 async def edit_form(request: Request):
     gv.request = request
 
@@ -1121,18 +1118,21 @@ async def edit_form(request: Request):
           component_id = 'form_edit'
           
         load_page_config()
-        
+
+        component_dict[component_id]['config'] = {
+            'table_name':table_name,
+            'id':id,
+            'data':data,
+            'primary_key':primary_key,
+            'table_config':table_config
+        }
+                
         rendered_components = [generate_html(component_dict[component_id])]
-        
+
         template = Template(BASE_HTML)
         return template.render(
             components=rendered_components,
-            min=min,
-            table_name=table_name,
-            id=id,
-            item=data,
-            primary_key=primary_key,
-            table_config=table_config
+            min=min
         )
         
     raise HTTPException(status_code=404, detail="Item not found")
