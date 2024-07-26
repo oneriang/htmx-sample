@@ -1,33 +1,24 @@
+import os
 import uvicorn
+from datetime import datetime
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, inspect, or_, and_, func, desc, asc
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, class_mapper
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import expression
 from sqlalchemy.sql.sqltypes import String, Integer, DateTime, Date, Boolean, Enum
 from sqlalchemy import inspect, String, Integer, Float, DateTime, Date, Boolean, Enum
-from sqlalchemy.orm import class_mapper
 
-from sqlalchemy import inspect
-from sqlalchemy.orm import class_mapper
-from sqlalchemy.sql.sqltypes import String, Integer, Boolean, DateTime, Date
-
-from typing import List, Dict, Any
-import yaml
-import os
-from datetime import datetime
-
-from transaction_module import convert_value
-
-import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-import yaml
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Union, Optional
 from jinja2 import Template
+
+import yaml
+
+from transaction_module import convert_value
 
 import gv as gv
 
@@ -48,22 +39,20 @@ metadata = MetaData()
 # Reflect existing database tables
 metadata.reflect(bind=engine)
 
-component_dict = {}
-
 # HTML templates as Python strings
 BASE_HTML = """
   <!DOCTYPE html>
   <html lang="en" data-theme="light">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>{{ page_title }}</title>
-      <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-     
-      
-<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-<script src="https://cdn.tailwindcss.com"></script>
-  </head>
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>{{ page_title }}</title>
+          <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+         
+          
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
   <body>
     {% for component in components %}
         {{ component | safe }}
@@ -451,173 +440,173 @@ HTML_TEMPLATES = {
 
 # YAML configuration as a Python string
 YAML_CONFIG = """
-title: Responsive Dashboard with Drawers
-component_definitions:
-  main_navbar:
-    id: main_navbar
-    type: navbar
-    attributes:
-      title: 
-        type: string
-        value: My Dashboard
-      class:
-        type: string
-        value: mb-4
-      menu_items:
-        type: list
-        value:
-          - {text: Home, link: "#"}
-          - {text: About, link: "#about"}
-          - {text: Contact, link: "#contact"}
-  
-  table_list:
-    id: table_list
-    type: list
-    value: getTables
+  title: Responsive Dashboard with Drawers
+  component_definitions:
+    main_navbar:
+      id: main_navbar
+      type: navbar
+      attributes:
+        title: 
+          type: string
+          value: My Dashboard
+        class:
+          type: string
+          value: mb-4
+        menu_items:
+          type: list
+          value:
+            - {text: Home, link: "#"}
+            - {text: About, link: "#about"}
+            - {text: Contact, link: "#contact"}
     
-  table_list1:
-    id: table_list1
-    type: list
-    value: getTables1
-
-  main_data_table:
-    id: main_data_table
-    type: data-table
-    config: get_configs
-    data: get_table_data_params
+    table_list:
+      id: table_list
+      type: list
+      value: getTables
+      
+    table_list1:
+      id: table_list1
+      type: list
+      value: getTables1
   
-  button:
-    id: button
-    type: button
-    attributes: 
-      id:
-        type: string
-        value: button
-      text:
-        type: string
-        value: ok
-      onclick:
-        type: string
-        value: modal_message.showModal()
-        
-  modal_message:
-    id: modal_message
-    type: modal_message
-    attributes:
-      id:
-        type: string
-        value: modal_message
-      title:
-        type: string
-        value: modal
-      content:
-        type: string
-        value: aaaaa
-        
-  modal_form:
-    id: modal_form
-    type: modal_form
-    attributes:
-      id:
-        type: string
-        value: modal_form
-      title:
-        type: string
-        value: modal
-      content:
-        type: string
-        value: aaaaa
-        
-  form_edit:
-    id: form_edit
-    type: form_edit
-
-  registration_form:
-    id: registration_form
-    type: form
-    attributes:
-      class:
-        type: string
-        value: mt-4 max-w-md mx-auto
-      fields:
-        type: list
-        value:
-          - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
-          - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
-          - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
-          - {name: age, type: number, label: Age, placeholder: Enter your age}
-          - {name: birthdate, type: date, label: Birth Date}
-          - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
-          - name: country
-            type: select
-            label: Country
-            required: true
-            options:
-              - {value: us, label: United States}
-              - {value: uk, label: United Kingdom}
-              - {value: ca, label: Canada}
-          - name: newsletter
-            type: checkbox
-            label: Subscribe to newsletter
-            checkboxLabel: Yes, I want to receive updates
-          - name: gender
-            type: radio
-            label: Gender
-            options:
-              - {value: male, label: Male}
-              - {value: female, label: Female}
-              - {value: other, label: Other}
-          - name: profile_picture
-            type: file
-            label: Profile Picture
-            helpText: Please upload an image file (JPG, PNG)
-      submit_text:
-        type: string
-        value: Register
-
-components:
-  - $ref: main_navbar
-  - type: container
-    attributes:
-      class:
-        type: string
-        value: "px-4 py-8"
-    children:
-      - $ref: button
-      - $ref: modal_message
-      - $ref: modal_form
-      #- $ref: table_list
-      #- $ref: table_list1
-      - $ref: main_data_table
-      - $ref: registration_form
-      - type: form
-        attributes:
-          id: 
-            type: string
-            value: genre
-          class:
-            type: string
-            value: mt-4 max-w-md mx-auto
-          fields:
-            type: list
-            value:
-              - {name: GenreId, type: number, label: ジャンルID, placeholder: , required: true, disabled: true}
-              - {name: Name, type: text, label: ジャンル名称, placeholder: , required: true, readonly: true}
-          submit_text:
-            type: string
-            value: Register
+    main_data_table:
+      id: main_data_table
+      type: data-table
+      config: get_configs
+      data: get_table_data_params
+    
+    button:
+      id: button
+      type: button
+      attributes: 
+        id:
+          type: string
+          value: button
+        text:
+          type: string
+          value: ok
+        onclick:
+          type: string
+          value: modal_message.showModal()
+          
+    modal_message:
+      id: modal_message
+      type: modal_message
+      attributes:
+        id:
+          type: string
+          value: modal_message
+        title:
+          type: string
+          value: modal
+        content:
+          type: string
+          value: aaaaa
+          
+    modal_form:
+      id: modal_form
+      type: modal_form
+      attributes:
+        id:
+          type: string
+          value: modal_form
+        title:
+          type: string
+          value: modal
+        content:
+          type: string
+          value: aaaaa
+          
+    form_edit:
+      id: form_edit
+      type: form_edit
+  
+    registration_form:
+      id: registration_form
+      type: form
+      attributes:
+        class:
+          type: string
+          value: mt-4 max-w-md mx-auto
+        fields:
+          type: list
+          value:
+            - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
+            - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
+            - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
+            - {name: age, type: number, label: Age, placeholder: Enter your age}
+            - {name: birthdate, type: date, label: Birth Date}
+            - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
+            - name: country
+              type: select
+              label: Country
+              required: true
+              options:
+                - {value: us, label: United States}
+                - {value: uk, label: United Kingdom}
+                - {value: ca, label: Canada}
+            - name: newsletter
+              type: checkbox
+              label: Subscribe to newsletter
+              checkboxLabel: Yes, I want to receive updates
+            - name: gender
+              type: radio
+              label: Gender
+              options:
+                - {value: male, label: Male}
+                - {value: female, label: Female}
+                - {value: other, label: Other}
+            - name: profile_picture
+              type: file
+              label: Profile Picture
+              helpText: Please upload an image file (JPG, PNG)
+        submit_text:
+          type: string
+          value: Register
+  
+  components:
+    - $ref: main_navbar
+    - type: container
+      attributes:
+        class:
+          type: string
+          value: "px-4 py-8"
+      children:
+        - $ref: button
+        - $ref: modal_message
+        - $ref: modal_form
+        #- $ref: table_list
+        #- $ref: table_list1
+        - $ref: main_data_table
+        - $ref: registration_form
+        - type: form
+          attributes:
+            id: 
+              type: string
+              value: genre
+            class:
+              type: string
+              value: mt-4 max-w-md mx-auto
+            fields:
+              type: list
+              value:
+                - {name: GenreId, type: number, label: ジャンルID, placeholder: , required: true, disabled: true}
+                - {name: Name, type: text, label: ジャンル名称, placeholder: , required: true, readonly: true}
+            submit_text:
+              type: string
+              value: Register
 """
 
 def load_page_config() -> Dict[str, Any]:
     config = yaml.safe_load(YAML_CONFIG)
-    global component_dict
+    
     # 创建一个组件字典，用于存储预定义的组件
-    component_dict = {comp['id']: comp for comp in config.get('component_definitions', {}).values()}
+    gv.component_dict = {comp['id']: comp for comp in config.get('component_definitions', {}).values()}
     
     # 递归函数，用于解析组件引用
     def resolve_component(comp):
         if isinstance(comp, dict) and '$ref' in comp:
-            return component_dict[comp['$ref']]
+            return gv.component_dict[comp['$ref']]
         elif isinstance(comp, dict) and 'children' in comp:
             comp['children'] = [resolve_component(child) for child in comp['children']]
         return comp
@@ -688,22 +677,21 @@ async def render_page(request: Request):
 
 @app.get("/component", response_class=HTMLResponse)
 async def rendered_component(request: Request):
-    
+    gv.request = request
     query_params = dict(request.query_params)
 
     if 'component_id' not in query_params:
         return ''
     
-    gv.request = request
-    global component_dict
-    
     component_id = query_params['component_id']
     
     load_page_config()
     
-    rendered_components = [generate_html(component_dict[component_id])]
-    
-    template = Template(BASE_HTML)
+    rendered_components = [generate_html(gv.component_dict[component_id])]
+    print(rendered_components)
+    return rendered_components[0]
+    #template = Template(BASE_HTML)
+    template = Template('<div></div>')
     return template.render(
         components=rendered_components,
         min=min
@@ -839,13 +827,13 @@ def apply_search_filter(query, table, column_config, value):
     return query
 
 def get_table_data_params(
-    request: Request = None, 
-    table_name: str = None, 
-    page: int = 1, 
-    page_size: int = 2,
-    sort_column: str | None = None,
-    sort_direction: str = 'asc'
-):
+        request: Request = None, 
+        table_name: str = None, 
+        page: int = 1, 
+        page_size: int = 2,
+        sort_column: str | None = None,
+        sort_direction: str = 'asc'
+    ):
     if request is None:
         request = gv.request
     
@@ -921,13 +909,13 @@ def get_table_data_params(
 
 @app.get("/table_content/{table_name}")
 async def read_table_content(
-    request: Request, 
-    table_name: str, 
-    page: int = 1, 
-    page_size: int = 10,
-    sort_column: str | None = None,
-    sort_direction: str = 'asc'
-):
+        request: Request, 
+        table_name: str, 
+        page: int = 1, 
+        page_size: int = 10,
+        sort_column: str | None = None,
+        sort_direction: str = 'asc'
+    ):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -1053,23 +1041,16 @@ async def edit_form1(request: Request, table_name: str, id: str, page: int = 1, 
 async def edit_form(request: Request):
     gv.request = request
 
-    search_params = {}
-
     table_name = None
     id = None
-
-    if request:
       
-      search_params = dict(request.query_params)
+    query_params = dict(request.query_params)
 
-      if 'table_name' in search_params:
-        table_name = search_params['table_name']
+    if 'table_name' in query_params:
+      table_name = query_params['table_name']
 
-      if 'id' in search_params:
-        id = search_params['id']
-
-      for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
-          search_params.pop(param, None)
+    if 'id' in query_params:
+      id = query_params['id']
 
     if table_name is None:
       table_name = 'Genre'
@@ -1078,36 +1059,18 @@ async def edit_form(request: Request):
       id = 22
 
     table_config = get_table_config(table_name)
-    print('table_config')
-    print(table_config)
     
     table = metadata.tables[table_name]
-    print(table)
 
     primary_key = get_primary_key(table)
-    print(primary_key)
-    
+     
     with SessionLocal() as session:
         stmt = select(table).where(getattr(table.c, primary_key) == id)
         result = session.execute(stmt).fetchone()._asdict()
     
-    data = dict(result)
-    
-    query_params = dict(request.query_params)
-
     if result:
-        '''
-        return templates.TemplateResponse("edit_form.html", {
-            "request": request,
-            "table_name": table_name,
-            "id": id,
-            "item": data,
-            "primary_key": primary_key,
-            "table_config": table_config
-        })
-        '''
-        
-        global component_dict
+      
+        data = dict(result)
         
         component_id = None
     
@@ -1119,7 +1082,7 @@ async def edit_form(request: Request):
           
         load_page_config()
 
-        component_dict[component_id]['config'] = {
+        gv.component_dict[component_id]['config'] = {
             'table_name':table_name,
             'id':id,
             'data':data,
@@ -1127,7 +1090,7 @@ async def edit_form(request: Request):
             'table_config':table_config
         }
                 
-        rendered_components = [generate_html(component_dict[component_id])]
+        rendered_components = [generate_html(gv.component_dict[component_id])]
 
         template = Template(BASE_HTML)
         return template.render(
