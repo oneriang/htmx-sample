@@ -576,7 +576,7 @@ YAML_CONFIG = """
         - $ref: modal_message
         - $ref: modal_form
         #- $ref: table_list
-        #- $ref: table_list1
+        - $ref: table_list1
         - $ref: main_data_table
         - $ref: registration_form
         - type: form
@@ -687,8 +687,11 @@ async def rendered_component(request: Request):
     
     load_page_config()
     
+    return generate_html(gv.component_dict[component_id])
+    
+    '''
     rendered_components = [generate_html(gv.component_dict[component_id])]
-    print(rendered_components)
+    #print(rendered_components)
     return rendered_components[0]
     #template = Template(BASE_HTML)
     template = Template('<div></div>')
@@ -696,6 +699,7 @@ async def rendered_component(request: Request):
         components=rendered_components,
         min=min
     )
+    '''
 
 
 def generate_table_config(engine, table_name):
@@ -1089,7 +1093,9 @@ async def edit_form(request: Request):
             'primary_key':primary_key,
             'table_config':table_config
         }
-                
+        
+        return generate_html(gv.component_dict[component_id])
+        '''        
         rendered_components = [generate_html(gv.component_dict[component_id])]
 
         template = Template(BASE_HTML)
@@ -1097,6 +1103,7 @@ async def edit_form(request: Request):
             components=rendered_components,
             min=min
         )
+        '''
         
     raise HTTPException(status_code=404, detail="Item not found")
 
