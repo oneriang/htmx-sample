@@ -26,7 +26,7 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
+        
 # 添加 min 函数到模板上下文
 templates.env.globals['min'] = min
 
@@ -40,7 +40,7 @@ metadata = MetaData()
 metadata.reflect(bind=engine)
 
 # HTML templates as Python strings
-BASE_HTML = """
+BASE_HTML1 = """
   <!DOCTYPE html>
   <html lang="en" data-theme="light">
       <head>
@@ -98,6 +98,166 @@ BASE_HTML = """
   </body>
   </html>
 """
+BASE_HTML2 = """
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaisyUI Responsive Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="drawer lg:drawer-open">
+        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar -->
+            <div class="w-full navbar bg-base-300">
+                <div class="flex-none lg:hidden">
+                    <label for="my-drawer-2" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                </div> 
+                <div class="flex-1 px-2 mx-2">Dashboard</div>
+                <div class="flex-none hidden lg:block">
+                    <ul class="menu menu-horizontal">
+                        <!-- Navbar menu content here -->
+                        <li><a>Navbar Item 1</a></li>
+                        <li><a>Navbar Item 2</a></li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Page content here -->
+            <div class="p-4">
+                <h1 class="text-2xl font-bold mb-4">Dashboard Content</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 1</h2>
+                            <p>Content for card 1</p>
+                        </div>
+                    </div>
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 2</h2>
+                            <p>Content for card 2</p>
+                        </div>
+                    </div>
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 3</h2>
+                            <p>Content for card 3</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        <div class="drawer-side">
+            <label for="my-drawer-2" class="drawer-overlay"></label> 
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                <!-- Sidebar content here -->
+                <li><a>Sidebar Item 1</a></li>
+                <li><a>Sidebar Item 2</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+BASE_HTML = """
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaisyUI Responsive Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="drawer lg:drawer-open">
+        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar -->
+            <div class="w-full navbar bg-base-300">
+                <div class="flex-none lg:hidden">
+                    <label for="my-drawer-2" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                </div> 
+                <div class="flex-1 px-2 mx-2">Dashboard</div>
+                <div class="flex-none hidden lg:block">
+                    <ul class="menu menu-horizontal">
+                        <li><a>Navbar Item 1</a></li>
+                        <li><a>Navbar Item 2</a></li>
+                    </ul>
+                </div>
+                <div class="flex-none">
+                    <label for="my-drawer-4" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </label>
+                </div>
+            </div>
+            <!-- Page content here -->
+            
+            <div class="p-4">
+            
+                <h1 class="text-2xl font-bold mb-4">Dashboard Content</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                
+    
+    
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 1</h2>
+                            <p>Content for card 1</p>
+                        </div>
+                    </div>
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 2</h2>
+                            <p>Content for card 2</p>
+                        </div>
+                    </div>
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">Card 3</h2>
+                            <p>Content for card 3</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        <!-- Left Sidebar -->
+        <div class="drawer-side">
+            <label for="my-drawer-2" class="drawer-overlay"></label> 
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                <li><a>Sidebar Item 1</a></li>
+                <li><a>Sidebar Item 2</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right User Sidebar -->
+    <div class="drawer drawer-end">
+        <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-side z-20">
+            <label for="my-drawer-4" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                <li><a>User Profile</a></li>
+                <li><a>Settings</a></li>
+                <li><a>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+"""
 
 HTML_TEMPLATES = {
     'container': '''
@@ -119,7 +279,9 @@ HTML_TEMPLATES = {
         </div>
     ''',
     'grid': '''
-        <div class="grid grid-cols-{{ attributes.columns.value }} {{ attributes.class.value }}">
+        <div class="grid 
+            grid-cols-{{ attributes.columns.value if attributes.columns and attributes.columns and attributes.columns.value else '2' }} 
+            {{ attributes.class.value if attributes and attributes.class and attributes.class.value }}">
             {% for child in children %}
                 <div class="col-span-1">{{ child | safe }}</div>
             {% endfor %}
@@ -572,6 +734,12 @@ YAML_CONFIG = """
           type: string
           value: "px-4 py-8"
       children:
+        - type: grid
+          children:
+            - $ref: button
+            - $ref: button
+            - $ref: button
+            - $ref: table_list1
         - $ref: button
         - $ref: modal_message
         - $ref: modal_form
