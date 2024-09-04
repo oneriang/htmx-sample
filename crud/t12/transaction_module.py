@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy import create_engine, MetaData, Table, select, and_, or_
 from sqlalchemy.orm import sessionmaker
@@ -5,6 +6,10 @@ from sqlalchemy.exc import SQLAlchemyError
 import yaml
 import logging
 from typing import List, Dict, Any, Union
+
+import gv as gv
+
+gv.data = {}
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -48,7 +53,8 @@ class Transaction:
 
 def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
     action = step["action"]
-    table = Table(step["table"], metadata, autoload_with=engine)
+    if step.get('table'):
+        table = Table(step["table"], metadata, autoload_with=engine)
     
     try:
         if action == "insert":
@@ -65,6 +71,16 @@ def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
         elif action == "get":
             query = build_query(step, table)
             result = db.execute(query).mappings().all()
+            if step.get('data_to'):
+                gv.data[step.get('data_to')] = result
+            return result
+        elif action == "file_create":
+            try:
+                with open(step.get('file_name'), "w", encoding='utf-8') as file:
+                    return file.write("\n".join([str(_) for _ in gv.data[step.get('data_from')]]))
+            except Exception as e:
+                logger.error(f"{e}")
+                return {}
             return result
         else:
             raise ValueError(f"不支持的操作: {action}")
@@ -94,9 +110,23 @@ def build_filter_expressions(filter_values: List[Dict[str, Any]], table: Table) 
     return filters
 
 def build_query(step: Dict[str, Any], table: Table) -> Any:
-    query = select(*[table.c[f["field"]] for f in step.get("fields", [{"field": "*"}])])
-    
+    columns = []
+    for f in step.get("fields", [{"field": "*"}]):
+        print(f)
+        if 'table' in f:
+            t = Table(f["table"], metadata, autoload_with=engine)
+        else:
+            t = table
+        if 'label' in f:
+            columns.append(t.c[f["field"]].label(f['label']))
+        else:
+            columns.append(t.c[f["field"]])
+
+    #query = select(*[table.c[f["field"]] for f in step.get("fields", [{"field": "*"}])])
+    query = select(*columns)
+
     join = step.get("join")
+    print(join)
     if join:
         for j in join:
             left_table = Table(j["left_table"], metadata, autoload_with=engine)
@@ -240,17 +270,22 @@ def handle_operator(column: Any, operator: str, value: Any) -> Any:
     except KeyError:
         raise ValueError(f"不支持的操作符: {operator}")
 
-@app.get("/execute_all_transactions/")
+@app.get("/")
 def execute_all_transactions(db: SessionLocal = Depends(get_db)):
     try:
         data = load_data_from_yaml()
         for transaction_data in data.get("transactions", []):
             transaction = Transaction(**transaction_data)
+            print(transaction.name)
             for step in transaction.steps:
                 result = execute_step(step, db)
                 logger.info(f"Step execution result: {result}")
         db.commit()
-        return {"message": "All transactions executed successfully."}
+        print(gv.data)
+        return {
+            "message": "All transactions executed successfully."
+            , 'data': result
+            }
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Error executing transactions: {e}")
@@ -261,5 +296,4 @@ def execute_all_transactions(db: SessionLocal = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8082)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
