@@ -1,0 +1,160 @@
+title: Responsive Dashboard with Drawers
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    children:
+      generic:
+        - type: btn
+        - $ref: button
+        - type: card
+      left_sidebar:
+        - $ref: table_list1
+      main_content:
+        - $ref: main_content
+      right_sidebar:
+        - $ref: table_list
+        
+  main_content:
+    id: main_content
+    type: main_content
+    children:
+      - type: grid
+        children:
+          - $ref: main_data_table
+          - $ref: registration_form
+          - type: skeleton
+            attributes:
+              width:
+                type: string
+                value: "32"
+              height:
+                type: string
+                value: "32"
+          - type: alert
+            attributes:
+              type:
+                type: string
+                value: alert-info
+              message:
+                type: string
+                value: This is an informational message.
+          - type: file_input
+            attributes:
+              label:
+                type: string
+                value: "Upload file"
+          
+  table_list:
+    id: table_list
+    type: list
+    value: getTables
+    
+  table_list1:
+    id: table_list1
+    type: list
+    value: getTables1
+
+  main_data_table:
+    id: main_data_table
+    type: data-table
+    config: get_configs
+    data: get_table_data_params
+  
+  button:
+    id: button
+    type: button
+    attributes: 
+      id:
+        type: string
+        value: button
+      text:
+        type: string
+        value: ok
+      onclick:
+        type: string
+        value: modal_message.showModal()
+        
+  modal_message:
+    id: modal_message
+    type: modal_message
+    attributes:
+      id:
+        type: string
+        value: modal_message
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
+        
+  modal_form:
+    id: modal_form
+    type: modal_form
+    attributes:
+      id:
+        type: string
+        value: modal_form
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
+        
+  form_create:
+    id: form_create
+    type: form_create
+
+  form_edit:
+    id: form_edit
+    type: form_edit
+
+  registration_form:
+    id: registration_form
+    type: form
+    attributes:
+      class:
+        type: string
+        value: mt-4 max-w-md mx-auto
+      fields:
+        type: list
+        value:
+          - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
+          - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
+          - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
+          - {name: age, type: number, label: Age, placeholder: Enter your age}
+          - {name: birthdate, type: date, label: Birth Date}
+          - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
+          - name: country
+            type: select
+            label: Country
+            required: true
+            options:
+              - {value: us, label: United States}
+              - {value: uk, label: United Kingdom}
+              - {value: ca, label: Canada}
+          - name: newsletter
+            type: checkbox
+            label: Subscribe to newsletter
+            checkboxLabel: Yes, I want to receive updates
+          - name: gender
+            type: radio
+            label: Gender
+            options:
+              - {value: male, label: Male}
+              - {value: female, label: Female}
+              - {value: other, label: Other}
+          - name: profile_picture
+            type: file
+            label: Profile Picture
+            helpText: Please upload an image file (JPG, PNG)
+      submit_text:
+        type: string
+        value: Register
+
+components:
+  - $ref: main_layout
+  - $ref: modal_form
+  - $ref: modal_message

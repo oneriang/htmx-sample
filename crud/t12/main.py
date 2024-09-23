@@ -18,15 +18,22 @@ from jinja2 import Template
 
 import yaml
 
+import logging
+
+import transaction_module
 from transaction_module import convert_value
 
 import gv as gv
 
 app = FastAPI()
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-        
+            
 # 添加 min 函数到模板上下文
 templates.env.globals['min'] = min
 
@@ -39,767 +46,34 @@ metadata = MetaData()
 # Reflect existing database tables
 metadata.reflect(bind=engine)
 
-# HTML templates as Python strings
-BASE_HTML1 = """
-  <!DOCTYPE html>
-  <html lang="en" data-theme="light">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>{{ page_title }}</title>
-          <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-         
-          
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-        <script src="https://cdn.tailwindcss.com"></script>
-      </head>
-  <body>
-    {% for component in components %}
-        {{ component | safe }}
-    {% endfor %}
-    <style>
-        .modal1 {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-        .modal-content1 {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-        }
-    </style>
+def load_data_from_html(filename: str) -> Optional[str]:
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            return file.read()
+    except IOError as e:
+        logging.error(f"Error loading data from {filename}: {e}")
+        return None
 
-    <script>
-        function showModal() {
-            document.getElementById('modal_form').showModal();
-        }
+def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            return yaml.safe_load(file)
+    except (IOError, yaml.YAMLError) as e:
+        logging.error(f"Error loading YAML data from {filename}: {e}")
+        return None
 
-        function hideModal() {
-            document.getElementById('modal_form').close();
-        }
+BASE_HTML = load_data_from_html('base_html.html')
 
-        document.body.addEventListener('htmx:afterSwap', function (event) {
-            if (event.detail.target.id === 'table-content') {
-                hideModal();
-            }
-        });
-    </script>
-  </body>
-  </html>
-"""
-BASE_HTML2 = """
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DaisyUI Responsive Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-    <div class="drawer lg:drawer-open">
-        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col">
-            <!-- Navbar -->
-            <div class="w-full navbar bg-base-300">
-                <div class="flex-none lg:hidden">
-                    <label for="my-drawer-2" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </label>
-                </div> 
-                <div class="flex-1 px-2 mx-2">Dashboard</div>
-                <div class="flex-none hidden lg:block">
-                    <ul class="menu menu-horizontal">
-                        <!-- Navbar menu content here -->
-                        <li><a>Navbar Item 1</a></li>
-                        <li><a>Navbar Item 2</a></li>
-                    </ul>
-                </div>
-            </div>
-            <!-- Page content here -->
-            <div class="p-4">
-                <h1 class="text-2xl font-bold mb-4">Dashboard Content</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 1</h2>
-                            <p>Content for card 1</p>
-                        </div>
-                    </div>
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 2</h2>
-                            <p>Content for card 2</p>
-                        </div>
-                    </div>
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 3</h2>
-                            <p>Content for card 3</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> 
-        <div class="drawer-side">
-            <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
-                <!-- Sidebar content here -->
-                <li><a>Sidebar Item 1</a></li>
-                <li><a>Sidebar Item 2</a></li>
-            </ul>
-        </div>
-    </div>
-</body>
-</html>
-"""
+HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
 
-BASE_HTML = """
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DaisyUI Responsive Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-    <div class="drawer lg:drawer-open">
-        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col">
-            <!-- Navbar -->
-            <div class="w-full navbar bg-base-300">
-                <div class="flex-none lg:hidden">
-                    <label for="my-drawer-2" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </label>
-                </div> 
-                <div class="flex-1 px-2 mx-2">Dashboard</div>
-                <div class="flex-none hidden lg:block">
-                    <ul class="menu menu-horizontal">
-                        <li><a>Navbar Item 1</a></li>
-                        <li><a>Navbar Item 2</a></li>
-                    </ul>
-                </div>
-                <div class="flex-none">
-                    <label for="my-drawer-4" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </label>
-                </div>
-            </div>
-            <!-- Page content here -->
-            
-            <div class="p-4">
-            
-                <h1 class="text-2xl font-bold mb-4">Dashboard Content</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                
-                
-    
-    
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 1</h2>
-                            <p>Content for card 1</p>
-                        </div>
-                    </div>
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 2</h2>
-                            <p>Content for card 2</p>
-                        </div>
-                    </div>
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body">
-                            <h2 class="card-title">Card 3</h2>
-                            <p>Content for card 3</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> 
-        <!-- Left Sidebar -->
-        <div class="drawer-side">
-            <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
-                <li><a>Sidebar Item 1</a></li>
-                <li><a>Sidebar Item 2</a></li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Right User Sidebar -->
-    <div class="drawer drawer-end">
-        <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-side z-20">
-            <label for="my-drawer-4" class="drawer-overlay"></label>
-            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
-                <li><a>User Profile</a></li>
-                <li><a>Settings</a></li>
-                <li><a>Logout</a></li>
-            </ul>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-HTML_TEMPLATES = {
-    'container': '''
-        <div class="container mx-auto {{ attributes.class.value }}">
-            {% for child in children %}
-                {{ child | safe }}
-            {% endfor %}
-        </div>
-    ''',
-    'card': '''
-        <div class="card w-full {{ attributes.class.value }}">
-            <div class="card-body">
-                <h2 class="card-title">{{ attributes.title.value }}</h2>
-                <p>{{ attributes.content.value }}</p>
-                {% for child in children %}
-                    {{ child | safe }}
-                {% endfor %}
-            </div>
-        </div>
-    ''',
-    'grid': '''
-        <div class="grid 
-            grid-cols-{{ attributes.columns.value if attributes.columns and attributes.columns and attributes.columns.value else '2' }} 
-            {{ attributes.class.value if attributes and attributes.class and attributes.class.value }}">
-            {% for child in children %}
-                <div class="col-span-1">{{ child | safe }}</div>
-            {% endfor %}
-        </div>
-    ''',
-    'list': '''
-        <ul class="menu bg-base-200 w-56 rounded-box">
-            {% for item in value %}
-                {% if item.get %}
-                    <li>
-                        <a href="#"
-                            hx-get="{{- '/component?' -}}
-                            {{- 'table_name=' ~ item.text -}}&
-                            {{- 'component_id=' ~ item.component_id -}}"
-                            hx-target="#table-content"
-                            >
-                                {{ item.text }}
-                            </a>
-                {% else %}
-                    <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    ''',
-    'data-table': '''
-      <div class="overflow-x-auto mt-4" id="table-content">
-      {{ configs.table_name }}
-          <table class="min-w-full bg-white border-collapse">
-              <thead>
-                  <tr>
-                      <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
-                      {% for column in configs.columns %}
-                      {% if not column['is_hidden'] %}
-                      <th class="border px-4 py-2">
-                          <div style="overflow: hidden; resize: horizontal;">
-                            <a href="#"
-                            hx-get="{{- '/component?' -}}
-                            {{- 'component_id=' ~ configs.component_id -}}&
-                            {{- 'page=' ~ page -}}&
-                            {{- 'search=' ~ search -}}&
-                            {{- 'sort_column=' ~ column['name'] -}}&
-                            {{- 'sort_direction=' -}}
-                            {%- if sort_column == column['name'] and sort_direction == 'asc' -%}
-                                {{- 'desc' -}}
-                            {%- else -%}
-                                {{- 'asc' -}}
-                            {%- endif -%}"
-                            hx-target="#table-content"
-                            class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}"
-                            >
-                                {{ column['label'] or column['name'] }}
-                                <span class="sort-icon"></span>
-                            </a>
-                          </div>
-                      </th>
-                      {% endif %}
-                      {% endfor %}
-                  </tr>
-              </thead>
-              <tbody>
-                  {% for row in data.rows %}
-                  <tr class="hover:bg-gray-100">
-                      <td class="border px-4 py-2 sticky-left sticky-left-shadow">
-                          <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
-                              hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
-                          <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
-                              hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
-                          <button onclick="showDeleteModal('{{ configs.table_name }}', '{{ row[data.primary_key] }}')"
-                              class="text-red-500 hover:underline">Delete</button>
-                      </td>
-                      {% for column in configs.columns %}
-                      {% if not column['is_hidden'] %}
-                      <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
-                      {% endif %}
-                      {% endfor %}
-                  </tr>
-                  {% endfor %}
-              </tbody>
-          </table>
-          <div class="mt-4 flex justify-between items-center">
-            <p>Showing 
-                {{ (data.page - 1) * data.page_size + 1 }} 
-                to 
-                {{ min(data.page * data.page_size, data.total_items) }} 
-                of 
-                {{ data.total_items }} 
-                records
-            </p>
-            <div class="flex space-x-2">
-                {% if data.page > 1 %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page - 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Previous
-                    </button>
-                {% endif %}
-                {% if data.page < data.total_pages %} 
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page + 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Next
-                    </button>
-                {% endif %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ data.page -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#table-content"
-                        id="btn-table-refresh"
-                        class="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        Refresh
-                    </button>
-            </div>
-          </div>
-        </div>
-    ''',
-    'table': '''
-        <div class="overflow-x-auto">
-            <table class="table {{ attributes.class.value }}">
-                <thead>
-                    <tr>
-                        {% for header in attributes.headers.value %}
-                            <th>{{ header }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in attributes.rows.value %}
-                        <tr>
-                            {% for cell in row %}
-                                <td>{{ cell }}</td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    ''',
-    'form': '''
-        <form class="{{ attributes.class.value }}">
-            {% for field in attributes.fields.value %}
-                <div class="form-control w-full mb-4">
-                    <label class="label">
-                        <span class="label-text">{{ field.label }}</span>
-                    </label>
-                    {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
-                        <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
-                    {% elif field.type == 'textarea' %}
-                        <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
-                    {% elif field.type == 'select' %}
-                        <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
-                            {% for option in field.options %}
-                                <option value="{{ option.value }}">{{ option.label }}</option>
-                            {% endfor %}
-                        </select>
-                    {% elif field.type == 'checkbox' %}
-                        <div class="flex items-center mt-2">
-                            <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
-                            <span class="ml-2">{{ field.checkboxLabel }}</span>
-                        </div>
-                    {% elif field.type == 'radio' %}
-                        <div class="flex flex-col mt-2">
-                            {% for option in field.options %}
-                                <label class="flex items-center mb-2">
-                                    <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
-                                    <span class="ml-2">{{ option.label }}</span>
-                                </label>
-                            {% endfor %}
-                        </div>
-                    {% elif field.type == 'file' %}
-                        <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
-                    {% endif %}
-                    {% if field.helpText %}
-                        <label class="label">
-                            <span class="label-text-alt text-info">{{ field.helpText }}</span>
-                        </label>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text.value }}</button>
-        </form>
-    ''',
-    'navbar': '''
-        <div class="navbar bg-base-100 {{ attributes.class.value }}">
-            <div class="flex-1">
-                <a class="btn btn-ghost normal-case text-xl">{{ attributes.title.value }}</a>
-            </div>
-            <div class="flex-none hidden md:block">
-                <ul class="menu menu-horizontal px-1">
-                    {% for item in attributes.menu_items.value %}
-                        <li><a href="{{ item.link }}">{{ item.text }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="flex-none md:hidden">
-                <button class="btn btn-square btn-ghost" data-drawer-target="my-drawer">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-            </div>
-        </div>
-    ''',
-    'button': '''
-        <button class="btn {{ attributes.class.value if attributes.class and attributes.class.value else '' }}" 
-                {% if attributes.modal_target and attributes.modal_target.value %}data-modal-target="{{ attributes.modal_target.value }}"{% endif %}
-                {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}
-                {% if attributes.onclick and attributes.onclick.value %}onclick="{{ attributes.onclick.value }}"{% endif %}>
-            {{ attributes.text.value }}
-        </button>
-    ''',
-    'modal_message': '''
-         <dialog id="{{ attributes.id.value }}" class="modal">
-            <div method="dialog" class="modal-box">
-                <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
-                <p class="py-4">{{ attributes.content.value }}</p>
-                <div class="modal-action">
-                  <form method="dialog">
-                    <button class="btn">Close</button>
-                  </form>
-                </div>
-            </div>
-        </dialog>
-    ''',
-    'modal_form': '''
-         <dialog id="{{ attributes.id.value }}" class="modal">
-            <div method="dialog" class="modal-box">
-                <div id="modal-content" class="modal-content">
-                <!-- Form content will be loaded here -->
-                </div>
-            </div>
-         </div>
-    ''',
-    'form_edit': '''
-        <!-- templates/edit_form.html -->
-        <h2 class="text-xl font-bold mb-4">Edit {{ configs.table_name }}</h2>
-        <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
-            {% for column in configs.table_config['columns'] %}
-            {% if column['is_hidden'] %}
-            {% else %}
-            <div class="mb-4">
-                <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
-                    {% if column['label'] %}
-                    {{ column['label'] }}
-                    {% else %}
-                    {{ column['name'] }}
-                    {% endif %}
-                </label>
-                {% if column['input_type'] == 'text' %}
-                <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                    if column['configs.primary_key'] %}readonly{% endif %}
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                {% elif column['input_type'] == 'number' %}
-                <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                    if column['configs.primary_key'] %}readonly{% endif %}
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                {% elif column['input_type'] == 'date' %}
-                <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                    if column['configs.primary_key'] %}readonly{% endif %}
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                {% elif column['input_type'] == 'checkbox' %}
-                <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
-                    %}checked{% endif %} {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
-                {% elif column['input_type'] == 'select' %}
-                <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% for option in column['options'] %}
-                    <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% endfor %}
-            <div class="flex justify-end">
-                <button type="button" onclick="hideModal()"
-                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
-                <button type="submit"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
-            </div>
-            <div style="display: none;" id="target"></div>
-        </form>
-
-        <script>
-            document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
-                console.log('Request completed');
-                document.getElementById('btn-table-refresh').click();
-                hideModal();
-            });
-        </script>
-    '''
-}
-
-# YAML configuration as a Python string
-YAML_CONFIG = """
-  title: Responsive Dashboard with Drawers
-  component_definitions:
-    main_navbar:
-      id: main_navbar
-      type: navbar
-      attributes:
-        title: 
-          type: string
-          value: My Dashboard
-        class:
-          type: string
-          value: mb-4
-        menu_items:
-          type: list
-          value:
-            - {text: Home, link: "#"}
-            - {text: About, link: "#about"}
-            - {text: Contact, link: "#contact"}
-    
-    table_list:
-      id: table_list
-      type: list
-      value: getTables
-      
-    table_list1:
-      id: table_list1
-      type: list
-      value: getTables1
-  
-    main_data_table:
-      id: main_data_table
-      type: data-table
-      config: get_configs
-      data: get_table_data_params
-    
-    button:
-      id: button
-      type: button
-      attributes: 
-        id:
-          type: string
-          value: button
-        text:
-          type: string
-          value: ok
-        onclick:
-          type: string
-          value: modal_message.showModal()
-          
-    modal_message:
-      id: modal_message
-      type: modal_message
-      attributes:
-        id:
-          type: string
-          value: modal_message
-        title:
-          type: string
-          value: modal
-        content:
-          type: string
-          value: aaaaa
-          
-    modal_form:
-      id: modal_form
-      type: modal_form
-      attributes:
-        id:
-          type: string
-          value: modal_form
-        title:
-          type: string
-          value: modal
-        content:
-          type: string
-          value: aaaaa
-          
-    form_edit:
-      id: form_edit
-      type: form_edit
-  
-    registration_form:
-      id: registration_form
-      type: form
-      attributes:
-        class:
-          type: string
-          value: mt-4 max-w-md mx-auto
-        fields:
-          type: list
-          value:
-            - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
-            - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
-            - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
-            - {name: age, type: number, label: Age, placeholder: Enter your age}
-            - {name: birthdate, type: date, label: Birth Date}
-            - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
-            - name: country
-              type: select
-              label: Country
-              required: true
-              options:
-                - {value: us, label: United States}
-                - {value: uk, label: United Kingdom}
-                - {value: ca, label: Canada}
-            - name: newsletter
-              type: checkbox
-              label: Subscribe to newsletter
-              checkboxLabel: Yes, I want to receive updates
-            - name: gender
-              type: radio
-              label: Gender
-              options:
-                - {value: male, label: Male}
-                - {value: female, label: Female}
-                - {value: other, label: Other}
-            - name: profile_picture
-              type: file
-              label: Profile Picture
-              helpText: Please upload an image file (JPG, PNG)
-        submit_text:
-          type: string
-          value: Register
-  
-  components:
-    - $ref: main_navbar
-    - type: container
-      attributes:
-        class:
-          type: string
-          value: "px-4 py-8"
-      children:
-        - type: grid
-          children:
-            - $ref: button
-            - $ref: button
-            - $ref: button
-            - $ref: table_list1
-        - $ref: button
-        - $ref: modal_message
-        - $ref: modal_form
-        #- $ref: table_list
-        - $ref: table_list1
-        - $ref: main_data_table
-        - $ref: registration_form
-        - type: form
-          attributes:
-            id: 
-              type: string
-              value: genre
-            class:
-              type: string
-              value: mt-4 max-w-md mx-auto
-            fields:
-              type: list
-              value:
-                - {name: GenreId, type: number, label: ジャンルID, placeholder: , required: true, disabled: true}
-                - {name: Name, type: text, label: ジャンル名称, placeholder: , required: true, readonly: true}
-            submit_text:
-              type: string
-              value: Register
-"""
-
-def load_page_config() -> Dict[str, Any]:
-    config = yaml.safe_load(YAML_CONFIG)
-    
-    # 创建一个组件字典，用于存储预定义的组件
-    gv.component_dict = {comp['id']: comp for comp in config.get('component_definitions', {}).values()}
-    
-    # 递归函数，用于解析组件引用
-    def resolve_component(comp):
-        if isinstance(comp, dict) and '$ref' in comp:
-            return gv.component_dict[comp['$ref']]
-        elif isinstance(comp, dict) and 'children' in comp:
-            comp['children'] = [resolve_component(child) for child in comp['children']]
-        return comp
-    
-    # 解析所有组件引用
-    config['components'] = [resolve_component(comp) for comp in config['components']]
-    
-    return config
-    
-def generate_html(component: Dict[str, Any]) -> str:
-
-    for key in ['config', 'data', 'value']:
-        if key in component and type(component[key]) is str:
-            if globals()[component[key]]:
-                component[key] = globals()[component[key]]()
-
-    template = Template(HTML_TEMPLATES.get(component['type'], ''))
-    rendered_children = [generate_html(child) for child in component.get('children', [])]
-    return template.render(
-      attributes=component.get('attributes', {}), 
-      configs=component.get('config', {}), 
-      data=component.get('data', {}), 
-      value=component.get('value', []), 
-      children=rendered_children,
-      min=min)
+YAML_CONFIG = load_data_from_yaml('yaml_config.yaml')
 
 def get_configs():
     return get_table_config()
@@ -828,7 +102,71 @@ def getTables1():
         )
     return values
 
+# 修改渲染函数
+def generate_html(component: Dict[str, Any]) -> str:
+    for key in ['config', 'data', 'value']:
+        if key in component and isinstance(component[key], str):
+            if component[key] in globals():
+                component[key] = globals()[component[key]]()
 
+    template = Template(HTML_TEMPLATES.get(component['type'], ''))
+    
+    rendered_children = {'_unnamed': []}
+    if 'children' in component:
+      if isinstance(component['children'], list):
+        print("这是一个数组（列表）")
+        rendered_children = [generate_html(resolve_component(child)) for child in component.get('children', [])]
+      else:
+        print("这不是一个数组（列表）")
+        for key, value in component['children'].items():
+            if isinstance(key, str):  # Named children
+                rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
+            elif isinstance(key, int):  # Unnamed children
+                rendered_children['_unnamed'].append(generate_html(resolve_component(value)))
+
+    return template.render(
+        attributes=component.get('attributes', {}),
+        configs=component.get('config', {}),
+        data=component.get('data', {}),
+        value=component.get('value', []),
+        children=rendered_children,
+        min=min
+    )
+
+# 辅助函数：解析组件引用
+def resolve_component(comp):
+    if isinstance(comp, dict) and '$ref' in comp:
+        return gv.component_dict[comp['$ref']]
+    return comp
+
+# 修改加载配置函数
+def load_page_config() -> Dict[str, Any]:
+    # config = yaml.safe_load(YAML_CONFIG)
+    config = YAML_CONFIG
+    
+    gv.component_dict = {
+        comp['id']: comp 
+        for comp in config.get('component_definitions', {}).values()
+    }
+    
+    def resolve_components(components):
+        resolved = []
+        for comp in components:
+            if isinstance(comp, dict) and '$ref' in comp:
+                resolved.append(resolve_component(comp))
+            elif isinstance(comp, dict) and 'children' in comp:
+                resolved_comp = comp.copy()
+                resolved_comp['children'] = resolve_components(comp['children'])
+                resolved.append(resolved_comp)
+            else:
+                resolved.append(comp)
+        return resolved
+
+    config['components'] = resolve_components(config['components'])
+    
+    return config
+
+# 主渲染函数保持不变
 @app.get("/page", response_class=HTMLResponse)
 async def render_page(request: Request):
     gv.request = request
@@ -856,19 +194,24 @@ async def rendered_component(request: Request):
     load_page_config()
     
     return generate_html(gv.component_dict[component_id])
-    
-    '''
-    rendered_components = [generate_html(gv.component_dict[component_id])]
-    #print(rendered_components)
-    return rendered_components[0]
-    #template = Template(BASE_HTML)
-    template = Template('<div></div>')
-    return template.render(
-        components=rendered_components,
-        min=min
-    )
-    '''
 
+
+@app.get("/")
+async def read_root(request: Request):
+    tables = get_table_names()
+    return templates.TemplateResponse("all_in_one.html", {"request": request, "tables": tables})
+
+@app.get("/table/{table_name}")
+async def read_table(request: Request, table_name: str):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    table_config = get_table_config(table_name)
+    return templates.TemplateResponse("all_in_one.html", {
+        "request": request,
+        "table_name": table_name,
+        "table_config": table_config
+    })
 
 def generate_table_config(engine, table_name):
     inspector = inspect(engine)
@@ -954,23 +297,6 @@ def get_primary_key(table):
 def get_table_names():
     inspector = inspect(engine)
     return inspector.get_table_names()
-
-@app.get("/")
-async def read_root(request: Request):
-    tables = get_table_names()
-    return templates.TemplateResponse("all_in_one.html", {"request": request, "tables": tables})
-
-@app.get("/table/{table_name}")
-async def read_table(request: Request, table_name: str):
-    if table_name not in metadata.tables:
-        raise HTTPException(status_code=404, detail="Table not found")
-    
-    table_config = get_table_config(table_name)
-    return templates.TemplateResponse("all_in_one.html", {
-        "request": request,
-        "table_name": table_name,
-        "table_config": table_config
-    })
 
 def apply_search_filter(query, table, column_config, value):
     if value:
@@ -1137,8 +463,8 @@ async def read_table_content(
         "search_params": search_params
     })
 
-@app.get("/create/{table_name}")
-async def create_form(request: Request, table_name: str):
+@app.get("/create1/{table_name}", response_class=HTMLResponse)
+async def create_form1(request: Request, table_name: str):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -1149,6 +475,67 @@ async def create_form(request: Request, table_name: str):
         "table_name": table_name, 
         "columns": columns,
     })
+    
+@app.get("/create", response_class=HTMLResponse)
+async def create_form(request: Request):
+    gv.request = request
+
+    table_name = None
+    id = None
+      
+    query_params = dict(request.query_params)
+
+    if 'table_name' in query_params:
+      table_name = query_params['table_name']
+
+    if 'id' in query_params:
+      id = query_params['id']
+
+    if table_name is None:
+      table_name = 'Genre'
+    
+    if id is None:
+      id = 22
+
+    table_config = get_table_config(table_name)
+    
+    primary_key = None
+    
+    #table = metadata.tables[table_name]
+
+    #primary_key = get_primary_key(table)
+    
+    ''' 
+    with SessionLocal() as session:
+        stmt = select(table).where(getattr(table.c, primary_key) == id)
+        result = session.execute(stmt).fetchone()._asdict()
+    '''
+    
+    if True:
+      
+        #data = dict(result)
+        
+        component_id = None
+    
+        if 'component_id' in query_params:
+          component_id = query_params['component_id']
+        
+        if component_id is None:
+          component_id = 'form_create'
+          
+        load_page_config()
+
+        gv.component_dict[component_id]['config'] = {
+            'table_name':table_name,
+            'id':id,
+            'data': {},
+            'primary_key':primary_key,
+            'table_config':table_config
+        }
+        
+        return generate_html(gv.component_dict[component_id])
+        
+    raise HTTPException(status_code=404, detail="Item not found")
 
 @app.post("/create/{table_name}")
 async def create_item(table_name: str, request: Request):
@@ -1178,36 +565,6 @@ async def create_item(table_name: str, request: Request):
         })
     except SQLAlchemyError as e:
         return {"success": False, "message": str(e)}
-
-@app.get("/edit1/{table_name}/{id}")
-async def edit_form1(request: Request, table_name: str, id: str, page: int = 1, search: str = '', page_size: int = 10):
-    if table_name not in metadata.tables:
-        raise HTTPException(status_code=404, detail="Table not found")
-    
-    table_config = get_table_config(table_name)
-    
-    table = metadata.tables[table_name]
-    primary_key = get_primary_key(table)
-    
-    with SessionLocal() as session:
-        stmt = select(table).where(getattr(table.c, primary_key) == id)
-        result = session.execute(stmt).fetchone()._asdict()
-    
-    data = dict(result)
-    
-    if result:
-        return templates.TemplateResponse("edit_form.html", {
-            "request": request,
-            "table_name": table_name,
-            "id": id,
-            "item": data,
-            "primary_key": primary_key,
-            "page": page,
-            "page_size": page_size,
-            "search": search,
-            "table_config": table_config
-        })
-    raise HTTPException(status_code=404, detail="Item not found")
 
 @app.get("/edit", response_class=HTMLResponse)
 async def edit_form(request: Request):
@@ -1370,6 +727,14 @@ async def get_record(table_name: str, id: str):
             return dict(result._mapping)
         else:
             raise HTTPException(status_code=404, detail="Record not found")
+
+@app.get("/execute_all_transactions")
+def execute_all_transactions():
+    try:
+        transaction_module.execute_all_transactions(SessionLocal())
+    except Exception as e:
+        logger.error(f"Unexpected error executing transactions: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     uvicorn.run(

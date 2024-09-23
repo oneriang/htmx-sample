@@ -6,7 +6,7 @@ columns:
   primary_key: 1
   type: INTEGER
 - input_type: text
-  label: LastName
+  label: Xing
   name: LastName
   nullable: false
   primary_key: 0
@@ -89,4 +89,4 @@ columns:
   nullable: true
   primary_key: 0
   type: NVARCHAR(60)
-table_name: Employee
+table_name: Yuangong

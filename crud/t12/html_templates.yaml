@@ -1,0 +1,744 @@
+'layout': |
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-left" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar -->
+            <div class="w-full navbar bg-base-300">
+                <div class="flex-none lg:hidden">
+                    <label for="drawer-left" aria-label="open left sidebar" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                </div>
+                <div class="flex-1 px-2 mx-2">Navbar Title</div>
+                <div class="flex-none">
+                    <label for="drawer-right" aria-label="open right sidebar" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                </div>
+            </div>
+            {% for child in children.generic %}
+                {{ child | safe }}
+            {% endfor %}
+            <!-- Main content -->
+            <div class="grid mb-4 pb-10 px-8 mx-4 rounded-3xl bg-gray-100 border-4 border-green-400">
+                {% for child in children.main_content %}
+                    {{ child | safe }}
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Left drawer -->
+        <div class="drawer-side">
+            <label for="drawer-left" aria-label="close left sidebar" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                {% for child in children.left_sidebar %}
+                    {{ child | safe }}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- Right drawer -->
+    <div class="drawer drawer-end">
+        <input id="drawer-right" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content">
+            <!-- Page content here -->
+        </div> 
+        <div class="drawer-side">
+            <label for="drawer-right" aria-label="close right sidebar" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+                {% for child in children.right_sidebar %}
+                    {{ child | safe }}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+'drawer_content': |
+    {% for child in children %}
+        {{ child | safe }}
+    {% endfor %}
+
+'main_content': |
+    {% for child in children %}
+        {{ child | safe }}
+    {% endfor %}
+
+'container': |
+    <div class="container mx-auto {{ attributes.class.value }}">
+      {% for child in children %}
+        {{ child | safe }}
+      {% endfor %}
+    </div>
+
+'card1': |
+    <div class="card w-full {{ attributes.class.value }}">
+        <div class="card-body">
+            <h2 class="card-title">{{ attributes.title.value }}</h2>
+            <p>{{ attributes.content.value }}</p>
+            {% for child in children %}
+                {{ child | safe }}
+            {% endfor %}
+        </div>
+    </div>
+
+'card': |
+    <a class="transform  hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 xl:col-span-3 intro-y bg-white"
+                                    href="#">
+        <div class="p-5">
+            <div class="flex justify-between">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-400"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+                <div
+                    class="bg-blue-500 rounded-full h-6 px-2 flex justify-items-center text-white font-semibold text-sm">
+                    <span class="flex items-center">30%</span>
+                </div>
+            </div>
+            <div class="ml-2 w-full flex-1">
+                <div>
+                    <div class="mt-3 text-3xl font-bold leading-8">4.510</div>
+
+                    <div class="mt-1 text-base text-gray-600">Item Sales</div>
+                </div>
+            </div>
+        </div>
+    </a>
+
+'grid1': |
+    <div class="grid 
+        grid-cols-{{ attributes.columns.value if attributes.columns and attributes.columns and attributes.columns.value else '2' }} 
+        {{ attributes.class.value if attributes and attributes.class and attributes.class.value }}">
+        {% for child in children %}
+            <div class="col-span-1">{{ child | safe }}</div>
+        {% endfor %}
+    </div>
+
+'grid': |
+    <div class="grid grid-cols-12 gap-6">
+        <div class="grid grid-cols-12 col-span-12 gap-6 xxl:col-span-9">
+            <div class="grid col-span-12 gap-6 mt-5">
+                {% for child in children %}
+                    {{ child | safe }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+'list': |
+    <ul class="menu bg-base-200 w-56 rounded-box">
+        {% for item in value %}
+            {% if item.get %}
+                <li>
+                    <a href="#"
+                        hx-get="{{- '/component?' -}}
+                        {{- 'table_name=' ~ item.text -}}&
+                        {{- 'component_id=' ~ item.component_id -}}"
+                        hx-target="#table-content"
+                        >
+                            {{ item.text }}
+                        </a>
+            {% else %}
+                <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+'data-table': |
+  <div class="overflow-x-auto mt-4" id="table-content">
+  {{ configs.table_name }}
+      <table class="min-w-full bg-white border-collapse">
+          <thead>
+              <tr>
+                  <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
+                  {% for column in configs.columns %}
+                  {% if not column['is_hidden'] %}
+                  <th class="border px-4 py-2">
+                      <div style="overflow: hidden; resize: horizontal;">
+                        <a href="#"
+                        hx-get="{{- '/component?' -}}
+                        {{- 'component_id=' ~ configs.component_id -}}&
+                        {{- 'page=' ~ page -}}&
+                        {{- 'search=' ~ search -}}&
+                        {{- 'sort_column=' ~ column['name'] -}}&
+                        {{- 'sort_direction=' -}}
+                        {%- if sort_column == column['name'] and sort_direction == 'asc' -%}
+                            {{- 'desc' -}}
+                        {%- else -%}
+                            {{- 'asc' -}}
+                        {%- endif -%}"
+                        hx-target="#table-content"
+                        class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}"
+                        >
+                            {{ column['label'] or column['name'] }}
+                            <span class="sort-icon"></span>
+                        </a>
+                      </div>
+                  </th>
+                  {% endif %}
+                  {% endfor %}
+              </tr>
+          </thead>
+          <tbody>
+              {% for row in data.rows %}
+              <tr class="hover:bg-gray-100">
+                  <td class="border px-4 py-2 sticky-left sticky-left-shadow">
+                      <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                          hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
+                      <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                          hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
+                      <button hx-get="/create?table_name={{ configs.table_name }}" hx-target="#modal-content"
+                          hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Create</button>
+                      <button hx-get="/create/{{ configs.table_name }}" hx-target="#modal-content"
+                          hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Create</button>
+                      <button onclick="showDeleteModal('{{ configs.table_name }}', '{{ row[data.primary_key] }}')"
+                          class="text-red-500 hover:underline">Delete</button>
+                  </td>
+                  {% for column in configs.columns %}
+                  {% if not column['is_hidden'] %}
+                  <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
+                  {% endif %}
+                  {% endfor %}
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+      <div class="mt-4 flex justify-between items-center">
+        <p>Showing 
+            {{ (data.page - 1) * data.page_size + 1 }} 
+            to 
+            {{ min(data.page * data.page_size, data.total_items) }} 
+            of 
+            {{ data.total_items }} 
+            records
+        </p>
+        <div class="flex space-x-2">
+            {% if data.page > 1 %}
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ configs.component_id -}}&
+                    {{- 'page=' ~ (data.page - 1) -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#table-content"
+                    class="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                    Previous
+                </button>
+            {% endif %}
+            {% if data.page < data.total_pages %} 
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ configs.component_id -}}&
+                    {{- 'page=' ~ (data.page + 1) -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#table-content"
+                    class="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                    Next
+                </button>
+            {% endif %}
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ configs.component_id -}}&
+                    {{- 'page=' ~ data.page -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#table-content"
+                    id="btn-table-refresh"
+                    class="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                    Refresh
+                </button>
+        </div>
+      </div>
+    </div>
+
+'table': |
+    <div class="overflow-x-auto">
+        <table class="table {{ attributes.class.value }}">
+            <thead>
+                <tr>
+                    {% for header in attributes.headers.value %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attributes.rows.value %}
+                    <tr>
+                        {% for cell in row %}
+                            <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+'form': |
+    <form class="{{ attributes.class.value }}">
+        {% for field in attributes.fields.value %}
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">{{ field.label }}</span>
+                </label>
+                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
+                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% elif field.type == 'textarea' %}
+                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
+                {% elif field.type == 'select' %}
+                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
+                        {% for option in field.options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                {% elif field.type == 'checkbox' %}
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
+                        <span class="ml-2">{{ field.checkboxLabel }}</span>
+                    </div>
+                {% elif field.type == 'radio' %}
+                    <div class="flex flex-col mt-2">
+                        {% for option in field.options %}
+                            <label class="flex items-center mb-2">
+                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
+                                <span class="ml-2">{{ option.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% elif field.type == 'file' %}
+                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% endif %}
+                {% if field.helpText %}
+                    <label class="label">
+                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
+                    </label>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text.value }}</button>
+    </form>
+
+'navbar': |
+    <div class="navbar bg-base-100 {{ attributes.class.value }}">
+        <div class="flex-1">
+            <a class="btn btn-ghost normal-case text-xl">{{ attributes.title.value }}</a>
+        </div>
+        <div class="flex-none hidden md:block">
+            <ul class="menu menu-horizontal px-1">
+                {% for item in attributes.menu_items.value %}
+                    <li><a href="{{ item.link }}">{{ item.text }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="flex-none md:hidden">
+            <button class="btn btn-square btn-ghost" data-drawer-target="my-drawer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+    </div>
+
+'button': |
+    <button class="btn {{ attributes.class.value if attributes.class and attributes.class.value else '' }}" 
+            {% if attributes.modal_target and attributes.modal_target.value %}data-modal-target="{{ attributes.modal_target.value }}"{% endif %}
+            {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}
+            {% if attributes.onclick and attributes.onclick.value %}onclick="{{ attributes.onclick.value }}"{% endif %}>
+        {{ attributes.text.value }}
+    </button>
+
+'modal_message': |
+    <dialog id="{{ attributes.id.value }}" class="modal">
+        <div method="dialog" class="modal-box">
+            <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+            <p class="py-4">{{ attributes.content.value }}</p>
+            <div class="modal-action">
+              <form method="dialog">
+                <button class="btn">Close</button>
+              </form>
+            </div>
+        </div>
+    </dialog>
+
+'modal_form': |
+  <dialog id="{{ attributes.id.value }}" class="modal">
+      <div method="dialog" class="modal-box">
+          <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+          <div id="modal-content" class="modal-content">
+          </div>
+          <div class="modal-action">
+            <form method="dialog">
+              <button class="btn">Close</button>
+            </form>
+          </div>
+      </div>
+  </dialog>
+
+'form_create': |
+    <!-- templates/edit_form.html -->
+    <h2 class="text-xl font-bold mb-4">Create {{ configs.table_name }}</h2>
+    <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
+        {% for column in configs.table_config['columns'] %}
+        {% if column['is_hidden'] %}
+        {% else %}
+        <div class="mb-4">
+            <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+                {% if column['label'] %}
+                {{ column['label'] }}
+                {% else %}
+                {{ column['name'] }}
+                {% endif %}
+            </label>
+            {% if column['input_type'] == 'text' %}
+            <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'number' %}
+            <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'date' %}
+            <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'checkbox' %}
+            <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+            {% elif column['input_type'] == 'select' %}
+            <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% for option in column['options'] %}
+                <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <div class="flex justify-end">
+            <button type="button" onclick="hideModal()"
+                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+            <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+        </div>
+        <div style="display: none;" id="target"></div>
+    </form>
+
+    <script>
+        document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
+            console.log('Request completed');
+            document.getElementById('btn-table-refresh').click();
+            hideModal();
+        });
+    </script>
+
+'form_edit': |
+    <!-- templates/edit_form.html -->
+    <h2 class="text-xl font-bold mb-4">Edit {{ configs.table_name }}</h2>
+    <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
+        {% for column in configs.table_config['columns'] %}
+        {% if column['is_hidden'] %}
+        {% else %}
+        <div class="mb-4">
+            <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+                {% if column['label'] %}
+                {{ column['label'] }}
+                {% else %}
+                {{ column['name'] }}
+                {% endif %}
+            </label>
+            {% if column['input_type'] == 'text' %}
+            <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'number' %}
+            <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'date' %}
+            <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                if column['configs.primary_key'] %}readonly{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            {% elif column['input_type'] == 'checkbox' %}
+            <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
+                %}checked{% endif %} {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+            {% elif column['input_type'] == 'select' %}
+            <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% for option in column['options'] %}
+                <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <div class="flex justify-end">
+            <button type="button" onclick="hideModal()"
+                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+            <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+        </div>
+        <div style="display: none;" id="target"></div>
+    </form>
+
+    <script>
+        document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
+            console.log('Request completed');
+            document.getElementById('btn-table-refresh').click();
+            hideModal();
+        });
+    </script>
+
+'alert': |
+    <div role="alert" class="alert {{ attributes.type.value }}">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>{{ attributes.message.value }}</span>
+    </div>
+
+'progress': |
+    <progress class="progress {{ attributes.color.value }} w-56" value="{{ attributes.value.value }}" max="{{ attributes.max.value }}"></progress>
+
+'badge': |
+    <span class="badge {{ attributes.color.value }}">{{ attributes.text.value }}</span>
+
+'tabs': |
+    <div class="tabs {{ attributes.class.value }}">
+        {% for tab in attributes.tabs.value %}
+            <a class="tab {{ tab.class }}">{{ tab.text }}</a>
+        {% endfor %}
+    </div>
+
+'collapse': |
+    <div class="collapse bg-base-200">
+        <input type="checkbox" /> 
+        <div class="collapse-title text-xl font-medium">
+            {{ attributes.title.value }}
+        </div>
+        <div class="collapse-content"> 
+            <p>{{ attributes.content.value }}</p>
+        </div>
+    </div>
+
+'tooltip': |
+    <div class="tooltip" data-tip="{{ attributes.tip.value }}">
+        <button class="btn">{{ attributes.text.value }}</button>
+    </div>
+
+'dropdown': |
+    <div class="dropdown">
+        <label tabindex="0" class="btn m-1">{{ attributes.label.value }}</label>
+        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+            {% for item in attributes.items.value %}
+                <li><a>{{ item }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+'stat': |
+    <div class="stat">
+        <div class="stat-figure text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+        </div>
+        <div class="stat-title">{{ attributes.title.value }}</div>
+        <div class="stat-value text-primary">{{ attributes.value.value }}</div>
+        <div class="stat-desc">{{ attributes.description.value }}</div>
+    </div>
+
+'carousel': |
+    <div class="carousel w-full">
+        {% for item in attributes.items.value %}
+            <div id="slide{{ loop.index }}" class="carousel-item relative w-full">
+                <img src="{{ item.image }}" class="w-full" alt="Slide {{ loop.index }}">
+                <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
+                    <a href="#slide{{ loop.previtem if loop.previtem else loop.length }}" class="btn btn-circle">❮</a> 
+                    <a href="#slide{{ loop.nextitem if loop.nextitem else 1 }}" class="btn btn-circle">❯</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+'modal': |
+    <div class="modal" id="{{ attributes.id.value }}">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+            <p class="py-4">{{ attributes.content.value }}</p>
+            <div class="modal-action">
+                <label for="{{ attributes.id.value }}" class="btn">Close</label>
+            </div>
+        </div>
+    </div>
+
+'rating': |
+    <div class="rating">
+        {% for i in range(attributes.max.value) %}
+            <input type="radio" name="{{ attributes.name.value }}" class="mask mask-star-2 bg-orange-400" {% if i + 1 == attributes.value.value %}checked{% endif %}>
+        {% endfor %}
+    </div>
+
+'timeline': |
+    <ul class="timeline timeline-vertical">
+        {% for item in attributes.items.value %}
+            <li>
+                <div class="timeline-start">{{ item.time }}</div>
+                <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="timeline-end timeline-box">{{ item.content }}</div>
+                <hr/>
+            </li>
+        {% endfor %}
+    </ul>
+
+'drawer': |
+    <div class="drawer">
+        <input id="{{ attributes.id.value }}" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content">
+            <!-- Page content here -->
+            <label for="{{ attributes.id.value }}" class="btn btn-primary drawer-button">Open drawer</label>
+        </div> 
+        <div class="drawer-side">
+            <label for="{{ attributes.id.value }}" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+                {% for item in attributes.menu_items.value %}
+                    <li><a>{{ item }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+'steps': |
+    <ul class="steps steps-vertical lg:steps-horizontal">
+        {% for step in attributes.steps.value %}
+            <li class="step {% if loop.index <= attributes.current_step.value %}step-primary{% endif %}">{{ step }}</li>
+        {% endfor %}
+    </ul>
+
+'hero': |
+    <div class="hero min-h-screen" style="background-image: url({{ attributes.background_image.value }});">
+        <div class="hero-overlay bg-opacity-60"></div>
+        <div class="hero-content text-center text-neutral-content">
+            <div class="max-w-md">
+                <h1 class="mb-5 text-5xl font-bold">{{ attributes.title.value }}</h1>
+                <p class="mb-5">{{ attributes.description.value }}</p>
+                <button class="btn btn-primary">{{ attributes.button_text.value }}</button>
+            </div>
+        </div>
+    </div>
+
+'chat_bubble': |
+    <div class="chat {% if attributes.position.value == 'end' %}chat-end{% else %}chat-start{% endif %}">
+        <div class="chat-image avatar">
+            <div class="w-10 rounded-full">
+                <img alt="Avatar" src="{{ attributes.avatar.value }}" />
+            </div>
+        </div>
+        <div class="chat-header">
+            {{ attributes.name.value }}
+            <time class="text-xs opacity-50">{{ attributes.time.value }}</time>
+        </div>
+        <div class="chat-bubble">{{ attributes.message.value }}</div>
+        <div class="chat-footer opacity-50">
+            {{ attributes.footer.value }}
+        </div>
+    </div>
+
+'stats': |
+    <div class="stats shadow">
+        {% for stat in attributes.stats.value %}
+        <div class="stat">
+            <div class="stat-figure text-{{ stat.color }}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ stat.icon }}"></path></svg>
+            </div>
+            <div class="stat-title">{{ stat.title }}</div>
+            <div class="stat-value text-{{ stat.color }}">{{ stat.value }}</div>
+            <div class="stat-desc">{{ stat.desc }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+'file_input': |
+    <div class="form-control w-full max-w-xs">
+        <label class="label">
+            <span class="label-text">{{ attributes.label.value }}</span>
+        </label>
+        <input type="file" class="file-input file-input-bordered w-full max-w-xs" />
+    </div>
+
+'code': |
+    <div class="mockup-code">
+        {% for line in attributes.code.value.split('\n') %}
+        <pre data-prefix="{{ loop.index }}"><code>{{ line }}</code></pre>
+        {% endfor %}
+    </div>
+
+'breadcrumbs': |
+    <div class="text-sm breadcrumbs">
+        <ul>
+            {% for item in attributes.items.value %}
+            <li><a href="{{ item.link }}">{{ item.text }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+'menu': |
+    <ul class="menu bg-base-200 w-56 rounded-box">
+        {% for item in attributes.items.value %}
+        <li>
+            {% if item.submenu %}
+            <details open>
+                <summary>{{ item.text }}</summary>
+                <ul>
+                    {% for subitem in item.submenu %}
+                    <li><a href="{{ subitem.link }}">{{ subitem.text }}</a></li>
+                    {% endfor %}
+                </ul>
+            </details>
+            {% else %}
+            <a href="{{ item.link }}">{{ item.text }}</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+'radial_progress': |
+    <div class="radial-progress text-primary" style="--value:{{ attributes.value.value }};">{{ attributes.value.value }}%</div>
+
+'skeleton': |
+    <div class="skeleton w-{{ attributes.width.value }} h-{{ attributes.height.value }}"></div>
+
+'alert_dialog': |
+    <input type="checkbox" id="{{ attributes.id.value }}" class="modal-toggle" />
+    <div class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+            <p class="py-4">{{ attributes.content.value }}</p>
+            <div class="modal-action">
+                <label for="{{ attributes.id.value }}" class="btn btn-primary">Confirm</label>
+                <label for="{{ attributes.id.value }}" class="btn">Cancel</label>
+            </div>
+        </div>
+    </div>
+
+'artboard': |
+    <div class="artboard artboard-demo">
+        <div class="text-4xl font-bold">{{ attributes.text.value }}</div>
+    </div>
+
+'btn': |
+    <button hx-get="/create?table_name=Yuangong" hx-target="#modal-content"
+                          hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
+

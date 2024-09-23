@@ -1,0 +1,37 @@
+transactions:
+  - 'name': Get
+    'steps':
+      - 'action': get
+        'table': Album
+        'fields':
+          - 'field': Title
+          - 'field': Name
+            'table': Artist
+          - 'field': Name
+            'label': TrackName
+            'table': Track
+        'join': 
+          - 'left_table': Album
+            'right_table': Artist
+            'on':
+              - 'left_column': ArtistId
+                'right_column': ArtistId
+            'type': inner
+          - 'left_table': Album
+            'right_table': Track
+            'on':
+              - 'left_column': AlbumId
+                'right_column': AlbumId
+            'type': inner
+        filter_values:
+          - field: Title
+            operator: eq
+            value: 'Meus Momentos'
+        data_to: customer
+  - name: Create File
+    steps:
+      - action: file_create
+        file_path: .
+        file_name: test1.json
+        file_type: json
+        data_from: customer

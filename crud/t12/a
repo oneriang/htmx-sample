@@ -1,0 +1,58 @@
+
+    'form_create': '''
+        <!-- templates/edit_form.html -->
+        <h2 class="text-xl font-bold mb-4">Create {{ configs.table_name }}</h2>
+        <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
+            {% for column in configs.table_config['columns'] %}
+            {% if column['is_hidden'] %}
+            {% else %}
+            <div class="mb-4">
+                <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+                    {% if column['label'] %}
+                    {{ column['label'] }}
+                    {% else %}
+                    {{ column['name'] }}
+                    {% endif %}
+                </label>
+                {% if column['input_type'] == 'text' %}
+                <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'number' %}
+                <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'date' %}
+                <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
+                    if column['configs.primary_key'] %}readonly{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% elif column['input_type'] == 'checkbox' %}
+                <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+                {% elif column['input_type'] == 'select' %}
+                <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    {% for option in column['options'] %}
+                    <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+            <div class="flex justify-end">
+                <button type="button" onclick="hideModal()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+            </div>
+            <div style="display: none;" id="target"></div>
+        </form>
+
+        <script>
+            document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
+                console.log('Request completed');
+                document.getElementById('btn-table-refresh').click();
+                hideModal();
+            });
+        </script>
+    ''',
