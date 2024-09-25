@@ -35,3 +35,105 @@ transactions:
         file_name: test1.json
         file_type: json
         data_from: customer
+        
+        
+transactions:
+  - name: Delete Album
+    steps:
+      - action: delete
+        table: Album
+        filter_values:
+          - field: Title
+            operator: eq
+            value: New Album
+
+  - name: Insert New Artist and Album
+    steps:
+      - action: insert
+        table: Artist
+        values:
+          Name: New Artist
+      - action: insert
+        table: Album
+        values:
+          Title: New Album
+          ArtistId: 276
+
+  - name: Delete Artist
+    steps:
+      - action: delete
+        table: Artist
+        filter_values:
+          - field: ArtistId
+            operator: eq
+            value: 285
+
+  - name: Update Track Price
+    steps:
+      - action: update
+        table: Track
+        values:
+          UnitPrice: 0.99
+        filter_values:
+          - field: TrackId
+            operator: eq
+            value: 1
+
+  - name: Delete Invoice
+    steps:
+      - action: delete
+        table: Invoice
+        filter_values:
+          - field: InvoiceId
+            operator: eq
+            value: 2
+
+  - name: Get Customer Info
+    steps:
+      - action: get
+        table: Customer
+        fields:
+          - field: FirstName
+          - field: LastName
+          - field: Email
+        filter_values:
+          - field: CustomerId
+            operator: eq
+            value: 1
+  transactions:
+  - 'name': Get
+    'steps':
+      - 'action': get
+        'table': Album
+        'fields':
+          - 'field': Title
+          - 'field': Name
+            'table': Artist
+          - 'field': Name
+            'label': TrackName
+            'table': Track
+        'join': 
+          - 'left_table': Album
+            'right_table': Artist
+            'on':
+              - 'left_column': ArtistId
+                'right_column': ArtistId
+            'type': inner
+          - 'left_table': Album
+            'right_table': Track
+            'on':
+              - 'left_column': AlbumId
+                'right_column': AlbumId
+            'type': inner
+        filter_values:
+          - field: Title
+            operator: eq
+            value: 'Meus Momentos'
+        data_to: customer
+  - name: Create File
+    steps:
+      - action: file_create
+        file_path: .
+        file_name: test1.json
+        file_type: json
+        data_from: customer

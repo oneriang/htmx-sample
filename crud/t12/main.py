@@ -68,12 +68,20 @@ def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
     except (IOError, yaml.YAMLError) as e:
         logging.error(f"Error loading YAML data from {filename}: {e}")
         return None
+        
+gv.BASE_HTML = None
+gv.HTML_TEMPLATES = None
+gv.YAML_CONFIG = None
 
-BASE_HTML = load_data_from_html('base_html.html')
+def load_data():
+    
+  gv.BASE_HTML = load_data_from_html('base_html.html')
+  
+  gv.HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
+  
+  gv.YAML_CONFIG = load_data_from_yaml('yaml_config.yaml')
 
-HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
-
-YAML_CONFIG = load_data_from_yaml('yaml_config.yaml')
+load_data()
 
 def get_configs():
     return get_table_config()
@@ -109,7 +117,7 @@ def generate_html(component: Dict[str, Any]) -> str:
             if component[key] in globals():
                 component[key] = globals()[component[key]]()
 
-    template = Template(HTML_TEMPLATES.get(component['type'], ''))
+    template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
     
     rendered_children = {'_unnamed': []}
     if 'children' in component:
@@ -142,7 +150,7 @@ def resolve_component(comp):
 # 修改加载配置函数
 def load_page_config() -> Dict[str, Any]:
     # config = yaml.safe_load(YAML_CONFIG)
-    config = YAML_CONFIG
+    config = gv.YAML_CONFIG
     
     gv.component_dict = {
         comp['id']: comp 
@@ -170,11 +178,13 @@ def load_page_config() -> Dict[str, Any]:
 @app.get("/page", response_class=HTMLResponse)
 async def render_page(request: Request):
     gv.request = request
+    
+    load_data()
 
     page_config = load_page_config()
     rendered_components = [generate_html(component) for component in page_config['components']]
 
-    template = Template(BASE_HTML)
+    template = Template(gv.BASE_HTML)
     return template.render(
         page_title=page_config['title'],
         components=rendered_components,

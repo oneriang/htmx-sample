@@ -7,6 +7,7 @@ component_definitions:
       generic:
         - type: btn
         - $ref: button
+        - $ref: button1
         - type: card
       left_sidebar:
         - $ref: table_list1
@@ -71,6 +72,20 @@ component_definitions:
       text:
         type: string
         value: ok
+      onclick:
+        type: string
+        value: modal_message.showModal()
+  
+  button1:
+    id: button1
+    type: button
+    attributes: 
+      id:
+        type: string
+        value: button1
+      text:
+        type: string
+        value: ok1
       onclick:
         type: string
         value: modal_message.showModal()
