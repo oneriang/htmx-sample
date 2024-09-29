@@ -1,11 +1,70 @@
 'layout': |
-    <div class="drawer lg:drawer-open">
+    <style>
+        html:has(.drawer-toggle:checked) {
+            overflow-y: hidden;
+            scrollbar-gutter: auto
+        }
+        .drawer-content {
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .drawer-side.drawer-side-left{
+            left: -20rem; /* Start off-screen */
+            transition: left 0.3s ease-in-out;
+            width: auto;
+        }
+        #drawer-left:checked ~ .drawer-side {
+            left: 0;
+        }
+
+        /* 基础样式 */
+        .drawer-content {
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        /* 大屏幕样式 */
+        @media screen and (min-width: 1024px) {
+            #drawer-left:checked ~ .drawer-content {
+                margin-left: 20rem; /* 匹配抽屉宽度 */
+            }
+        }
+
+        /* 小屏幕样式 */
+        @media screen and (max-width: 1023px) {
+            #drawer-left:checked ~ .drawer-content {
+                margin-left: 0; /* 在小屏幕上不移动内容 */
+            }
+            
+            # /* 可选：为小屏幕设置抽屉样式 */
+            # .drawer {
+            #     position: fixed;
+            #     left: -20rem;
+            #     width: 20rem;
+            #     height: 100%;
+            #     transition: left 0.3s ease-in-out;
+            # }
+            
+            # #drawer-left:checked ~ .drawer {
+            #     left: 0;
+            # }
+
+            .drawer-side.drawer-side-left{
+                left: -20rem; /* Start off-screen */
+                transition: left 0.3s ease-in-out;
+                width: 100%;
+            }
+        }
+    </style>
+    <div class="drawer">
         <input id="drawer-left" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex flex-col">
             <!-- Navbar -->
             <div class="w-full navbar bg-base-300">
-                <div class="flex-none lg:hidden">
-                    <label for="drawer-left" aria-label="open left sidebar" class="btn btn-square btn-ghost">
+                <div class="flex-none">
+                    <label for="drawer-left" aria-label="toggle left sidebar" class="btn btn-square btn-ghost lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                    <label for="drawer-left" aria-label="toggle left sidebar" class="btn btn-square btn-ghost hidden lg:flex">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </label>
                 </div>
@@ -27,7 +86,7 @@
             </div>
         </div>
         <!-- Left drawer -->
-        <div class="drawer-side">
+        <div class="drawer-side drawer-side-left">
             <label for="drawer-left" aria-label="close left sidebar" class="drawer-overlay"></label>
             <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
                 {% for child in children.left_sidebar %}
@@ -36,6 +95,7 @@
             </ul>
         </div>
     </div>
+
     <!-- Right drawer -->
     <div class="drawer drawer-end">
         <input id="drawer-right" type="checkbox" class="drawer-toggle" />
@@ -51,6 +111,90 @@
             </ul>
         </div>
     </div>
+    
+    <script>
+        function closeDrawer() {
+            document.getElementById('drawer-left').checked = false;
+        }
+
+        // 为所有的li元素添加点击事件
+        document.querySelectorAll('.drawer-side li').forEach(item => {
+            item.addEventListener('click', closeDrawer);
+        });
+    </script>
+
+'layout_login': |
+    <div class="relative flex flex-col justify-center h-screen overflow-hidden">
+        <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
+            <h1 class="text-3xl font-semibold text-center text-purple-700">DaisyUI</h1>
+            {% for child in children %}
+                {{ child | safe }}
+            {% endfor %}
+        </div>
+    </div>
+
+'layout_registration': |
+    <div class="relative flex flex-col justify-center h-screen overflow-hidden">
+        <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
+            <h1 class="text-3xl font-semibold text-center text-purple-700">DaisyUI</h1>
+            {% for child in children %}
+                {{ child | safe }}
+            {% endfor %}
+        </div>
+    </div>
+    
+'layout2': |
+    <style>
+          .drawer-toggle {
+              display: none;
+          }
+          .drawer-content {
+              transition: margin-left 0.3s ease-in-out;
+          }
+          .drawer-toggle:checked ~ .drawer-content {
+              margin-left: 20rem;
+          }
+          .drawer-side {
+              left: -20rem;
+              transition: left 0.3s ease-in-out;
+          }
+          .drawer-toggle:checked ~ .drawer-side {
+              left: 0;
+          }
+          .drawer-side a {
+              display: block;
+              padding: 0.5rem 1rem;
+          }
+          .drawer-side a:hover {
+              background-color: rgba(0, 0, 0, 0.1);
+          }
+          .drawer-toggle:checked ~ .drawer-side .close-drawer {
+              display: block;
+          }
+          .close-drawer {
+              display: none;
+          }
+      </style>
+      <div class="drawer">
+          <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+          <div class="drawer-content">
+              <!-- Page content here -->
+              <label for="my-drawer" class="btn btn-primary drawer-button">Open drawer</label>
+              <div class="p-4">
+                  <h2 class="text-2xl font-bold">Main Content</h2>
+                  <p>This is the main content area. It will be pushed to the right when the drawer opens.</p>
+              </div>
+          </div> 
+          <div class="drawer-side">
+              <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+              <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+                  <!-- Sidebar content here -->
+                  <li><label for="my-drawer" class="close-drawer">Close Drawer</label></li>
+                  <li><label for="my-drawer"><a href="#">Sidebar Item 1</a></label></li>
+                  <li><a href="#"><label for="my-drawer">Sidebar Item 2</label></a></li>
+              </ul>
+          </div>
+      </div>
 
 'drawer_content': |
     {% for child in children %}
@@ -136,8 +280,10 @@
                         {{- 'table_name=' ~ item.text -}}&
                         {{- 'component_id=' ~ item.component_id -}}"
                         hx-target="#table-content"
-                        >
+                        class="w-full" style="width:100%;">
+                        
                             {{ item.text }}
+                            
                         </a>
             {% else %}
                 <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
@@ -290,7 +436,7 @@
         </table>
     </div>
 
-'form': |
+'form1': |
     <form class="{{ attributes.class.value }}">
         {% for field in attributes.fields.value %}
             <div class="form-control w-full mb-4">
@@ -332,6 +478,59 @@
             </div>
         {% endfor %}
         <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text.value }}</button>
+    </form>
+
+'form': |
+    <form class="{{ attributes.class }}"
+          {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
+          {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
+          {% if attributes.hx_encoding %}hx-encoding="{{ attributes.hx_encoding }}"{% endif %}
+          {% if attributes.enctype %}enctype="{{ attributes.enctype }}"{% endif %}
+          {% for attr, value in attributes.items() %}
+              {% if attr not in ['class', 'fields', 'submit_text', 'hx_post', 'hx_target', 'hx_encoding', 'enctype'] %}
+                  {{ attr }}="{{ value }}"
+              {% endif %}
+          {% endfor %}>
+        {% for field in attributes.fields %}
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">{{ field.label }}</span>
+                </label>
+                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
+                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% elif field.type == 'textarea' %}
+                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
+                {% elif field.type == 'select' %}
+                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
+                        {% for option in field.options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                {% elif field.type == 'checkbox' %}
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
+                        <span class="ml-2">{{ field.checkboxLabel }}</span>
+                    </div>
+                {% elif field.type == 'radio' %}
+                    <div class="flex flex-col mt-2">
+                        {% for option in field.options %}
+                            <label class="flex items-center mb-2">
+                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
+                                <span class="ml-2">{{ option.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% elif field.type == 'file' %}
+                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% endif %}
+                {% if field.helpText %}
+                    <label class="label">
+                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
+                    </label>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text }}</button>
     </form>
 
 'navbar': |
@@ -377,10 +576,10 @@
 'modal_form': |
   <dialog id="{{ attributes.id.value }}" class="modal">
       <div method="dialog" class="modal-box">
-          <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
+          <h3 class="font-bold text-lg hidden">{{ attributes.title.value }}</h3>
           <div id="modal-content" class="modal-content">
           </div>
-          <div class="modal-action">
+          <div class="modal-action hidden">
             <form method="dialog">
               <button class="btn">Close</button>
             </form>
@@ -450,41 +649,41 @@
     <h2 class="text-xl font-bold mb-4">Edit {{ configs.table_name }}</h2>
     <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
         {% for column in configs.table_config['columns'] %}
-        {% if column['is_hidden'] %}
-        {% else %}
-        <div class="mb-4">
-            <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
-                {% if column['label'] %}
-                {{ column['label'] }}
-                {% else %}
-                {{ column['name'] }}
-                {% endif %}
-            </label>
-            {% if column['input_type'] == 'text' %}
-            <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                if column['configs.primary_key'] %}readonly{% endif %}
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            {% elif column['input_type'] == 'number' %}
-            <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                if column['configs.primary_key'] %}readonly{% endif %}
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            {% elif column['input_type'] == 'date' %}
-            <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                if column['configs.primary_key'] %}readonly{% endif %}
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            {% elif column['input_type'] == 'checkbox' %}
-            <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
-                %}checked{% endif %} {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
-            {% elif column['input_type'] == 'select' %}
-            <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                {% for option in column['options'] %}
-                <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
-                {% endfor %}
-            </select>
+            {% if column['is_hidden'] %}
+            {% else %}
+                <div class="mb-4">
+                    <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
+                        {% if column['label'] %}
+                        {{ column['label'] }}
+                        {% else %}
+                        {{ column['name'] }}
+                        {% endif %}
+                    </label>
+                    {% if column['input_type'] == 'text' %}
+                    <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                        if column['configs.primary_key'] %}readonly{% endif %}
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    {% elif column['input_type'] == 'number' %}
+                    <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                        if column['configs.primary_key'] %}readonly{% endif %}
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    {% elif column['input_type'] == 'date' %}
+                    <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
+                        if column['configs.primary_key'] %}readonly{% endif %}
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    {% elif column['input_type'] == 'checkbox' %}
+                    <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
+                        %}checked{% endif %} {% if column['configs.primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+                    {% elif column['input_type'] == 'select' %}
+                    <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['configs.primary_key'] %}disabled{% endif %}
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        {% for option in column['options'] %}
+                        <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </div>
             {% endif %}
-        </div>
-        {% endif %}
         {% endfor %}
         <div class="flex justify-end">
             <button type="button" onclick="hideModal()"
@@ -504,9 +703,12 @@
     </script>
 
 'alert': |
-    <div role="alert" class="alert {{ attributes.type.value }}">
+    <div role="alert"
+        {% for attr, value in attributes.items() %}
+            {{ attr }}="{{ value }}"
+        {% endfor %}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span>{{ attributes.message.value }}</span>
+        <span>{{ attributes.message }}</span>
     </div>
 
 'progress': |

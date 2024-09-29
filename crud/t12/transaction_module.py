@@ -1,11 +1,13 @@
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy import create_engine, MetaData, Table, select, and_, or_
+from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 import yaml
 import logging
 from typing import List, Dict, Any, Union
+import traceback
 
 import gv as gv
 
@@ -38,7 +40,7 @@ def get_db():
     finally:
         db.close()
 
-def load_data_from_yaml(filename: str = "chinook.yaml") -> Dict[str, Any]:
+def load_data_from_yaml1(filename: str = "chinook.yaml") -> Dict[str, Any]:
     try:
         with open(filename, "r") as file:
             return yaml.safe_load(file)
@@ -74,6 +76,33 @@ def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
             if step.get('data_to'):
                 gv.data[step.get('data_to')] = result
             return result
+        elif action == "get2":
+            query = select([table])
+            if "filter_values" in step:
+                filters = build_filter_clauses(step["filter_values"], table)
+                query = query.where(*filters)
+            if "fields" in step:
+                columns = [table.c[field] for field in step["fields"]]
+                query = query.with_only_columns(*columns)
+            result = db.execute(query).fetchall()
+            if step.get('data_to'):
+                gv.data[step.get('data_to')] = result
+            return result
+        if action == "get3":
+            if "fields" in step:
+                columns = [table.c[field] for field in step["fields"]]
+                query = select(*columns)
+            else:
+                query = select(table)
+
+            if "filter_values" in step:
+                filters = build_filter_clauses(step["filter_values"], table)
+                query = query.where(*filters)
+
+            result = db.execute(query).fetchall()
+            if step.get('data_to'):
+                gv.data[step.get('data_to')] = result
+            return result
         elif action == "file_create":
             try:
                 with open(step.get('file_name'), "w", encoding='utf-8') as file:
@@ -82,6 +111,13 @@ def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
                 logger.error(f"{e}")
                 return {}
             return result
+        elif action == "execute":
+            sql = step.get("sql")
+            if sql:
+                result = db.execute(text(sql))
+                return result.rowcount
+            else:
+                raise ValueError("SQL statement is missing for execute action")
         else:
             raise ValueError(f"不支持的操作: {action}")
     except Exception as e:
@@ -110,6 +146,7 @@ def build_filter_expressions(filter_values: List[Dict[str, Any]], table: Table) 
     return filters
 
 def build_query(step: Dict[str, Any], table: Table) -> Any:
+    print('build_query')
     columns = []
     for f in step.get("fields", [{"field": "*"}]):
         print(f)
@@ -135,7 +172,11 @@ def build_query(step: Dict[str, Any], table: Table) -> Any:
             query = query.join(right_table, and_(*join_on), isouter=j["type"] == "left")
 
     filter_values = step.get("filter_values", [])
+    print('filter_values')
+    print(filter_values)
     filters = build_filter_expressions(filter_values, table)
+
+    print(filters)
     if filters:
         query = query.filter(*filters)
 
@@ -271,7 +312,7 @@ def handle_operator(column: Any, operator: str, value: Any) -> Any:
         raise ValueError(f"不支持的操作符: {operator}")
 
 @app.get("/")
-def execute_all_transactions(db: SessionLocal = Depends(get_db)):
+def execute_all_transactions1(db: SessionLocal = Depends(get_db)):
     try:
         data = load_data_from_yaml()
         for transaction_data in data.get("transactions", []):
@@ -294,6 +335,120 @@ def execute_all_transactions(db: SessionLocal = Depends(get_db)):
         db.rollback()
         logger.error(f"Unexpected error executing transactions: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+import traceback
+
+
+def execute_all_transactions2(db: SessionLocal = Depends(get_db)):
+    try:
+        data = load_data_from_yaml()
+        for transaction_data in data.get("transactions", []):
+            transaction = Transaction(**transaction_data)
+            logger.info(f"Executing transaction: {transaction.name}")
+            for step in transaction.steps:
+                result = execute_step(step, db)
+                logger.info(f"Step execution result: {result}")
+        db.commit()
+        return {"message": "All transactions executed successfully."}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error executing transactions: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error executing transactions: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+import yaml
+from typing import Dict, Any
+
+def load_data_from_yaml(filename: str) -> Dict[str, Any]:
+    try:
+        with open(filename, "r") as file:
+            return yaml.safe_load(file)
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        logger.error(f"Error loading YAML data from {filename}: {e}")
+        return {}
+
+# @app.get("/")
+# def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
+#     try:
+#         data = load_data_from_yaml(config_file)
+
+#         if transaction_name is not None:
+#             transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
+#             if not transaction_data:
+#                 raise ValueError(f"Transaction {transaction_name} not found in {config_file}")
+#             transaction = Transaction(**transaction_data)
+#             for step in transaction.steps:
+#                 print('step')
+#                 print(step)
+#                 # 替换参数
+#                 for key, value in step.get('values', {}).items():
+#                     if isinstance(value, str) and value.startswith('{{') and value.endswith('}}'):
+#                         param_name = value.strip('{} ')
+#                         step['values'][key] = params.get(param_name, value)
+                        
+#                 result = execute_step(step, db)
+#                 logger.info(f"Step execution result: {result}")
+#         else:
+#             for transaction_data in data.get("transactions", []):
+#                 transaction = Transaction(**transaction_data)
+#                 print(transaction.name)
+#                 for step in transaction.steps:
+#                     result = execute_step(step, db)
+#                     logger.info(f"Step execution result: {result}")
+
+#         db.commit()
+#         return {"message": f"Transaction {transaction_name} executed successfully."}
+#     except SQLAlchemyError as e:
+#         db.rollback()
+#         logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
+#         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+#     except Exception as e:
+#         db.rollback()
+#         logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
+#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/")
+def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
+    try:
+        data = load_data_from_yaml(config_file)
+        transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
+        if not transaction_data:
+            raise ValueError(f"Transaction {transaction_name} not found in {config_file}")
+
+        transaction = Transaction(**transaction_data)
+        for step in transaction.steps:
+            # 替换 values 中的参数
+            if 'values' in step:
+                for key, value in step['values'].items():
+                    if isinstance(value, str) and value.startswith('{{') and value.endswith('}}'):
+                        param_name = value.strip('{} ')
+                        step['values'][key] = params.get(param_name, value)
+            
+            # 替换 filter_values 中的参数
+            if 'filter_values' in step:
+                for filter_item in step['filter_values']:
+                    if isinstance(filter_item['value'], str) and filter_item['value'].startswith('{{') and filter_item['value'].endswith('}}'):
+                        param_name = filter_item['value'].strip('{} ')
+                        filter_item['value'] = params.get(param_name, filter_item['value'])
+            
+            result = execute_step(step, db)
+            logger.info(f"Step execution result: {result}")
+        
+        db.commit()
+        return result  # 返回最后一个步骤的结果
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

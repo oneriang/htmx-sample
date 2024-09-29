@@ -1,7 +1,7 @@
 import os
 import uvicorn
 from datetime import datetime
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -12,18 +12,29 @@ from sqlalchemy.sql import expression
 from sqlalchemy.sql.sqltypes import String, Integer, DateTime, Date, Boolean, Enum
 from sqlalchemy import inspect, String, Integer, Float, DateTime, Date, Boolean, Enum
 
+from fastapi.security import OAuth2PasswordRequestForm
+from passlib.context import CryptContext
+
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Union, Optional
 from jinja2 import Template
+
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer
 
 import yaml
 
 import logging
 
+import copy
+
 import transaction_module
 from transaction_module import convert_value
 
 import gv as gv
+
 
 app = FastAPI()
 
@@ -53,6 +64,12 @@ def get_db():
     finally:
         db.close()
 
+# 设置密码哈希
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# def get_password_hash(password):
+#     return pwd_context.hash(password)
+    
 def load_data_from_html(filename: str) -> Optional[str]:
     try:
         with open(filename, "r", encoding="utf-8") as file:
@@ -63,6 +80,8 @@ def load_data_from_html(filename: str) -> Optional[str]:
 
 def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
     try:
+        if filename is None:
+            filename = 'yaml_config.yaml'
         with open(filename, "r", encoding="utf-8") as file:
             return yaml.safe_load(file)
     except (IOError, yaml.YAMLError) as e:
@@ -83,22 +102,131 @@ def load_data():
 
 load_data()
 
+
+
+# -------------
+# 密码加密上下文
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# JWT 相关设置
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_password(plain_password, hashed_password):
+    print(plain_password)
+    print(hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    print(password)
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: str
+
+
+# @app.post("/token")
+# async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+#     db = SessionLocal()
+#     try:
+#         user = db.execute(select(metadata.tables['Users']).where(
+#             metadata.tables['Users'].c.Username == form_data.username
+#         )).first()
+#         if not user or not verify_password(form_data.password, user.Password):
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Incorrect username or password",
+#                 headers={"WWW-Authenticate": "Bearer"},
+#             )
+#         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+#         access_token = create_access_token(
+#             data={"sub": user.Username}, expires_delta=access_token_expires
+#         )
+#         return {"access_token": access_token, "token_type": "bearer"}
+#     finally:
+#         db.close()
+
+@app.post("/login", response_class=HTMLResponse)
+async def login(request: Request):
+    form_data = await request.form()
+    params = {key: value for key, value in form_data.items()}
+    print(params)
+    try:
+        with SessionLocal() as db:
+            result = transaction_module.execute_transactions(
+                db, 
+                "UserLogin", 
+                params,
+                config_file="login_txn.yaml"
+            )
+        print(result)
+        user_data = gv.data.get("user_data", [])
+
+        if not user_data or not verify_password(params['password'], user_data[0]["Password"]):
+            return "<div class='alert alert-error'>Incorrect username or password</div>"
+        
+        user = user_data[0]
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["Username"], "role": user["Role"]},
+            expires_delta=access_token_expires
+        )
+        
+        response = f"<div class='alert alert-success'>Login successful! Welcome, {user['Username']}!</div>"
+        response += f"<script>localStorage.setItem('token', '{access_token}');</script>"
+        return response
+    except Exception as e:
+        return f"<div class='alert alert-error'>Login failed: {str(e)}</div>"
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    db = SessionLocal()
+    try:
+        user = db.execute(select(metadata.tables['Users']).where(
+            metadata.tables['Users'].c.Username == username
+        )).first()
+        if user is None:
+            raise credentials_exception
+        return user
+    finally:
+        db.close()
+
+@app.get("/protected")
+async def protected_route(current_user: dict = Depends(get_current_user)):
+    return {"message": f"Hello, {current_user.Username}"}
+    
+# -------------
+
 def get_configs():
     return get_table_config()
-    
-def getTables():
-    tables = get_table_names()
-    values = []
-    for t in tables:
-        values.append(
-            {
-                'link': '/table/' + t,
-                'text': t
-            }
-        )
-    return values
 
-def getTables1():
+def getTables():
     tables = get_table_names()
     values = []
     for t in tables:
@@ -148,9 +276,10 @@ def resolve_component(comp):
     return comp
 
 # 修改加载配置函数
-def load_page_config() -> Dict[str, Any]:
+def load_page_config(config_name = None) -> Dict[str, Any]:
     # config = yaml.safe_load(YAML_CONFIG)
-    config = gv.YAML_CONFIG
+    gv.YAML_CONFIG = load_data_from_yaml(config_name)
+    config = copy.deepcopy(gv.YAML_CONFIG)
     
     gv.component_dict = {
         comp['id']: comp 
@@ -190,6 +319,60 @@ async def render_page(request: Request):
         components=rendered_components,
         min=min
     )
+
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request):
+    gv.request = request
+    
+    load_data()  # 重新加载配置，确保使用最新的配置
+
+    page_config = load_page_config('login_config.yaml')
+    
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    return template.render(
+        page_title="User Management",
+        components=rendered_components,
+        min=min
+    )
+
+
+@app.get("/register", response_class=HTMLResponse)
+async def register(request: Request):
+    gv.request = request
+    
+    load_data()  # 重新加载配置，确保使用最新的配置
+
+    page_config = load_page_config('register_config.yaml')
+    
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    return template.render(
+        page_title="User Management",
+        components=rendered_components,
+        min=min
+    )
+
+@app.post("/register", response_class=HTMLResponse)
+async def register(request: Request):
+    form_data = await request.form()
+    params = {key: value for key, value in form_data.items()}
+    params['password'] = get_password_hash(params['password'])
+    print(params['password'])
+    try:
+        with SessionLocal() as db:
+            result = transaction_module.execute_transactions(
+                db, 
+                "RegisterUser", 
+                params,
+                config_file="register_txn.yaml"
+            )
+        return f"<div class='alert alert-success'>User registered successfully!</div>"
+    except Exception as e:
+        return f"<div class='alert alert-error'>Registration failed: {str(e)}</div>"
+
 
 @app.get("/component", response_class=HTMLResponse)
 async def rendered_component(request: Request):
@@ -738,13 +921,27 @@ async def get_record(table_name: str, id: str):
         else:
             raise HTTPException(status_code=404, detail="Record not found")
 
+# @app.get("/execute_all_transactions")
+# def execute_all_transactions():
+#     try:
+#         transaction_module.execute_all_transactions(SessionLocal())
+#     except Exception as e:
+#         logger.error(f"Unexpected error executing transactions: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.get("/execute_all_transactions")
-def execute_all_transactions():
+def execute_transactions():
     try:
-        transaction_module.execute_all_transactions(SessionLocal())
+        with SessionLocal() as db:
+            return transaction_module.execute_all_transactions(db)
+    except HTTPException as e:
+        logger.error(f"Error executing transactions: {e.detail}")
+        logger.error(traceback.format_exc())
+        raise
     except Exception as e:
-        logger.error(f"Unexpected error executing transactions: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(

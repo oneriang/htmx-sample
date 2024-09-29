@@ -1,0 +1,9 @@
+transactions:
+  - name: RegisterUser
+    steps:
+      - action: insert
+        table: Users
+        values:
+          Username: '{{ username }}'
+          Password: '{{ password }}'
+          Email: '{{ email }}'

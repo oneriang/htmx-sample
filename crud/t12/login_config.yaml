@@ -1,0 +1,55 @@
+title: Responsive Dashboard with Drawers
+# component_definitions:
+#   login:
+#     id: login
+#     type: layout_login
+#     children:
+#       - type: form
+#         attributes:
+#           id: login_form
+#           class: mt-4 max-w-md mx-auto
+#           fields:
+#             - {name: username, type: text, label: Username, required: true}
+#             - {name: password, type: password, label: Password, required: true}
+#           submit_text: Login
+
+# components:
+#   - $ref: login
+
+component_definitions:
+  # ... 其他定义 ...
+
+  login_form:
+    id: login_form
+    type: form
+    attributes:
+      class: mt-4 max-w-md mx-auto
+      hx_post: /login
+      hx_target: "#login-result"
+      hx_encoding: multipart/form-data
+      enctype: application/x-www-form-urlencoded
+      fields:
+        - name: username
+          type: text
+          label: Username
+          placeholder: Enter your username
+          required: true
+        - name: password
+          type: password
+          label: Password
+          placeholder: Enter your password
+          required: true
+      submit_text: Login
+
+  login_page:
+    id: login_page
+    type: layout_login
+    children:
+      - $ref: login_form
+      - type: alert
+        attributes:
+          id: login-result
+
+components:
+  # ... 其他组件 ...
+  - $ref: login_page

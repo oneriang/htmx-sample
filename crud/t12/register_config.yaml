@@ -1,0 +1,60 @@
+title: Responsive Dashboard with Drawers
+# component_definitions:
+#   register:
+#     id: register
+#     type: layout_login
+#     children:
+#       - type: form
+#         attributes:
+#           id: registration_form
+#           class: mt-4 max-w-md mx-auto
+#           fields:
+#             - {name: username, type: text, label: Username, required: true}
+#             - {name: email, type: email, label: Email, required: true}
+#             - {name: password, type: password, label: Password, required: true}
+#           submit_text: Register
+
+# components:
+#   - $ref: register
+
+component_definitions:
+  # ... 其他定义 ...
+
+  registration_form:
+    id: registration_form
+    type: form
+    attributes:
+      class: mt-4 max-w-md mx-auto
+      hx_post: /register
+      hx_target: "#registration-result"
+      hx_encoding: multipart/form-data
+      enctype: application/x-www-form-urlencoded
+      fields:
+        - name: username
+          type: text
+          label: Username
+          placeholder: Enter your username
+          required: true
+        - name: email
+          type: email
+          label: Email
+          placeholder: Enter your email
+          required: true
+        - name: password
+          type: password
+          label: Password
+          placeholder: Enter your password
+          required: true
+      submit_text: Register
+
+  registration_page:
+    id: registration_page
+    type: layout_registration
+    children:
+      - $ref: registration_form
+      - type: alert
+        attributes:
+          id: registration-result
+
+components:
+  - $ref: registration_page

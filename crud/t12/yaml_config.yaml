@@ -4,17 +4,19 @@ component_definitions:
     id: main_layout
     type: layout
     children:
-      generic:
-        - type: btn
-        - $ref: button
-        - $ref: button1
-        - type: card
       left_sidebar:
-        - $ref: table_list1
+        - $ref: table_list
       main_content:
         - $ref: main_content
       right_sidebar:
-        - $ref: table_list
+        - type: alert
+          attributes:
+            type:
+              type: string
+              value: alert-info
+            message:
+              type: string
+              value: This is an informational message.
         
   main_content:
     id: main_content
@@ -23,38 +25,11 @@ component_definitions:
       - type: grid
         children:
           - $ref: main_data_table
-          - $ref: registration_form
-          - type: skeleton
-            attributes:
-              width:
-                type: string
-                value: "32"
-              height:
-                type: string
-                value: "32"
-          - type: alert
-            attributes:
-              type:
-                type: string
-                value: alert-info
-              message:
-                type: string
-                value: This is an informational message.
-          - type: file_input
-            attributes:
-              label:
-                type: string
-                value: "Upload file"
-          
+
   table_list:
     id: table_list
     type: list
     value: getTables
-    
-  table_list1:
-    id: table_list1
-    type: list
-    value: getTables1
 
   main_data_table:
     id: main_data_table
@@ -168,8 +143,47 @@ component_definitions:
       submit_text:
         type: string
         value: Register
+        
+  user_management1:
+    id: user_management
+    type: form
+    attributes:
+      id: login_form
+      class: mt-4 max-w-md mx-auto
+      fields:
+        - {name: username, type: text, label: Username, required: true}
+        - {name: password, type: password, label: Password, required: true}
+      submit_text: Login
+
+  login:
+    id: login
+    type: layout_login
+    children:
+      - type: form
+        attributes:
+          id: login_form
+          class: mt-4 max-w-md mx-auto
+          fields:
+            - {name: username, type: text, label: Username, required: true}
+            - {name: password, type: password, label: Password, required: true}
+          submit_text: Login
+
+  register:
+    id: register
+    type: layout_login
+    children:
+      - type: form
+        attributes:
+          id: registration_form
+          class: mt-4 max-w-md mx-auto
+          fields:
+            - {name: username, type: text, label: Username, required: true}
+            - {name: email, type: email, label: Email, required: true}
+            - {name: password, type: password, label: Password, required: true}
+          submit_text: Register
 
 components:
   - $ref: main_layout
   - $ref: modal_form
   - $ref: modal_message
+  # - $ref: login

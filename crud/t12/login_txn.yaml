@@ -1,0 +1,15 @@
+transactions:
+  - name: UserLogin
+    steps:
+      - action: get
+        table: Users
+        fields:
+          - field: UserID
+          - field: Username
+          - field: Password
+          - field: Role
+        filter_values:
+          - field: Username
+            operator: eq
+            value: '{{ username }}'
+        data_to: user_data
