@@ -37,6 +37,16 @@
             max-width: 500px;
         }
     </style>
+    <style>
+        #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+    </style>
 
     <script>
         function showModal() {
@@ -53,6 +63,23 @@
             }
         });
     </script>
+    
+    <script>
+      document.body.addEventListener('htmx:configRequest', function(event) {
+        var token = localStorage.getItem('token');
+        if (token) {
+          event.detail.headers['Authorization'] = 'Bearer ' + token;
+        }
+      });
+    </script>
+    
+    <script>
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        if (evt.detail.xhr.status === 401) {
+            window.location.href = '/login';
+        }
+    });
+</script>
 </body>
 
 </html>

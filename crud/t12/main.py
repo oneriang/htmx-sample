@@ -81,7 +81,7 @@ def load_data_from_html(filename: str) -> Optional[str]:
 def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
     try:
         if filename is None:
-            filename = 'yaml_config.yaml'
+            filename = 'main_config.yaml'
         with open(filename, "r", encoding="utf-8") as file:
             return yaml.safe_load(file)
     except (IOError, yaml.YAMLError) as e:
@@ -98,7 +98,7 @@ def load_data():
   
   gv.HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
   
-  gv.YAML_CONFIG = load_data_from_yaml('yaml_config.yaml')
+  gv.YAML_CONFIG = load_data_from_yaml('main_config.yaml')
 
 load_data()
 
@@ -138,28 +138,6 @@ class UserCreate(BaseModel):
     username: str
     password: str
     email: str
-
-
-# @app.post("/token")
-# async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-#     db = SessionLocal()
-#     try:
-#         user = db.execute(select(metadata.tables['Users']).where(
-#             metadata.tables['Users'].c.Username == form_data.username
-#         )).first()
-#         if not user or not verify_password(form_data.password, user.Password):
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Incorrect username or password",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-#         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-#         access_token = create_access_token(
-#             data={"sub": user.Username}, expires_delta=access_token_expires
-#         )
-#         return {"access_token": access_token, "token_type": "bearer"}
-#     finally:
-#         db.close()
 
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request):
@@ -304,8 +282,8 @@ def load_page_config(config_name = None) -> Dict[str, Any]:
     return config
 
 # 主渲染函数保持不变
-@app.get("/page", response_class=HTMLResponse)
-async def render_page(request: Request):
+@app.get("/", response_class=HTMLResponse)
+async def render_page(request: Request, current_user: dict = Depends(get_current_user)):
     gv.request = request
     
     load_data()
@@ -389,7 +367,7 @@ async def rendered_component(request: Request):
     return generate_html(gv.component_dict[component_id])
 
 
-@app.get("/")
+@app.get("/tables")
 async def read_root(request: Request):
     tables = get_table_names()
     return templates.TemplateResponse("all_in_one.html", {"request": request, "tables": tables})
@@ -850,6 +828,72 @@ async def edit_item(table_name: str, id: str, request: Request):
         print(e)
         return {"success": False, "message": str(e)}
 
+@app.get("/delete", response_class=HTMLResponse)
+async def delete_form(request: Request):
+    gv.request = request
+
+    table_name = None
+    id = None
+      
+    query_params = dict(request.query_params)
+
+    if 'table_name' in query_params:
+      table_name = query_params['table_name']
+
+    if 'id' in query_params:
+      id = query_params['id']
+
+    if table_name is None:
+      table_name = 'Genre'
+    
+    if id is None:
+      id = 22
+
+    table_config = get_table_config(table_name)
+    
+    table = metadata.tables[table_name]
+
+    primary_key = get_primary_key(table)
+     
+    with SessionLocal() as session:
+        stmt = select(table).where(getattr(table.c, primary_key) == id)
+        result = session.execute(stmt).fetchone()._asdict()
+    
+    if result:
+      
+        data = dict(result)
+        
+        component_id = None
+    
+        if 'component_id' in query_params:
+          component_id = query_params['component_id']
+        
+        if component_id is None:
+          component_id = 'form_delete'
+          
+        load_page_config()
+
+        gv.component_dict[component_id]['config'] = {
+            'table_name':table_name,
+            'id':id,
+            'data':data,
+            'primary_key':primary_key,
+            'table_config':table_config
+        }
+        
+        return generate_html(gv.component_dict[component_id])
+        '''        
+        rendered_components = [generate_html(gv.component_dict[component_id])]
+
+        template = Template(BASE_HTML)
+        return template.render(
+            components=rendered_components,
+            min=min
+        )
+        '''
+        
+    raise HTTPException(status_code=404, detail="Item not found")
+
 @app.delete("/delete/{table_name}/{id}")
 async def delete_item(table_name: str, id: str):
     if table_name not in metadata.tables:
@@ -920,14 +964,6 @@ async def get_record(table_name: str, id: str):
             return dict(result._mapping)
         else:
             raise HTTPException(status_code=404, detail="Record not found")
-
-# @app.get("/execute_all_transactions")
-# def execute_all_transactions():
-#     try:
-#         transaction_module.execute_all_transactions(SessionLocal())
-#     except Exception as e:
-#         logger.error(f"Unexpected error executing transactions: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/execute_all_transactions")
 def execute_transactions():

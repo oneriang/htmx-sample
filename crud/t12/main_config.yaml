@@ -97,6 +97,10 @@ component_definitions:
     id: form_edit
     type: form_edit
 
+  form_delete:
+    id: form_delete
+    type: form_delete
+
   registration_form:
     id: registration_form
     type: form

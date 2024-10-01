@@ -311,56 +311,7 @@ def handle_operator(column: Any, operator: str, value: Any) -> Any:
     except KeyError:
         raise ValueError(f"不支持的操作符: {operator}")
 
-@app.get("/")
-def execute_all_transactions1(db: SessionLocal = Depends(get_db)):
-    try:
-        data = load_data_from_yaml()
-        for transaction_data in data.get("transactions", []):
-            transaction = Transaction(**transaction_data)
-            print(transaction.name)
-            for step in transaction.steps:
-                result = execute_step(step, db)
-                logger.info(f"Step execution result: {result}")
-        db.commit()
-        print(gv.data)
-        return {
-            "message": "All transactions executed successfully."
-            , 'data': result
-            }
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error(f"Error executing transactions: {e}")
-        raise HTTPException(status_code=500, detail="Database error")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Unexpected error executing transactions: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
 import traceback
-
-
-def execute_all_transactions2(db: SessionLocal = Depends(get_db)):
-    try:
-        data = load_data_from_yaml()
-        for transaction_data in data.get("transactions", []):
-            transaction = Transaction(**transaction_data)
-            logger.info(f"Executing transaction: {transaction.name}")
-            for step in transaction.steps:
-                result = execute_step(step, db)
-                logger.info(f"Step execution result: {result}")
-        db.commit()
-        return {"message": "All transactions executed successfully."}
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error(f"Error executing transactions: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Unexpected error executing transactions: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
 import yaml
 from typing import Dict, Any
 
@@ -371,46 +322,6 @@ def load_data_from_yaml(filename: str) -> Dict[str, Any]:
     except (FileNotFoundError, yaml.YAMLError) as e:
         logger.error(f"Error loading YAML data from {filename}: {e}")
         return {}
-
-# @app.get("/")
-# def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
-#     try:
-#         data = load_data_from_yaml(config_file)
-
-#         if transaction_name is not None:
-#             transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
-#             if not transaction_data:
-#                 raise ValueError(f"Transaction {transaction_name} not found in {config_file}")
-#             transaction = Transaction(**transaction_data)
-#             for step in transaction.steps:
-#                 print('step')
-#                 print(step)
-#                 # 替换参数
-#                 for key, value in step.get('values', {}).items():
-#                     if isinstance(value, str) and value.startswith('{{') and value.endswith('}}'):
-#                         param_name = value.strip('{} ')
-#                         step['values'][key] = params.get(param_name, value)
-                        
-#                 result = execute_step(step, db)
-#                 logger.info(f"Step execution result: {result}")
-#         else:
-#             for transaction_data in data.get("transactions", []):
-#                 transaction = Transaction(**transaction_data)
-#                 print(transaction.name)
-#                 for step in transaction.steps:
-#                     result = execute_step(step, db)
-#                     logger.info(f"Step execution result: {result}")
-
-#         db.commit()
-#         return {"message": f"Transaction {transaction_name} executed successfully."}
-#     except SQLAlchemyError as e:
-#         db.rollback()
-#         logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
-#         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-#     except Exception as e:
-#         db.rollback()
-#         logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
-#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/")
 def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
