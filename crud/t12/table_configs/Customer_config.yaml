@@ -77,4 +77,4 @@ columns:
   nullable: true
   primary_key: 0
   type: INTEGER
-table_name: Customer
+name: Customer

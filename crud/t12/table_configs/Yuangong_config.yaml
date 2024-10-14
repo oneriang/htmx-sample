@@ -89,4 +89,4 @@ columns:
   nullable: true
   primary_key: 0
   type: NVARCHAR(60)
-table_name: Yuangong
+name: Yuangong

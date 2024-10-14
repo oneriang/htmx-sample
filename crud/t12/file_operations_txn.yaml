@@ -1,0 +1,10 @@
+transactions:
+  - name: file_operations
+    steps:
+      - action: upload_file
+        file: "{{uploaded_file}}"
+        file_name: "{{file_name}}"
+        folder_path: "{{folder_path}}"
+        #destination: "./uploaded/{{filename}}"
+      - action: download_file
+        file_path: "./download/file.txt"

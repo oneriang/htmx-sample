@@ -1,0 +1,27 @@
+columns:
+- input_type: number
+  label: InvoiceId
+  name: InvoiceId
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: CustomerName
+  name: CustomerName
+  nullable: true
+  primary_key: 0
+  type: 'NULL'
+- input_type: date
+  label: InvoiceDate
+  name: InvoiceDate
+  nullable: true
+  primary_key: 0
+  type: DATETIME
+- input_type: text
+  label: TotalAmount
+  name: TotalAmount
+  nullable: true
+  primary_key: 0
+  type: 'NULL'
+name: vw_invoice_details
+type: view

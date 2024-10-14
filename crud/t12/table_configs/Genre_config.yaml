@@ -11,5 +11,5 @@ columns:
   nullable: true
   primary_key: 0
   type: NVARCHAR(120)
-table_name: Genre
+name: Genre
 component_edit_id: form_edit

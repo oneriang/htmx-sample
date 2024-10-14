@@ -17,4 +17,4 @@ columns:
   nullable: true
   primary_key: 0
   type: VARCHAR
-table_name: items
+name: items

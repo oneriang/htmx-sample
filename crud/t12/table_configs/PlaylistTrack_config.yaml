@@ -11,4 +11,4 @@ columns:
   nullable: false
   primary_key: 2
   type: INTEGER
-table_name: PlaylistTrack
+name: PlaylistTrack

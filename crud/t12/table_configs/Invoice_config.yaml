@@ -53,4 +53,4 @@ columns:
   nullable: false
   primary_key: 0
   type: NUMERIC(10, 2)
-table_name: Invoice
+name: Invoice

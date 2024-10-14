@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-User Chatroom</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div id="username-container">
+        <input type="text" id="username" placeholder="Enter your username">
+        <button onclick="joinChat()">Join Chat</button>
+    </div>
+    <div id="chat-container" style="display: none;">
+        <div id="chat-messages"></div>
+        <form id="chat-form" ws-send>
+            <input type="text" name="message" placeholder="Type a message...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        function joinChat() {
+            const username = document.getElementById('username').value.trim();
+            if (username) {
+                document.getElementById('username-container').style.display = 'none';
+                document.getElementById('chat-container').style.display = 'block';
+
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.setAttribute('hx-ext', 'ws');
+                chatContainer.setAttribute('ws-connect', `/ws/${username}`);
+                htmx.process(chatContainer);
+            }
+        }
+    </script>
+</body>
+
+</html>

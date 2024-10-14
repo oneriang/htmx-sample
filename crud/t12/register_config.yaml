@@ -1,25 +1,5 @@
 title: Responsive Dashboard with Drawers
-# component_definitions:
-#   register:
-#     id: register
-#     type: layout_login
-#     children:
-#       - type: form
-#         attributes:
-#           id: registration_form
-#           class: mt-4 max-w-md mx-auto
-#           fields:
-#             - {name: username, type: text, label: Username, required: true}
-#             - {name: email, type: email, label: Email, required: true}
-#             - {name: password, type: password, label: Password, required: true}
-#           submit_text: Register
-
-# components:
-#   - $ref: register
-
 component_definitions:
-  # ... 其他定义 ...
-
   registration_form:
     id: registration_form
     type: form
@@ -46,10 +26,45 @@ component_definitions:
           placeholder: Enter your password
           required: true
       submit_text: Register
+    children:
+      - type: input
+        attributes:
+          name: username
+          type: text
+          label: Username
+          placeholder: Enter your username
+          required: true
+      - type: input
+        attributes:
+          name: email
+          type: email
+          label: Email
+          placeholder: Enter your email
+          required: true
+      - type: input
+        attributes:
+          name: password
+          type: password
+          label: Password
+          placeholder: Enter your password
+          required: true
+      - type: button
+        attributes:
+          class: btn btn-primary w-full mt-4
+          id: btn_register
+          text: Register
+      - type: link
+        attributes:
+          class: btn btn-primary w-full mt-4
+          id: link_login
+          text: Lgoin
+          href: /login
 
   registration_page:
     id: registration_page
     type: layout_registration
+    attributes:
+      title: ZHY                        
     children:
       - $ref: registration_form
       - type: alert

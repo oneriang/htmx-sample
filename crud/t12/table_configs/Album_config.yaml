@@ -23,4 +23,4 @@ columns:
   nullable: true
   primary_key: 0
   type: BLOB
-table_name: Album
+name: Album

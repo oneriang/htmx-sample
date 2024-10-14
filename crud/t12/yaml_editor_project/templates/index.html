@@ -1,0 +1,430 @@
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YAML Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+    <style>
+        #editor { 
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>YAML Editor</h1>
+    <div>
+        <select id="file-list">
+            <option value="">Select a file</option>
+        </select>
+        <button onclick="loadFile()">Open</button>
+        <button onclick="newFile()">New File</button>
+        <button onclick="saveFile()">Save</button>
+    </div>
+    <div id="editor"></div>
+
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/yaml");
+
+        function updateFileList() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(data => {
+                    var select = document.getElementById('file-list');
+                    var currentValue = select.value;
+                    select.innerHTML = '<option value="">Select a file</option>';
+                    data.files.forEach(function(file) {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
+                    });
+                    select.value = currentValue;  // 保持当前选择
+                });
+        }
+
+        function loadFile() {
+            var filename = document.getElementById('file-list').value;
+            if (filename) {
+                fetch(`/file/${filename}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        editor.setValue(data.content);
+                        editor.clearSelection();
+                    });
+            }
+        }
+
+        function newFile() {
+            var filename = prompt("Enter new file name:");
+            if (filename) {
+                fetch('/new', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({filename: filename}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    updateFileList();
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('Failed to create new file');
+                });
+            }
+        }
+
+        function saveFile() {
+            var filename = document.getElementById('file-list').value;
+            if (filename) {
+                var content = editor.getValue();
+                fetch(`/file/${filename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: content
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('Failed to save file');
+                });
+            } else {
+                alert('Please select a file to save');
+            }
+        }
+
+        // 初始加载文件列表
+        updateFileList();
+
+        // 每5秒更新一次文件列表
+        setInterval(updateFileList, 5000);
+    </script>
+</body>
+</html>
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YAML Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #file-list {
+            width: 250px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+        }
+        #file-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #file-list li {
+            cursor: pointer;
+            padding: 5px;
+            margin: 2px 0;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+        }
+        #file-list li:hover {
+            background-color: #d0d0d0;
+        }
+        #editor-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #tab-bar {
+            display: flex;
+            background-color: #f0f0f0;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #e0e0e0;
+            margin-right: 5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: none;
+        }
+        .tab-close {
+            margin-left: 5px;
+            color: #888;
+            font-size: 14px;
+        }
+        .tab-close:hover {
+            color: #f00;
+        }
+        #editors {
+            flex-grow: 1;
+            position: relative;
+        }
+        .editor {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+        }
+        .editor.active {
+            display: block;
+        }
+        #new-file-btn, #save-btn, #refresh-btn, #set-folder-btn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #new-file-btn:hover, #save-btn:hover, #refresh-btn:hover, #set-folder-btn:hover {
+            background-color: #45a049;
+        }
+        #save-btn, #refresh-btn, #set-folder-btn {
+            margin-left: 10px;
+        }
+        #folder-input {
+            width: 100%;
+            margin-top: 10px;
+            padding: 5px;
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #file-list {
+                width: auto;
+                height: 200px;
+            }
+            #editor-container {
+                height: calc(100vh - 240px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="file-list">
+        <h2>Files</h2>
+        <input type="text" id="folder-input" placeholder="Enter server folder path">
+        <button id="set-folder-btn" onclick="setFolder()">Set Folder</button>
+        <ul id="files"></ul>
+        <button id="new-file-btn" onclick="newFile()">New File</button>
+        <button id="save-btn" onclick="saveActiveFile()">Save</button>
+        <button id="refresh-btn" onclick="updateFileList()">Refresh</button>
+    </div>
+    <div id="editor-container">
+        <div id="tab-bar"></div>
+        <div id="editors"></div>
+    </div>
+
+    <script>
+        let editors = {};
+        let activeEditor = null;
+
+        function updateFileList() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(data => {
+                    const fileList = document.getElementById('files');
+                    fileList.innerHTML = '';
+                    data.files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.textContent = file;
+                        li.onclick = () => confirmOpen(file);
+                        fileList.appendChild(li);
+                    });
+                });
+        }
+
+        function setFolder() {
+            const folderPath = document.getElementById('folder-input').value;
+            fetch('/set_folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder: folderPath })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                updateFileList();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to set folder');
+            });
+        }
+
+        function confirmOpen(filename) {
+            if (confirm(`Do you want to open ${filename}?`)) {
+                openFile(filename);
+            }
+        }
+
+        function openFile(filename) {
+            if (editors[filename]) {
+                activateEditor(filename);
+                return;
+            }
+
+            fetch(`/file/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    createEditor(filename, data.content);
+                });
+        }
+
+        function createEditor(filename, content) {
+            const tabBar = document.getElementById('tab-bar');
+            const editorsContainer = document.getElementById('editors');
+
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.innerHTML = `${filename}<span class="tab-close" onclick="closeEditor('${filename}')">&times;</span>`;
+            tab.onclick = (e) => {
+                if (e.target !== tab.querySelector('.tab-close')) {
+                    activateEditor(filename);
+                }
+            };
+            tabBar.appendChild(tab);
+
+            const editorDiv = document.createElement('div');
+            editorDiv.className = 'editor';
+            editorDiv.id = `editor-${filename}`;
+            editorsContainer.appendChild(editorDiv);
+
+            const editor = ace.edit(editorDiv.id);
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/yaml");
+            editor.setValue(content);
+
+            editors[filename] = { editor, tab, editorDiv };
+            activateEditor(filename);
+        }
+
+        function activateEditor(filename) {
+            if (activeEditor) {
+                activeEditor.tab.classList.remove('active');
+                activeEditor.editorDiv.classList.remove('active');
+            }
+            activeEditor = editors[filename];
+            activeEditor.tab.classList.add('active');
+            activeEditor.editorDiv.classList.add('active');
+        }
+
+        function closeEditor(filename) {
+            if (editors[filename]) {
+                editors[filename].tab.remove();
+                editors[filename].editorDiv.remove();
+                delete editors[filename];
+
+                if (activeEditor === editors[filename]) {
+                    activeEditor = null;
+                    const remainingEditors = Object.keys(editors);
+                    if (remainingEditors.length > 0) {
+                        activateEditor(remainingEditors[0]);
+                    }
+                }
+            }
+        }
+
+        function newFile() {
+            const filename = prompt("Enter new file name:");
+            if (filename) {
+                fetch('/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({filename: filename}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    updateFileList();
+                    openFile(filename);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to create new file');
+                });
+            }
+        }
+
+        function saveActiveFile() {
+            if (!activeEditor) {
+                alert('No file is currently open');
+                return;
+            }
+
+            const filename = activeEditor.tab.textContent.replace('×', '').trim();
+            const content = activeEditor.editor.getValue();
+
+            fetch(`/file/${filename}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: content
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save file');
+            });
+        }
+
+        // 初始加载文件列表
+        updateFileList();
+
+        // 添加保存快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveActiveFile();
+            }
+        });
+    </script>
+</body>
+</html>

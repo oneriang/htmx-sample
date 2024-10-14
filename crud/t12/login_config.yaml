@@ -1,24 +1,5 @@
 title: Responsive Dashboard with Drawers
-# component_definitions:
-#   login:
-#     id: login
-#     type: layout_login
-#     children:
-#       - type: form
-#         attributes:
-#           id: login_form
-#           class: mt-4 max-w-md mx-auto
-#           fields:
-#             - {name: username, type: text, label: Username, required: true}
-#             - {name: password, type: password, label: Password, required: true}
-#           submit_text: Login
-
-# components:
-#   - $ref: login
-
 component_definitions:
-  # ... 其他定义 ...
-
   login_form:
     id: login_form
     type: form
@@ -40,11 +21,69 @@ component_definitions:
           placeholder: Enter your password
           required: true
       submit_text: Login
+    children:
+      - type: input
+        attributes:
+          name: username
+          type: text
+          label: Username
+          placeholder: Enter your username
+          required: true
+      - type: input
+        attributes:
+          name: password
+          type: password
+          label: Password
+          placeholder: Enter your password
+          required: true
+      - type: button
+        attributes:
+          class: btn btn-primary w-full mt-4
+          id: btn_logon
+          type: submit
+          text: login
+      - type: link
+        attributes:
+          class: btn btn-primary w-full mt-4
+          id: link_register
+          text: Register
+          href: /register
+  
+          
+  form_test:
+    id: form_test
+    type: form
+    attributes:
+      class: mt-4 max-w-md mx-auto
+    children:
+      - type: input
+        attributes:
+          name: username
+          type: text
+          label: Username
+          placeholder: Enter your username
+          required: true
+      - type: input
+        attributes:
+          name: password
+          type: password
+          label: Password
+          placeholder: Enter your password
+          required: true
+      - type: button
+        attributes: 
+          id: button
+          text: ok
+          hx_get: /protected
+          onclick: modal_message.showModal()
 
   login_page:
     id: login_page
     type: layout_login
+    attributes:
+      title: ZHY
     children:
+      #- $ref: form_test
       - $ref: login_form
       - type: alert
         attributes:

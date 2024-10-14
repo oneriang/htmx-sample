@@ -1,5 +1,12 @@
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Response, Form
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+import shutil
+import os
 from sqlalchemy import create_engine, MetaData, Table, select, and_, or_
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
@@ -22,6 +29,18 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./Chinook.db"
 
 # Create FastAPI application instance
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/", StaticFiles(directory="static",html = True), name="static")
 
 # Create database connection engine
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -53,7 +72,36 @@ class Transaction:
         self.name = name
         self.steps = steps
 
-def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
+from fastapi import UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
+import shutil
+import os
+from typing import List
+import magic
+
+
+# 定义允许的文件类型和最大文件大小
+ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+def allowed_file(filename: str) -> bool:
+    return os.path.splitext(filename)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_file_type(file: UploadFile) -> bool:
+    mime = magic.Magic(mime=True)
+    file_type = mime.from_buffer(file.file.read(1024))
+    file.file.seek(0)  # Reset file pointer
+    return file_type.split('/')[1] in [ext.lstrip('.') for ext in ALLOWED_EXTENSIONS]
+
+def validate_file_size(file: UploadFile) -> bool:
+    file.file.seek(0, 2)  # Move to the end of the file
+    file_size = file.file.tell()  # Get the position (size)
+    file.file.seek(0)  # Reset file pointer
+    return file_size <= MAX_FILE_SIZE
+    
+    
+
+def execute_step(step: Dict[str, Any], db: SessionLocal = None) -> Any:
     action = step["action"]
     if step.get('table'):
         table = Table(step["table"], metadata, autoload_with=engine)
@@ -118,6 +166,58 @@ def execute_step(step: Dict[str, Any], db: SessionLocal) -> Any:
                 return result.rowcount
             else:
                 raise ValueError("SQL statement is missing for execute action")
+        # elif action == "upload_file":
+        #     file: UploadFile = step.get("file")
+        #     destination: str = step.get("destination", "")
+        #     if not file:
+        #         raise ValueError("No file provided for upload")
+        #     if not destination:
+        #         raise ValueError("No destination provided for file upload")
+        #     os.makedirs(os.path.dirname(destination), exist_ok=True)
+        #     with open(destination, "wb") as buffer:
+        #         shutil.copyfileobj(file.file, buffer)
+        #     return {"filename": file.filename, "destination": destination}
+        # elif action == "download_file":
+        #     file_path: str = step.get("file_path", "")
+        #     if not file_path or not os.path.exists(file_path):
+        #         raise ValueError(f"File not found: {file_path}")
+        #     return FileResponse(file_path, filename=os.path.basename(file_path))
+        elif action == "upload_file":
+            file: UploadFile = step.get("file")
+            destination: str = step.get("folder_path", "") + '/' + step.get("file_name", "")
+            if not file:
+                raise ValueError("No file provided for upload")
+            if not destination:
+                raise ValueError("No destination provided for file upload")
+            
+            # 文件类型验证
+            if not allowed_file(file.filename):
+                raise ValueError(f"File type not allowed. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}")
+            
+            # # 文件内容类型验证
+            # if not validate_file_type(file):
+            #     raise ValueError("File content does not match the allowed types")
+            
+            # 文件大小验证
+            if not validate_file_size(file):
+                raise ValueError(f"File size exceeds the maximum limit of {MAX_FILE_SIZE / (1024 * 1024)} MB")
+            
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            with open(destination, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            return {"filename": file.filename, "destination": destination}
+
+        elif action == "download_file":
+            file_path: str = step.get("file_path", "")
+            if not file_path or not os.path.exists(file_path):
+                raise ValueError(f"File not found: {file_path}")
+            
+            # 验证文件类型（可选，取决于您的需求）
+            if not allowed_file(file_path):
+                raise ValueError(f"File type not allowed for download. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}")
+            
+            return FileResponse(file_path, filename=os.path.basename(file_path))
         else:
             raise ValueError(f"不支持的操作: {action}")
     except Exception as e:
@@ -323,8 +423,10 @@ def load_data_from_yaml(filename: str) -> Dict[str, Any]:
         logger.error(f"Error loading YAML data from {filename}: {e}")
         return {}
 
-@app.get("/")
-def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
+
+
+@app.get("/a")
+def execute_transactions1(db: SessionLocal = Depends(get_db), transaction_name: str = None, params: dict = None, config_file: str = "chinook.yaml"):
     try:
         data = load_data_from_yaml(config_file)
         transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
@@ -358,6 +460,115 @@ def execute_transactions(db: SessionLocal = Depends(get_db), transaction_name: s
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         db.rollback()
+        logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/b")
+async def execute_transactions2(
+    db: SessionLocal = Depends(get_db),
+    transaction_name: str = None,
+    params: dict = None,
+    config_file: str = "chinook.yaml",
+    uploaded_file: UploadFile = File(None)
+):
+    try:
+        data = load_data_from_yaml(config_file)
+        transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
+        if not transaction_data:
+            raise ValueError(f"Transaction {transaction_name} not found in {config_file}")
+
+        transaction = Transaction(**transaction_data)
+        for step in transaction.steps:
+            # 替换参数和处理上传文件
+            if 'values' in step:
+                for key, value in step['values'].items():
+                    if isinstance(value, str) and value.startswith('{{') and value.endswith('}}'):
+                        param_name = value.strip('{} ')
+                        step['values'][key] = params.get(param_name, value)
+            
+            if 'filter_values' in step:
+                for filter_item in step['filter_values']:
+                    if isinstance(filter_item['value'], str) and filter_item['value'].startswith('{{') and filter_item['value'].endswith('}}'):
+                        param_name = filter_item['value'].strip('{} ')
+                        filter_item['value'] = params.get(param_name, filter_item['value'])
+            
+            if step['action'] == 'upload_file':
+                step['file'] = uploaded_file
+            
+            result = execute_step(step, db)
+            logger.info(f"Step execution result: {result}")
+        
+        db.commit()
+        return result  # 返回最后一个步骤的结果
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# @app.post("/")
+def execute_transactions(
+    db: SessionLocal = None,
+    transaction_name: str = None,
+    params: dict = None,
+    config_file: str = None
+):
+    try:
+        #if db is None:
+        #  db = Depends(get_db)
+          
+        data = load_data_from_yaml(config_file)
+        transaction_data = next((t for t in data.get("transactions", []) if t['name'] == transaction_name), None)
+        if not transaction_data:
+            raise ValueError(f"Transaction {transaction_name} not found in {config_file}")
+
+        transaction = Transaction(**transaction_data)
+        for step in transaction.steps:
+            # 替换参数和处理上传文件
+            if 'values' in step:
+                for key, value in step['values'].items():
+                    if isinstance(value, str) and value.startswith('{{') and value.endswith('}}'):
+                        param_name = value.strip('{} ')
+                        step['values'][key] = params.get(param_name, value)
+            
+            if 'filter_values' in step:
+                for filter_item in step['filter_values']:
+                    if isinstance(filter_item['value'], str) and filter_item['value'].startswith('{{') and filter_item['value'].endswith('}}'):
+                        param_name = filter_item['value'].strip('{} ')
+                        filter_item['value'] = params.get(param_name, filter_item['value'])
+            
+            if step['action'] == 'upload_file':
+                step['file'] = params.get('file')
+                step['file_name'] = params.get('file_name')
+                step['folder_path'] = params.get('folder_path')
+            
+            try:
+                result = execute_step(step, db)
+                logger.info(f"Step execution result: {result}")
+                return result
+            except ValueError as ve:
+                # 捕获文件验证相关的错误
+                logger.error(f"File validation error: {str(ve)}")
+                raise HTTPException(status_code=400, detail=str(ve))
+        
+        if db:
+          db.commit()
+        return result  # 返回最后一个步骤的结果
+    except SQLAlchemyError as e:
+        if db:
+          db.rollback()
+        logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except HTTPException as he:
+        # 重新抛出 HTTP 异常
+        raise he
+    except Exception as e:
+        
+        if db:
+          db.rollback()
         logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 

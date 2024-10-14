@@ -1,0 +1,27 @@
+columns:
+- input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: FirstName
+  name: FirstName
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(40)
+- input_type: text
+  label: LastName
+  name: LastName
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(20)
+- input_type: text
+  label: Country
+  name: Country
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(40)
+name: vw_customer_countries
+type: view

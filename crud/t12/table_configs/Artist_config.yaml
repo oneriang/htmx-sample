@@ -11,4 +11,4 @@ columns:
   nullable: true
   primary_key: 0
   type: NVARCHAR(120)
-table_name: Artist
+name: Artist

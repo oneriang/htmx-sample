@@ -10,6 +10,7 @@ component_definitions:
       main_content:
         - $ref: main_content
       right_sidebar:
+        - $ref: button_logout
         - type: alert
           attributes:
             type:
@@ -46,6 +47,14 @@ component_definitions:
       text: ok
       hx_get: /protected
       onclick: modal_message.showModal()
+  
+  button_logout:
+    id: button_logout
+    type: button
+    attributes: 
+      id: button_logout
+      text: logout
+      hx_get: /logout
   
   button1:
     id: button1
@@ -101,7 +110,7 @@ component_definitions:
     id: form_delete
     type: form_delete
 
-  registration_form:
+  registration_form1:
     id: registration_form
     type: form
     attributes:
@@ -143,7 +152,30 @@ component_definitions:
       submit_text:
         type: string
         value: Register
-        
+
+  registration_form:
+    id: registration_form
+    type: form
+    attributes:
+      class: mt-4 max-w-md mx-auto
+      hx_post: /register
+      hx_target: "#registration-result"
+      hx_encoding: multipart/form-data
+      enctype: application/x-www-form-urlencoded
+    children:
+      - type: input
+        attributes:
+          name: profile_picture
+          type: file
+          label: Profile Picture
+          placeholder: select your picture
+          required: true
+      - type: button
+        attributes:
+          class: btn btn-primary w-full mt-4
+          id: btn_register
+          text: R
+
   user_management1:
     id: user_management
     type: form
@@ -187,3 +219,9 @@ components:
   - $ref: modal_form
   - $ref: modal_message
   # - $ref: login
+  - $ref: registration_form
+  - type: file_upload_form
+    attributes:
+      label: Profile Picture
+      button: 
+        label: Upload

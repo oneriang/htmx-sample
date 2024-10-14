@@ -1,0 +1,21 @@
+columns:
+- input_type: number
+  label: ArtistId
+  name: ArtistId
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: ArtistName
+  name: ArtistName
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(120)
+- input_type: text
+  label: AlbumCount
+  name: AlbumCount
+  nullable: true
+  primary_key: 0
+  type: 'NULL'
+name: vw_artist_album_count
+type: view

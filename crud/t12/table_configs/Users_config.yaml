@@ -35,4 +35,4 @@ columns:
   nullable: true
   primary_key: 0
   type: DATETIME
-table_name: Users
+name: Users

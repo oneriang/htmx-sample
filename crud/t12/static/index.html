@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMX File Upload</title>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        progress {
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Upload with HTMX</h1>
+    <form id="uploadForm"
+          hx-encoding="multipart/form-data"
+          hx-post="/upload"
+          hx-target="#message"
+          hx-indicator="#progress"
+          enctype="multipart/form-data">
+        <div>
+            <label for="fileInput">Select File:</label>
+            <input type="file" name="file" id="fileInput">
+        </div>
+        <div>
+            <label for="transactionName">Transaction Name:</label>
+            <input type="text" name="transaction_name" id="transactionName" required>
+        </div>
+        <div>
+            <label for="configFile">Config File:</label>
+            <input type="text" name="config_file" id="configFile" value="chinook.yaml">
+        </div>
+        <div>
+            <label for="extraParams">Extra Parameters (JSON):</label>
+            <textarea name="params" id="extraParams" rows="4"></textarea>
+        </div>
+        <button type="submit">Upload and Process</button>
+    </form>
+    <progress id="progress" class="htmx-indicator" value="0" max="100"></progress>
+    <div id="message"></div>
+
+    <script>
+        document.body.addEventListener('htmx:xhr:progress', function(evt) {
+            htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
+        });
+
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            var file = htmx.find('#fileInput').files[0];
+            if (file) {
+                var allowedExtensions = ['.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'];
+                var maxFileSize = 5 * 1024 * 1024; // 5 MB
+
+                var fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                if (!allowedExtensions.includes(fileExtension)) {
+                    htmx.find('#message').innerHTML = `File type not allowed. Allowed types are: ${allowedExtensions.join(', ')}`;
+                    htmx.find('#message').className = 'error';
+                    evt.preventDefault();
+                    return;
+                }
+
+                if (file.size > maxFileSize) {
+                    htmx.find('#message').innerHTML = `File size exceeds the maximum limit of ${maxFileSize / (1024 * 1024)} MB`;
+                    htmx.find('#message').className = 'error';
+                    evt.preventDefault();
+                    return;
+                }
+            }
+
+            // 验证并格式化额外参数
+            var extraParams = htmx.find('#extraParams').value;
+            if (extraParams) {
+                try {
+                    JSON.parse(extraParams);
+                } catch (e) {
+                    htmx.find('#message').innerHTML = 'Invalid JSON in extra parameters';
+                    htmx.find('#message').className = 'error';
+                    evt.preventDefault();
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

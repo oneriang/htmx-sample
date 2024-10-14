@@ -11,7 +11,10 @@
         .drawer-side.drawer-side-left{
             left: -20rem; /* Start off-screen */
             transition: left 0.3s ease-in-out;
-            width: auto;
+            width: 100%;
+        }
+        .drawer-side.drawer-side-left ul.menu{
+            flex-wrap: nowrap;
         }
         #drawer-left:checked ~ .drawer-side {
             left: 0;
@@ -79,7 +82,7 @@
                 {{ child | safe }}
             {% endfor %}
             <!-- Main content -->
-            <div class="grid mb-4 pb-10 px-8 mx-4 rounded-3xl bg-gray-100 border-4 border-green-400">
+            <div class="grid mb-2 pb-2 px-2 mx-2 rounded-3xl bg-gray-100 border-4 border-green-400">
                 {% for child in children.main_content %}
                     {{ child | safe }}
                 {% endfor %}
@@ -88,7 +91,7 @@
         <!-- Left drawer -->
         <div class="drawer-side drawer-side-left">
             <label for="drawer-left" aria-label="close left sidebar" class="drawer-overlay"></label>
-            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+            <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content overflow-y-auto">
                 {% for child in children.left_sidebar %}
                     {{ child | safe }}
                 {% endfor %}
@@ -126,7 +129,7 @@
 'layout_login': |
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
-            <h1 class="text-3xl font-semibold text-center text-purple-700">DaisyUI</h1>
+            <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
             {% for child in children %}
                 {{ child | safe }}
             {% endfor %}
@@ -136,65 +139,12 @@
 'layout_registration': |
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
-            <h1 class="text-3xl font-semibold text-center text-purple-700">DaisyUI</h1>
+            <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
             {% for child in children %}
                 {{ child | safe }}
             {% endfor %}
         </div>
     </div>
-    
-'layout2': |
-    <style>
-          .drawer-toggle {
-              display: none;
-          }
-          .drawer-content {
-              transition: margin-left 0.3s ease-in-out;
-          }
-          .drawer-toggle:checked ~ .drawer-content {
-              margin-left: 20rem;
-          }
-          .drawer-side {
-              left: -20rem;
-              transition: left 0.3s ease-in-out;
-          }
-          .drawer-toggle:checked ~ .drawer-side {
-              left: 0;
-          }
-          .drawer-side a {
-              display: block;
-              padding: 0.5rem 1rem;
-          }
-          .drawer-side a:hover {
-              background-color: rgba(0, 0, 0, 0.1);
-          }
-          .drawer-toggle:checked ~ .drawer-side .close-drawer {
-              display: block;
-          }
-          .close-drawer {
-              display: none;
-          }
-      </style>
-      <div class="drawer">
-          <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-          <div class="drawer-content">
-              <!-- Page content here -->
-              <label for="my-drawer" class="btn btn-primary drawer-button">Open drawer</label>
-              <div class="p-4">
-                  <h2 class="text-2xl font-bold">Main Content</h2>
-                  <p>This is the main content area. It will be pushed to the right when the drawer opens.</p>
-              </div>
-          </div> 
-          <div class="drawer-side">
-              <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-              <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
-                  <!-- Sidebar content here -->
-                  <li><label for="my-drawer" class="close-drawer">Close Drawer</label></li>
-                  <li><label for="my-drawer"><a href="#">Sidebar Item 1</a></label></li>
-                  <li><a href="#"><label for="my-drawer">Sidebar Item 2</label></a></li>
-              </ul>
-          </div>
-      </div>
 
 'drawer_content': |
     {% for child in children %}
@@ -270,7 +220,7 @@
         </div>
     </div>
 
-'list': |
+'list1': |
     <ul class="menu bg-base-200 w-56 rounded-box">
         {% for item in value %}
             {% if item.get %}
@@ -290,71 +240,142 @@
             {% endif %}
         {% endfor %}
     </ul>
+    
+'list': |
+    {% for item in value %}
+            {% if item.get %}
+                <li>
+                    <a href="#"
+                        hx-get="{{- '/component?' -}}
+                        {{- 'table_name=' ~ item.text -}}&
+                        {{- 'component_id=' ~ item.component_id -}}"
+                        hx-target="#table-content"
+                        hx-push-url="true"
+                        class="w-full" style="width:100%;">
+                        
+                            {{ item.text }}
+                            
+                        </a>
+            {% else %}
+                <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
+            {% endif %}
+        {% endfor %}
 
 'data-table': |
-  <div class="overflow-x-auto mt-4" id="table-content">
-      {{ configs.table_name }}
-      <button hx-get="/create?table_name={{ configs.table_name }}" hx-target="#modal-content"
+    <div class="overflow-x-auto mt-0" id="table-content">
+        {{ configs.name }}
+        <button hx-get="/create?table_name={{ configs.name }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Create</button>
-      <table class="min-w-full bg-white border-collapse">
-          <thead>
-              <tr>
-                  <th class="border px-4 py-2 sticky-left sticky-left-shadow">Actions</th>
-                  {% for column in configs.columns %}
-                  {% if not column['is_hidden'] %}
-                  <th class="border px-4 py-2">
-                      <div style="overflow: hidden; resize: horizontal;">
-                        <a href="#"
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ page -}}&
-                        {{- 'search=' ~ search -}}&
-                        {{- 'sort_column=' ~ column['name'] -}}&
-                        {{- 'sort_direction=' -}}
-                        {%- if sort_column == column['name'] and sort_direction == 'asc' -%}
-                            {{- 'desc' -}}
-                        {%- else -%}
-                            {{- 'asc' -}}
-                        {%- endif -%}"
-                        hx-target="#table-content"
-                        class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}"
-                        >
-                            {{ column['label'] or column['name'] }}
-                            <span class="sort-icon"></span>
-                        </a>
-                      </div>
-                  </th>
-                  {% endif %}
+        <table class="min-w-full bg-white border-collapse">
+            <thead>
+                <tr>
+                    <th class="border px-4 py-2 sticky-left sticky-left-shadow max-w-24 w-24">Actions</th>
+                    {% for column in configs.columns %}
+                        {% if not column['is_hidden'] %}
+                            <th class="border px-4 py-2" style="overflow: hidden; resize: horizontal;">
+                                <div>
+                                    <a href="#"
+                                    hx-get="{{- '/component?' -}}
+                                    {{- 'component_id=' ~ configs.component_id -}}&
+                                    {{- 'page=' ~ page -}}&
+                                    {{- 'search=' ~ search -}}&
+                                    {{- 'sort_column=' ~ column['name'] -}}&
+                                    {{- 'sort_direction=' -}}
+                                    {%- if sort_column == column['name'] and sort_direction == 'asc' -%}
+                                        {{- 'desc' -}}
+                                    {%- else -%}
+                                        {{- 'asc' -}}
+                                    {%- endif -%}"
+                                    hx-target="#table-content"
+                                    class="{% if sort_column == column['name'] %}sort-{{ sort_direction }}{% endif %}"
+                                    >
+                                        {{ column['label'] or column['name'] }}
+                                        <span class="sort-icon"></span>
+                                    </a>
+                                </div>
+                             </th>
+                        {% endif %}
                   {% endfor %}
               </tr>
-          </thead>
-          <tbody>
-              {% for row in data.rows %}
-              <tr class="hover:bg-gray-100">
-                  <td class="border px-4 py-2 sticky-left sticky-left-shadow">
-                      <button hx-get="/edit?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+            </thead>
+            <tbody>
+                {% for row in data.rows %}
+                    <tr class="hover:bg-gray-100">
+                        <td class="border px-4 py-2 sticky-left sticky-left-shadow">
+                            <button hx-get="/edit?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                                hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
+                            <button hx-get="/delete?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                                hx-trigger="click" onclick="modal_form.showModal()" class="text-red-500 hover:underline">Delete</button>
+                        </td>
+                        {% for column in configs.columns %}
+                            {% if not column['is_hidden'] %}
+                                <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% for row in data.rows %}
+            <div class="card bg-base-100 w-96 shadow-xl hidden my-2">          
+                {% for column in configs.columns %}
+                    {% if not column['is_hidden'] %}
+                        {% if 'img' in column %}
+                            <figure>
+                                <img
+                                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                                alt="Shoes" />
+                            </figure>
+                        {% else %}
+                            <div class="card-body">
+                                <h2 class="card-title">
+                                Shoes!
+                                <div class="badge badge-secondary">NEW</div>
+                                </h2>
+                                <p>If a dog chews shoes whose shoes does he choose?</p>
+                                <div class="card-actions justify-end">
+                                <div class="badge badge-outline">Fashion</div>
+                                <div class="badge badge-outline">Products</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card lg:card-side bg-base-100 shadow-xl my-2">
+                <div class="card-body">
+                    {% for column in configs.columns %}
+                        {% if not column['is_hidden'] %}
+                            {% if 'img' in column %}
+                                <figure>
+                                    <img
+                                    src="https://img.daisyui.com/images/stock/photo-1494232410401-ad00d5433cfa.webp"
+                                    alt="Album" />
+                                </figure>
+                            {% else %}
+                                <h2 class="card-title">{{ column['name'] }}</h2>
+                                <p>{{ row[column['name']] or '' }}</p>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    <div class="card-actions justify-end">
+                        <button hx-get="/edit?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
-                      <button hx-get="/delete?table_name={{ configs.table_name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                        <button hx-get="/delete?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-red-500 hover:underline">Delete</button>
-                  </td>
-                  {% for column in configs.columns %}
-                      {% if not column['is_hidden'] %}
-                          <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
-                      {% endif %}
-                  {% endfor %}
-              </tr>
-              {% endfor %}
-          </tbody>
-      </table>
-      <div class="mt-4 flex justify-between items-center">
-        <p>Showing 
-            {{ (data.page - 1) * data.page_size + 1 }} 
-            to 
-            {{ min(data.page * data.page_size, data.total_items) }} 
-            of 
-            {{ data.total_items }} 
-            records
-        </p>
+                    </div>
+                </div>
+             </div>
+        {% endfor %}
+        <div class="mt-4 flex justify-between items-center">
+            <p>Showing 
+                {{ (data.page - 1) * data.page_size + 1 }} 
+                to 
+                {{ min(data.page * data.page_size, data.total_items) }} 
+                of 
+                {{ data.total_items }} 
+                records
+            </p>
         <div class="flex space-x-2">
             {% if data.page > 1 %}
                 <button
@@ -476,7 +497,7 @@
         <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text.value }}</button>
     </form>
 
-'form': |
+'form2': |
     <form class="{{ attributes.class }}"
           {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
           {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
@@ -487,7 +508,8 @@
                   {{ attr }}="{{ value }}"
               {% endif %}
           {% endfor %}>
-        {% for field in attributes.fields %}
+          {% if attributes.fields %}
+          {% for field in attributes.fields %}
             <div class="form-control w-full mb-4">
                 <label class="label">
                     <span class="label-text">{{ field.label }}</span>
@@ -526,8 +548,125 @@
                 {% endif %}
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text }}</button>
+        {% endif %}
+         {% if attributes.buttons %}
+            {% for btn in attributes.buttons %}
+                <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text }}</button>
+       
+            {% endfor %}
+        {% endif %}
+        
+        {% if children %}
+        <div class="form-control w-full mb-4">
+
+        {% for field in children %}
+        {{ field }}
+            {% if field.is_field %}
+                <label class="label">
+                    <span class="label-text">{{ field.label }}</span>
+                </label>
+                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
+                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% elif field.type == 'textarea' %}
+                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
+                {% elif field.type == 'select' %}
+                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
+                        {% for option in field.options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                {% elif field.type == 'checkbox' %}
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
+                        <span class="ml-2">{{ field.checkboxLabel }}</span>
+                    </div>
+                {% elif field.type == 'radio' %}
+                    <div class="flex flex-col mt-2">
+                        {% for option in field.options %}
+                            <label class="flex items-center mb-2">
+                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
+                                <span class="ml-2">{{ option.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% elif field.type == 'file' %}
+                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
+                {% endif %}
+                {% if field.helpText %}
+                    <label class="label">
+                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
+                    </label>
+                {% endif %}
+            {% else %}
+            
+            {{ field }}
+            
+            {% endif %}
+
+        {% endfor %}
+        </div>
+        
+        {% endif %}
+        
+        
     </form>
+
+
+'form': |
+    <form class="{{ attributes.class }}"
+      {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
+      {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
+      {% if attributes.hx_encoding %}hx-encoding="{{ attributes.hx_encoding }}"{% endif %}
+      {% if attributes.enctype %}enctype="{{ attributes.enctype }}"{% endif %}
+      {% for attr, value in attributes.items() %}
+          {% if attr not in ['class', 'fields', 'submit_text', 'hx_post', 'hx_target', 'hx_encoding', 'enctype'] %}
+              {{ attr }}="{{ value }}"
+          {% endif %}
+      {% endfor %}>
+        <div class="form-control w-full mb-4">
+            {% for child in children %}
+                {{ child }}
+            {% endfor %}
+        </div>
+    </form>
+
+
+'input': |
+    <label class="label">
+        <span class="label-text">{{ attributes.label }}</span>
+    </label>
+    {% if attributes.type == 'text' or attributes.type == 'email' or attributes.type == 'password' or attributes.type == 'number' or attributes.type == 'date' %}
+        <input {% if attributes.disabled %}disabled{% endif %} {% if attributes.readonly %}readonly{% endif %} type="{{ attributes.type }}" name="{{ attributes.name }}" placeholder="{{ attributes.placeholder }}" class="input input-bordered w-full" {% if attributes.required %}required{% endif %}>
+    {% elif attributes.type == 'textarea' %}
+        <textarea name="{{ attributes.name }}" placeholder="{{ attributes.placeholder }}" class="textarea textarea-bordered w-full" {% if attributes.required %}required{% endif %}></textarea>
+    {% elif attributes.type == 'select' %}
+        <select name="{{ attributes.name }}" class="select select-bordered w-full" {% if attributes.required %}required{% endif %}>
+            {% for option in attributes.options %}
+                <option value="{{ option.value }}">{{ option.label }}</option>
+            {% endfor %}
+        </select>
+    {% elif attributes.type == 'checkbox' %}
+        <div class="flex items-center mt-2">
+            <input type="checkbox" name="{{ attributes.name }}" class="checkbox" {% if attributes.required %}required{% endif %}>
+            <span class="ml-2">{{ attributes.checkboxLabel }}</span>
+        </div>
+    {% elif attributes.type == 'radio' %}
+        <div class="flex flex-col mt-2">
+            {% for option in attributes.options %}
+                <label class="flex items-center mb-2">
+                    <input type="radio" name="{{ attributes.name }}" value="{{ option.value }}" class="radio" {% if attributes.required %}required{% endif %}>
+                    <span class="ml-2">{{ option.label }}</span>
+                </label>
+            {% endfor %}
+        </div>
+    {% elif attributes.type == 'file' %}
+        <input type="file" name="{{ attributes.name }}" class="file-input file-input-bordered w-full" {% if attributes.required %}required{% endif %}>
+    {% endif %}
+    {% if attributes.helpText %}
+        <label class="label">
+            <span class="label-text-alt text-info">{{ attributes.helpText }}</span>
+        </label>
+    {% endif %}
 
 'navbar': |
     <div class="navbar bg-base-100 {{ attributes.class.value }}">
@@ -999,7 +1138,8 @@
 
 'button': |
     <button
-        {% if attributes.class %}class="{{ attributes.class }}"{% endif %}
+        class="btn btn-primary w-full mt-4 
+          {% if attributes.class %} {{ attributes.class }} {% endif %}"
           {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
           {% if attributes.hx_get %}hx-get="{{ attributes.hx_get }}"{% endif %}
           {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
@@ -1009,5 +1149,61 @@
               {% if attr not in ['class', 'fields', 'submit_text', 'hx_post', 'hx_target', 'hx_encoding', 'enctype'] %}
                   {{ attr }}="{{ value }}"
               {% endif %}
-          {% endfor %}>{{ attributes.text }}</button>
+          {% endfor %}>
+        {{ attributes.text }}
+    </button>
 
+'link': |
+    <a
+        {% for attr, value in attributes.items() %}
+            {{ attr }}="{{ value }}"
+        {% endfor %}>
+        {{ attributes.text }}
+    </a>
+
+'file_upload_form': |
+    <form id="uploadForm"
+          hx-encoding="multipart/form-data"
+          hx-post="/upload"
+          hx-target="#message"
+          hx-indicator="#progress"
+          enctype="multipart/form-data">
+        <div>
+            <div class="form-control w-full max-w-xs">
+                <label class="label">
+                    <span class="label-text">{{ attributes.label }}</span>
+                </label>
+                <input id="fileInput" name="file" type="file" class="file-input file-input-bordered w-full max-w-xs" />
+            </div>
+        </div>
+        <button class="btn btn-primary w-full mt-4" type="submit">{{ attributes.button.label if attributes.button and attributes.button.label else 'Upload' }}</button>
+    </form>
+    <progress id="progress" class="htmx-indicator w-full" value="0" max="100"></progress>
+    <div id="message"></div>
+    <script>
+        document.body.addEventListener('htmx:xhr:progress', function(evt) {
+            htmx.find('#progress').setAttribute('value', evt.detail.loaded/evt.detail.total * 100)
+        });
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            var file = htmx.find('#fileInput').files[0];
+            if (file) {
+                var allowedExtensions = ['.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'];
+                var maxFileSize = 5 * 1024 * 1024; // 5 MB
+
+                var fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                if (!allowedExtensions.includes(fileExtension)) {
+                    htmx.find('#message').innerHTML = `File type not allowed. Allowed types are: ${allowedExtensions.join(', ')}`;
+                    htmx.find('#message').className = 'error';
+                    evt.preventDefault();
+                    return;
+                }
+
+                if (file.size > maxFileSize) {
+                    htmx.find('#message').innerHTML = `File size exceeds the maximum limit of ${maxFileSize / (1024 * 1024)} MB`;
+                    htmx.find('#message').className = 'error';
+                    evt.preventDefault();
+                    return;
+                }
+            }
+        });
+    </script>
