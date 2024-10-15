@@ -1207,3 +1207,52 @@
             }
         });
     </script>
+
+'file_manager': |
+    <div id="file-manager">
+        <style>
+            .file-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 20px;
+            }
+            .file-item {
+                text-align: center;
+            }
+            .file-item img {
+                max-width: 100%;
+                height: auto;
+                margin: auto;
+                display: block;
+            }
+            .file-item svg {
+                max-width: 100%;
+                height: auto;
+                margin: auto;
+                display: block;
+            }
+            .file-item p {
+                overflow: hidden;        /* はみ出た部分を表示しない */
+                white-space: nowrap;     /* 行を折り返さない */
+                text-overflow: ellipsis; /* 省略記号を表示する */
+            }
+        </style>
+        <h1>{{ attributes.label }}</h1>
+        <div class="file-list">
+            {% for file in files %}
+            <div class="file-item">
+                {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                <img src="./uploaded/{{ file }}" alt="{{ file }}" style="width:100px;height:100px;object-fit:cover;">
+                {% else %}
+                <svg style="width:100px;height:100px;object-fit:cover;" class="file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                    <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+                {% endif %}
+                <p>{{ file }}</p>
+                <button hx-get="/preview/{{ file }}" hx-target="#preview">Preview</button>
+            </div>
+            {% endfor %}
+        </div>
+        <div id="preview"></div>
+    </div>

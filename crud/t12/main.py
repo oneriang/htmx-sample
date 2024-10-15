@@ -34,6 +34,8 @@ import copy
 import transaction_module
 import gv as gv
 
+from pathlib import Path
+
 from transaction_module import convert_value
 
 app = FastAPI()
@@ -44,6 +46,9 @@ logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# app.mount("/files", StaticFiles(directory="files"), name="files")
+app.mount("/uploaded", StaticFiles(directory="uploaded"), name="uploaded")
 
 # 添加 min 函数到模板上下文
 templates.env.globals['min'] = min
@@ -259,7 +264,7 @@ def getTables():
 
 # 修改渲染函数
 def generate_html(component: Dict[str, Any]) -> str:
-    for key in ['config', 'data', 'value']:
+    for key in ['config', 'data', 'value', 'files']:
         if key in component and isinstance(component[key], str):
             if component[key] in globals():
                 component[key] = globals()[component[key]]()
@@ -284,6 +289,7 @@ def generate_html(component: Dict[str, Any]) -> str:
         configs=component.get('config', {}),
         data=component.get('data', {}),
         value=component.get('value', []),
+        files=component.get('files', []),
         children=rendered_children,
         min=min
     )
@@ -1115,15 +1121,6 @@ async def delete_form(request: Request):
         }
         
         return generate_html(gv.component_dict[component_id])
-        '''        
-        rendered_components = [generate_html(gv.component_dict[component_id])]
-
-        template = Template(BASE_HTML)
-        return template.render(
-            components=rendered_components,
-            min=min
-        )
-        '''
         
     raise HTTPException(status_code=404, detail="Item not found")
 
@@ -1280,7 +1277,17 @@ def upload_file(
             
             # 根据结果返回适当的响应
             if isinstance(result, dict) and 'filename' in result:
-                return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
+                load_page_config()
+                print(gv.component_dict.keys())
+                res = generate_html(gv.component_dict['file_manager'])
+                res = f'''
+                <div hx-swap-oob="innerHTML:#file-manager">
+                    {res}
+                </div>
+                '''
+                print(res)
+                return HTMLResponse(res)
+                # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
             else:
                 return HTMLResponse(f"<div class='success'>Transaction completed successfully</div>")
         
@@ -1295,6 +1302,29 @@ def upload_file(
         logger.error(f"Error during file upload: {str(e)}")
         return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
 
+def get_files():
+    print('get_files')
+    files = os.listdir("uploaded")
+    return files
+
+@app.get("/preview/{filename}", response_class=HTMLResponse)
+async def preview_file(request: Request, filename: str):
+    file_path = Path(f"uploaded/{filename}")
+    if file_path.is_file():
+        if file_path.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif']:
+            res = f'''
+                <div>
+                    <h2>Preview: { filename }</h2>
+                    <img src="./uploaded/{ filename }" alt="{ filename }" style="max-width:100%;max-height:600px;">
+                </div>
+            '''
+            return res
+    res = f'''
+        <div>
+            File not found or not supported
+        </div>
+    '''
+    return res
 
 if __name__ == "__main__":
     uvicorn.run(

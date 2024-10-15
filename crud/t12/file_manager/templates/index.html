@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <script src="https://unpkg.com/htmx.org@1.6.1"></script>
+    <style>
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .file-item {
+            text-align: center;
+        }
+        .file-item img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Manager</h1>
+    <div class="file-list">
+        {% for file in files %}
+        <div class="file-item">
+            {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+            <img src="/files/{{ file }}" alt="{{ file }}" style="width:100px;height:100px;object-fit:cover;">
+            {% else %}
+            <svg style="width:100px;height:100px;object-fit:cover;" class="file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            {% endif %}
+            <p>{{ file }}</p>
+            <button hx-get="/preview/{{ file }}" hx-target="#preview">Preview</button>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="preview"></div>
+</body>
+</html>

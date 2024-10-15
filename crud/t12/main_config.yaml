@@ -213,6 +213,13 @@ component_definitions:
             - {name: email, type: email, label: Email, required: true}
             - {name: password, type: password, label: Password, required: true}
           submit_text: Register
+  
+  file_manager:
+    id: file_manager
+    type: file_manager
+    files: get_files
+    attributes:
+      label: File Manager
 
 components:
   - $ref: main_layout
@@ -225,3 +232,8 @@ components:
       label: Profile Picture
       button: 
         label: Upload
+  # - type: file_manager
+  #   files: get_files
+  #   attributes:
+  #     label: File Manager
+  - $ref: file_manager
