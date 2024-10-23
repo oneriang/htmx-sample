@@ -40,6 +40,16 @@ from transaction_module import convert_value
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，您可以根据需要指定特定的源
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -106,28 +116,29 @@ def load_data():
   
   gv.YAML_CONFIG = load_data_from_yaml('main_config.yaml')
 
+  gv.icons = gv.HTML_TEMPLATES.get('icons', {})
 
-class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
-    async def __call__(self, request: Request) -> Optional[str]:
-        try:
-            return await super().__call__(request)
-        except HTTPException as e:
-            if e.status_code == status.HTTP_401_UNAUTHORIZED:
-                if "HX-Request" in request.headers:
-                    # 如果是 HTMX 请求，重新抛出异常
-                    raise
-                else:
-                    # 如果是普通请求，重定向到登录页面
-                    from fastapi.responses import RedirectResponse
-                    return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
-            raise
+# class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
+#     print('CustomOAuth2PasswordBearer')
+#     async def __call__(self, request: Request) -> Optional[str]:
+#         try:
+#             return await super().__call__(request)
+#         except HTTPException as e:
+#             if e.status_code == status.HTTP_401_UNAUTHORIZED:
+#                 if "HX-Request" in request.headers:
+#                     # 如果是 HTMX 请求，重新抛出异常
+#                     raise
+#                 else:
+#                     # 如果是普通请求，重定向到登录页面
+#                     from fastapi.responses import RedirectResponse
+#                     return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
+#             raise
 
-oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="token")
+# oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="token")
 
-def get_oauth2_scheme():
-  print(get_oauth2_scheme)
-  oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-  return oauth2_scheme
+# def get_oauth2_scheme():
+#   oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+#   return oauth2_scheme
 
 def verify_password(plain_password, hashed_password):
     print(plain_password)
@@ -148,7 +159,9 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
+#async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
+async def get_current_user(request: Request):
+
     print('get_current_user')
 
     token = request.cookies.get("access_token")
@@ -234,7 +247,7 @@ def get_configs():
 gv.model = {}
 gv.models = []
 
-def getTables():
+def get_tables():
     tables = get_table_names()
     views = get_view_names()
     values = []
@@ -271,7 +284,9 @@ def generate_html(component: Dict[str, Any]) -> str:
 
     template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
     
-    rendered_children = {'_unnamed': []}
+    # rendered_children = {'_unnamed': []}
+    rendered_children = {}
+    # print(component)
     if 'children' in component:
       if isinstance(component['children'], list):
         print("这是一个数组（列表）")
@@ -281,9 +296,9 @@ def generate_html(component: Dict[str, Any]) -> str:
         for key, value in component['children'].items():
             if isinstance(key, str):  # Named children
                 rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
-            elif isinstance(key, int):  # Unnamed children
-                rendered_children['_unnamed'].append(generate_html(resolve_component(value)))
-
+            # elif isinstance(key, int):  # Unnamed children
+            #     rendered_children['_unnamed'].append(generate_html(resolve_component(value)))
+    # print(component)
     return template.render(
         attributes=component.get('attributes', {}),
         configs=component.get('config', {}),
@@ -291,6 +306,7 @@ def generate_html(component: Dict[str, Any]) -> str:
         value=component.get('value', []),
         files=component.get('files', []),
         children=rendered_children,
+        icons=gv.icons,
         min=min
     )
 
@@ -328,7 +344,7 @@ def load_page_config(config_name = None) -> Dict[str, Any]:
     
     return config
 
-def generate_table_or_view_config(engine, name, is_view=False):
+def generate_table_or_view_config1(engine, name, is_view=False):
     inspector = inspect(engine)
     columns = inspector.get_columns(name)
     
@@ -380,6 +396,66 @@ def generate_table_or_view_config(engine, name, is_view=False):
 
     return config
 
+def generate_table_or_view_config(engine, name, is_view=False):
+    inspector = inspect(engine)
+    columns = inspector.get_columns(name)
+    
+    config_path = f'table_configs/{name}_config.yaml'
+    
+    # Check if configuration file exists
+    if os.path.exists(config_path):
+        # Read existing configuration file
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+            return config
+        
+    config = {
+        "name": name,
+        "type": "view" if is_view else "table",
+        "columns": []
+    }
+
+    for column in columns:
+        column_config = {
+            "name": column['name'],
+            "label": column['name'],
+            "type": str(column['type']),
+            "nullable": column.get('nullable', True),  # Views might not have this information
+            "primary_key": column.get('primary_key', False)  # Views might not have this information
+        }
+
+        # Check if the column is auto-increment
+        if column.get('autoincrement', False):
+            column_config['autoincrement'] = True
+
+        if column.get('primary_key', False) and isinstance(column['type'], Integer):
+            # Additional checks might be needed depending on the database
+            column_config['autoincrement'] = True
+
+        # Determine input type and additional properties
+        if isinstance(column['type'], String):
+            column_config['input_type'] = 'text'
+        elif isinstance(column['type'], (Integer, Float)):
+            column_config['input_type'] = 'number'
+        elif isinstance(column['type'], (DateTime, Date)):
+            column_config['input_type'] = 'date'
+        elif isinstance(column['type'], Boolean):
+            column_config['input_type'] = 'checkbox'
+        elif isinstance(column['type'], Enum):
+            column_config['input_type'] = 'select'
+            column_config['options'] = column['type'].enums
+        else:
+            column_config['input_type'] = 'text'
+
+        config['columns'].append(column_config)
+
+    # Save configuration to a YAML file
+    os.makedirs('table_configs', exist_ok=True)
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False)
+
+    return config
+    
 # Generate configurations for all tables and views
 def generate_all_configs(engine):
     inspector = inspect(engine)
@@ -481,7 +557,7 @@ def get_view_names():
     inspector = inspect(engine)
     return inspector.get_view_names()
 
-def apply_search_filter(query, table, column_config, value):
+def apply_search_filter1(query, table, column_config, value):
     if value:
         column = getattr(table.c, column_config['name'])
         input_type = column_config.get('input_type', 'text')
@@ -507,7 +583,7 @@ def apply_search_filter(query, table, column_config, value):
             return query.where(column == value)
     return query
 
-def get_table_data_params(
+def get_table_data1(
         request: Request = None, 
         table_name: str = None, 
         page: int = 1, 
@@ -516,7 +592,7 @@ def get_table_data_params(
         sort_direction: str = 'asc'
     ):
 
-    print('get_table_data_params')
+    print('get_table_data')
 
     if request is None:
         request = gv.request
@@ -525,13 +601,23 @@ def get_table_data_params(
     if request:
       # Get all query parameters
       search_params = dict(request.query_params)
+      
+      print('*****************')
+      print(search_params)
+      print('*****************')
       # Remove known parameters
 
       if 'page' in search_params:
-        page = int(search_params['page'])
+        if search_params['page'] == '':
+          page = 1
+        else:
+          page = int(search_params['page'])
 
       if 'page_size' in search_params:
-        page_size = int(search_params['page_size'])
+        if search_params['page_size'] == '':
+          page_size = 10
+        else:
+          page_size = int(search_params['page_size'])
       
       if 'sort_column' in search_params:
         sort_column = search_params['sort_column']
@@ -570,8 +656,11 @@ def get_table_data_params(
     
     # Apply search filters for each column based on JSON configuration
     for column_config in table_config['columns']:
-        if column_config['name'] in search_params:
-            query = apply_search_filter(query, table, column_config, search_params[column_config['name']])
+        if 'keyword' in search_params:
+            query = apply_search_filter(query, table, column_config, search_params['keyword'])
+        else:
+            if column_config['name'] in search_params:
+                query = apply_search_filter(query, table, column_config, search_params[column_config['name']])
     
     # Apply sorting if a sort column is specified
     if sort_column and sort_column in table.columns:
@@ -603,10 +692,200 @@ def get_table_data_params(
         "search_params": search_params
     }
 
+def apply_search_filter(query, table, column_config, value, is_keyword_search=False):
+    """
+    Apply search filter to a query based on column configuration and search value.
+    根据列配置和搜索值对查询应用搜索过滤器。
+    
+    Args:
+        query: SQLAlchemy query object
+              SQLAlchemy查询对象
+        table: SQLAlchemy table object
+               SQLAlchemy表对象
+        column_config: Dictionary containing column configuration
+                      包含列配置的字典
+        value: Search value
+               搜索值
+        is_keyword_search: Boolean indicating if this is a keyword search across all columns
+                          布尔值，指示是否是跨所有列的关键字搜索
+    
+    Returns:
+        Modified query with search filter applied
+        应用了搜索过滤器的修改后的查询
+    """
+    if value:
+        column = getattr(table.c, column_config['name'])
+        input_type = column_config.get('input_type', 'text')
+        
+        # For keyword search, we only apply LIKE filters on text and string columns
+        # 对于关键字搜索，我们只对文本和字符串列应用LIKE过滤器
+        if is_keyword_search:
+            if isinstance(column.type, String):
+                return query.where(column.ilike(f"%{value}%"))
+            return query
+            
+        if input_type == 'text':
+            return query.where(column.ilike(f"%{value}%"))
+        elif input_type == 'number':
+            try:
+                value = float(value)
+                return query.where(column == value)
+            except ValueError:
+                return query
+        elif input_type in ('date', 'datetime'):
+            try:
+                value = datetime.strptime(value, "%Y-%m-%d")
+                return query.where(column == value)
+            except ValueError:
+                return query
+        elif input_type == 'checkbox':
+            value = value.lower() in ('true', '1', 'yes', 'on')
+            return query.where(column == value)
+        elif input_type == 'select':
+            return query.where(column == value)
+    return query
+
+def get_table_data(
+        request: Request = None, 
+        table_name: str = None, 
+        page: int = 1, 
+        page_size: int = 5,
+        sort_column: str | None = None,
+        sort_direction: str = 'asc'
+    ):
+    print('get_table_data')
+
+    if request is None:
+        request = gv.request
+    
+    search_params = {}
+    if request:
+        # Get query parameters from request
+        # 从请求中获取查询参数
+        search_params = dict(request.query_params)
+        
+        print('*****************')
+        print(search_params)
+        print('*****************')
+
+        # Process pagination parameters
+        # 处理分页参数
+        if 'page' in search_params:
+            if search_params['page'] == '':
+                page = 1
+            else:
+                page = int(search_params['page'])
+
+        if 'page_size' in search_params:
+            if search_params['page_size'] == '':
+                page_size = 10
+            else:
+                page_size = int(search_params['page_size'])
+        
+        # Process sorting parameters
+        # 处理排序参数
+        if 'sort_column' in search_params:
+            sort_column = search_params['sort_column']
+
+        if 'sort_direction' in search_params:
+            sort_direction = search_params['sort_direction']
+
+        if 'table_name' in search_params:
+            table_name = search_params['table_name']
+
+        # Remove known parameters from search params
+        # 从搜索参数中移除已知参数
+        for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
+            search_params.pop(param, None)
+
+    print(table_name)
+
+    # Set default table if none specified
+    # 如果未指定表，设置默认表
+    if table_name is None:
+        table_name = 'Genre'
+
+    # Get table object and verify it exists
+    # 获取表对象并验证其存在
+    table = None
+    if table_name in metadata.tables:
+        table = metadata.tables[table_name]
+    if table is None:
+        raise HTTPException(status_code=404, detail="Table not found")
+
+    table_config = get_table_config(table_name)
+    
+    # Get primary key and calculate offset for pagination
+    # 获取主键并计算分页的偏移量
+    primary_key = next((col['name'] for col in table_config['columns'] if col.get('primary_key')), None)
+    offset = (page - 1) * page_size
+    
+    query = select(table.columns)
+    
+    # Handle keyword search across all columns
+    # 处理跨所有列的关键字搜索
+    if 'keyword' in search_params and search_params['keyword']:
+        keyword = search_params['keyword']
+        keyword_conditions = []
+        for column_config in table_config['columns']:
+            column = getattr(table.c, column_config['name'])
+            # Only apply keyword search to text/string columns
+            # 只对文本/字符串列应用关键字搜索
+            if isinstance(column.type, String):
+                keyword_conditions.append(column.ilike(f"%{keyword}%"))
+        if keyword_conditions:
+            query = query.where(or_(*keyword_conditions))
+    else:
+        # Apply regular column-specific filters
+        # 应用常规的列特定过滤器
+        for column_config in table_config['columns']:
+            if column_config['name'] in search_params:
+                query = apply_search_filter(query, table, column_config, search_params[column_config['name']])
+    
+    # Apply sorting if a sort column is specified
+    # 如果指定了排序列，应用排序
+    if sort_column and sort_column in table.columns:
+        sort_func = desc if sort_direction.lower() == 'desc' else asc
+        query = query.order_by(sort_func(getattr(table.c, sort_column)))
+    
+    with SessionLocal() as session:
+        # Get total count and paginated results
+        # 获取总数和分页结果
+        count_query = select(func.count()).select_from(query.alias())
+        total_items = session.execute(count_query).scalar()
+        result = session.execute(query.offset(offset).limit(page_size)).fetchall()
+        
+    # Calculate total pages
+    # 计算总页数
+    total_pages = (total_items + page_size - 1) // page_size
+    
+        
+    print('***********************')
+    print('sort_direction')
+    print(sort_direction)
+    print('***********************')
+    
+    # Return the complete result set
+    # 返回完整的结果集
+    return {
+        "request": request,
+        "table_name": table_name,
+        "columns": [col['name'] for col in table_config['columns']],
+        "rows": result,
+        "primary_key": primary_key,
+        "page": page,
+        "page_size": page_size,
+        "total_items": total_items,
+        "total_pages": total_pages,
+        "table_config": table_config,
+        "sort_column": sort_column,
+        "sort_direction": sort_direction,
+        "search_params": search_params
+    }
 
 load_data()
 
-gv.tables = getTables()
+gv.tables = get_tables()
 
 # Generate table configurations
 #generate_all_table_configs(engine)
@@ -791,16 +1070,16 @@ async def read_table(request: Request, table_name: str):
         "table_config": table_config
     })
 
-@app.get("/protected")
-#@login_required
-async def protected_route(request: Request, current_user: dict = Depends(get_current_user)):
-    logger.debug(f"protected page requested. Current user: {current_user}")
+# @app.get("/protected")
+# #@login_required
+# async def protected_route(request: Request, current_user: dict = Depends(get_current_user)):
+#     logger.debug(f"protected page requested. Current user: {current_user}")
     
-    if not current_user:
-        logger.info("Unauthenticated user redirected to login")
-        return RedirectResponse(url="/login", status_code=302)
+#     if not current_user:
+#         logger.info("Unauthenticated user redirected to login")
+#         return RedirectResponse(url="/login", status_code=302)
 
-    return {"message": "Hello"}
+#     return {"message": "Hello"}
 
 
 
@@ -852,6 +1131,11 @@ async def read_table_content(
         
     total_pages = (total_items + page_size - 1) // page_size
     
+    print('***********************')
+    print('sort_direction')
+    print(sort_direction)
+    print('***********************')
+
     return templates.TemplateResponse("table_content.html", {
         "request": request,
         "table_name": table_name,
@@ -941,10 +1225,7 @@ async def create_form(request: Request):
 
 @app.post("/create/{table_name}")
 async def create_item(table_name: str, request: Request):
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    # table = metadata.tables[table_name]
-
+    print('post create_item')
     table = None
     if table_name in metadata.tables:
         table = metadata.tables[table_name]
@@ -954,6 +1235,21 @@ async def create_item(table_name: str, request: Request):
     form_data = await request.form()
     data = {key: value for key, value in form_data.items() if key in table.columns.keys()}
     
+    table_config = get_table_config(table_name)
+    
+    for c in table_config['columns']:
+      print(c)
+      if c['primary_key'] == 1:
+        if c['autoincrement'] == True:
+          data[c['name']] = None
+      
+    print(data)
+    # if data['id'] == '':
+    #     data['id'] = None
+    
+    for key in data:
+        data[key] = convert_value(table.c[key].type, data[key])
+
     try:
         with SessionLocal() as session:
             stmt = insert(table).values(**data)
@@ -972,6 +1268,7 @@ async def create_item(table_name: str, request: Request):
             "search": "",
         })
     except SQLAlchemyError as e:
+        print(str(e))
         return {"success": False, "message": str(e)}
 
 @app.get("/edit", response_class=HTMLResponse)
@@ -1326,6 +1623,47 @@ async def preview_file(request: Request, filename: str):
     '''
     return res
 
+@app.get("/api/stats", response_class=HTMLResponse)
+async def get_stats(request: Request):
+    '''
+    import plotly.express as px
+    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
+    # fig.show()
+    return fig.to_html(full_html=False, include_plotlyjs=False)
+    '''
+    return HTMLResponse(f"<div class='error'>{datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')}</div>")
+
+@app.get("/api/total_albums", response_class=HTMLResponse)
+async def get_total_albums(request: Request):
+    with SessionLocal() as db:
+      result = transaction_module.execute_transactions(
+                db = db,
+                transaction_name = 'get_total_albums',
+                config_file="main_txn.yaml"
+            )
+    print(result)
+    for r in result:
+      print(r)
+      for k in r:
+        print(r[k])
+    return HTMLResponse(str(result[0]['total_albums']))
+
+@app.get("/api/total_artists", response_class=HTMLResponse)
+async def get_total_albums(request: Request):
+    with SessionLocal() as db:
+      result = transaction_module.execute_transactions(
+                db = db,
+                transaction_name = 'get_total_artists',
+                config_file="main_txn.yaml"
+            )
+    print(result)
+    for r in result:
+      print(r)
+      for k in r:
+        print(r[k])
+    return HTMLResponse(str(result[0]['total_artists']))
+   
+            
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

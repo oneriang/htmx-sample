@@ -36,7 +36,7 @@ component_definitions:
     id: main_data_table
     type: data-table
     config: get_configs
-    data: get_table_data_params
+    data: get_table_data
   
   button:
     id: button

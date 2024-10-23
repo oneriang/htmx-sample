@@ -1,0 +1,13 @@
+<li>
+    <span class="{{ 'completed' if todo.completed else '' }}"
+          hx-put="/toggle/{{ todo.id }}"
+          hx-swap="outerHTML"
+          hx-target="closest li">
+        {{ todo.title }}
+    </span>
+    <button hx-delete="/delete/{{ todo.id }}"
+            hx-target="closest li"
+            hx-swap="outerHTML">
+        Delete
+    </button>
+</li>

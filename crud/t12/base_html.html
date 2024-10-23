@@ -2,84 +2,127 @@
 <html lang="en" data-theme="light">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page_title }}</title>
-    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+  <style>
+    .loader {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: block;
+      border-top: 3px solid red;
+      border-right: 3px solid transparent;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+  <style>
+    #loading-indicator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 999999;
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
-    {% for component in components %}
-    {{ component | safe }}
-    {% endfor %}
-    <style>
-        .modal1 {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
 
-        .modal-content1 {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-        }
-    </style>
-    <style>
-        #loading {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-        }
-    </style>
 
-    <script>
-        function showModal() {
-            document.getElementById('modal_form').showModal();
-        }
+  {% for component in components %}
+  {{ component | safe }}
+  {% endfor %}
 
-        function hideModal() {
-            document.getElementById('modal_form').close();
-        }
+  <div id="loading-indicator">
+    <div class="loader"></div>
+  </div>
 
-        document.body.addEventListener('htmx:afterSwap', function (event) {
-            if (event.detail.target.id === 'table-content') {
-                hideModal();
-            }
-        });
-    </script>
-    
-    <script>
-      document.body.addEventListener('htmx:configRequest', function(event) {
-        var token = localStorage.getItem('token');
-        if (token) {
-          event.detail.headers['Authorization'] = 'Bearer ' + token;
-        }
-      });
-    </script>
-    
-    <script>
+  <script>
+    document.body.addEventListener('htmx:beforeRequest', function () {
+      document.getElementById('loading-indicator').style.display = 'block';
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function () {
+      document.getElementById('loading-indicator').style.display = 'none';
+    });
+  </script>
+
+  <style>
+    .modal1 {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content1 {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+    }
+  </style>
+
+  <script>
+    function showModal() {
+      document.getElementById('modal_form').showModal();
+    }
+
+    function hideModal() {
+      document.getElementById('modal_form').close();
+    }
+
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+      if (event.detail.target.id === 'table-content') {
+        hideModal();
+      }
+    });
+  </script>
+
+  <script>
+    document.body.addEventListener('htmx:configRequest', function (event) {
+      var token = localStorage.getItem('token');
+      if (token) {
+        event.detail.headers['Authorization'] = 'Bearer ' + token;
+      }
+    });
+  </script>
+
+  <script>
     document.body.addEventListener('htmx:responseError', function(evt) {
         if (evt.detail.xhr.status === 401) {
-            window.location.href = '/login';
+            // window.location.href = '/login';
         }
     });
-</script>
+  </script>
+
 </body>
 
 </html>

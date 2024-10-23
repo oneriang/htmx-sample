@@ -50,6 +50,14 @@ def create_views(engine):
         GROUP BY i.InvoiceId;
         """))
 
+        conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS todos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            completed BOOLEAN NOT NULL DEFAULT 0
+        )
+        """))
+
 # 创建视图
 create_views(engine)
 

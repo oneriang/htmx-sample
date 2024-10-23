@@ -1,0 +1,25 @@
+transactions:
+  - name: get_total_albums
+    steps:
+      - action: get
+        table: Album
+        fields:
+          - field: AlbumId
+            function: count
+            label: total_albums
+        # filter_values:
+        #   - field: date
+        #     operator: ge
+        #     value: "2023-01-01"
+  - name: get_total_artists
+    steps:
+      - action: get
+        table: Artist
+        fields:
+          - field: ArtistId
+            function: count
+            label: total_artists
+        # filter_values:
+        #   - field: date
+        #     operator: ge
+        #     value: "2023-01-01"

@@ -245,7 +245,7 @@ def build_filter_expressions(filter_values: List[Dict[str, Any]], table: Table) 
             filters.append(handle_operator(column, f["operator"], value))
     return filters
 
-def build_query(step: Dict[str, Any], table: Table) -> Any:
+def build_query1(step: Dict[str, Any], table: Table) -> Any:
     print('build_query')
     columns = []
     for f in step.get("fields", [{"field": "*"}]):
@@ -279,6 +279,140 @@ def build_query(step: Dict[str, Any], table: Table) -> Any:
     print(filters)
     if filters:
         query = query.filter(*filters)
+
+    return query
+
+from sqlalchemy import func
+
+def build_query2(step: Dict[str, Any], table: Table) -> Any:
+    print('build_query')
+    columns = []
+    for f in step.get("fields", [{"field": "*"}]):
+        print(f)
+        if 'table' in f:
+            t = Table(f["table"], metadata, autoload_with=engine)
+        else:
+            t = table
+        
+        # Handle aggregation functions
+        if 'function' in f:
+            if f['function'].lower() == 'sum':
+                column = func.sum(t.c[f["field"]])
+            elif f['function'].lower() == 'count':
+                column = func.count(t.c[f["field"]])
+            elif f['function'].lower() == 'avg':
+                column = func.avg(t.c[f["field"]])
+            elif f['function'].lower() == 'min':
+                column = func.min(t.c[f["field"]])
+            elif f['function'].lower() == 'max':
+                column = func.max(t.c[f["field"]])
+            else:
+                raise ValueError(f"Unsupported aggregation function: {f['function']}")
+            
+            if 'label' in f:
+                column = column.label(f['label'])
+        else:
+            column = t.c[f["field"]]
+            if 'label' in f:
+                column = column.label(f['label'])
+        
+        columns.append(column)
+
+    query = select(*columns)
+
+    join = step.get("join")
+    print(join)
+    if join:
+        for j in join:
+            left_table = Table(j["left_table"], metadata, autoload_with=engine)
+            right_table = Table(j["right_table"], metadata, autoload_with=engine)
+            join_on = [left_table.c[o["left_column"]] == right_table.c[o["right_column"]] for o in j["on"]]
+            query = query.join(right_table, and_(*join_on), isouter=j["type"] == "left")
+
+    filter_values = step.get("filter_values", [])
+    print('filter_values')
+    print(filter_values)
+    filters = build_filter_expressions(filter_values, table)
+
+    print(filters)
+    if filters:
+        query = query.filter(*filters)
+
+    # Add GROUP BY clause if there are aggregation functions
+    if any('function' in f for f in step.get("fields", [])):
+        group_by_columns = [t.c[f["field"]] for f in step.get("fields", []) if 'function' not in f]
+        if group_by_columns:
+            query = query.group_by(*group_by_columns)
+
+    return query
+
+from sqlalchemy import asc, desc
+
+def build_query(step: Dict[str, Any], table: Table) -> Any:
+    print('build_query')
+    columns = []
+    for f in step.get("fields", [{"field": "*"}]):
+        print(f)
+        if 'table' in f:
+            t = Table(f["table"], metadata, autoload_with=engine)
+        else:
+            t = table
+        
+        if 'function' in f:
+            if f['function'].lower() == 'sum':
+                column = func.sum(t.c[f["field"]])
+            elif f['function'].lower() == 'count':
+                column = func.count(t.c[f["field"]])
+            elif f['function'].lower() == 'avg':
+                column = func.avg(t.c[f["field"]])
+            elif f['function'].lower() == 'min':
+                column = func.min(t.c[f["field"]])
+            elif f['function'].lower() == 'max':
+                column = func.max(t.c[f["field"]])
+            else:
+                raise ValueError(f"Unsupported aggregation function: {f['function']}")
+            
+            if 'label' in f:
+                column = column.label(f['label'])
+        else:
+            column = t.c[f["field"]]
+            if 'label' in f:
+                column = column.label(f['label'])
+        
+        columns.append(column)
+
+    query = select(*columns)
+
+    join = step.get("join")
+    if join:
+        for j in join:
+            left_table = Table(j["left_table"], metadata, autoload_with=engine)
+            right_table = Table(j["right_table"], metadata, autoload_with=engine)
+            join_on = [left_table.c[o["left_column"]] == right_table.c[o["right_column"]] for o in j["on"]]
+            query = query.join(right_table, and_(*join_on), isouter=j["type"] == "left")
+
+    filter_values = step.get("filter_values", [])
+    filters = build_filter_expressions(filter_values, table)
+    if filters:
+        query = query.filter(*filters)
+
+    # 添加对 ORDER BY 的支持
+    order_by = step.get("order_by", [])
+    if order_by:
+        order_clauses = []
+        for order in order_by:
+            column = table.c[order["field"]]
+            if order.get("direction", "asc").lower() == "asc":
+                order_clauses.append(asc(column))
+            else:
+                order_clauses.append(desc(column))
+        query = query.order_by(*order_clauses)
+
+    # 如果有聚合函数，添加 GROUP BY 子句
+    if any('function' in f for f in step.get("fields", [])):
+        group_by_columns = [t.c[f["field"]] for f in step.get("fields", []) if 'function' not in f]
+        if group_by_columns:
+            query = query.group_by(*group_by_columns)
 
     return query
 

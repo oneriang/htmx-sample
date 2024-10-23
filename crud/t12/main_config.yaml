@@ -3,6 +3,8 @@ component_definitions:
   main_layout:
     id: main_layout
     type: layout
+    attributes:
+      title: YY
     children:
       left_sidebar:
         - $ref: button
@@ -20,25 +22,132 @@ component_definitions:
               type: string
               value: This is an informational message.
         
+  main_content1:
+    id: main_content
+    type: main_content
+    children:
+      - type: grid1
+        children:
+          - type: card1
+            data:
+              title: Total Albums
+              content: 0
+            attributes:
+              hx-trigger: load, every 3600s
+              hx-get: /api/total_albums
+              hx-target: find p
+              hx-swap: innerHTML
+          - type: card1
+            data:
+              title: Total Artists
+              content: BBB1
+            attributes:
+              hx-trigger: load, every 3600s
+              hx-get: /api/total_artists
+              hx-swap: innerHTML
+              hx-target: find p
+          - type: card1
+            data:
+              title: AAA2
+              content: BBB2
+            attributes:
+              hx-trigger: load, every 3600s
+              hx-get: /api/stats
+              hx-swap: innerHTML
+              hx-target: find p
+          - type: card1
+            data:
+              title: AAA3
+              content: BBB3
+            attributes:
+              hx-trigger: load, every 3600s
+              hx-get: /api/stats
+              hx-swap: innerHTML
+              hx-target: find p
+          # - type: card1
+          #   attributes:
+          #     title: AAA1
+          #     content: BBB1
+          # - type: card1
+          #   attributes:
+          #     title: AAA2
+          #     content: BBB2
+          # - type: card1
+          #   attributes:
+          #     title: AAA3
+          #     content: BBB3
+      # - $ref: main_data_table
+      - $ref: main_data_list
+
   main_content:
     id: main_content
     type: main_content
     children:
-      - type: grid
-        children:
-          - $ref: main_data_table
+      # - $ref: main_data_table
+      - $ref: main_data_table
 
+  todo_list:
+    id: todo_list
+    type: list
+    value: get_todos
+    
   table_list:
     id: table_list
     type: list
-    value: getTables
+    value: get_tables
 
+  # main_data_table:
+  #   id: main_data_table
+  #   type: data-table
+  #   config: get_configs
+  #   data: get_table_data
   main_data_table:
     id: main_data_table
     type: data-table
     config: get_configs
-    data: get_table_data_params
+    data: get_table_data
+    children:
+      header:
+        - type: data_search_form
+          config: get_configs
+          data: get_table_data
+      content:      
+        - $ref: main_data_table_content
+      footer:
+        - type: data_pagination
+          config: get_configs
+          data: get_table_data
+        
+  main_data_table_content:
+    id: main_data_table_content
+    type: data_table_content
+    config: get_configs
+    data: get_table_data
+
+  main_data_card:
+    id: main_data_card
+    type: data-card
+    config: get_configs
+    data: get_table_data
   
+  main_data_list:
+    id: main_data_list
+    type: data-list
+    config: get_configs
+    data: get_table_data
+    children:
+      header:
+        - type: data_search_form
+          config: get_configs
+      content:      
+        - $ref: main_data_list_content
+
+  main_data_list_content:
+    id: main_data_list_content
+    type: data_list_content
+    config: get_configs
+    data: get_table_data
+
   button:
     id: button
     type: button
@@ -187,33 +296,6 @@ component_definitions:
         - {name: password, type: password, label: Password, required: true}
       submit_text: Login
 
-  login:
-    id: login
-    type: layout_login
-    children:
-      - type: form
-        attributes:
-          id: login_form
-          class: mt-4 max-w-md mx-auto
-          fields:
-            - {name: username, type: text, label: Username, required: true}
-            - {name: password, type: password, label: Password, required: true}
-          submit_text: Login
-
-  register:
-    id: register
-    type: layout_login
-    children:
-      - type: form
-        attributes:
-          id: registration_form
-          class: mt-4 max-w-md mx-auto
-          fields:
-            - {name: username, type: text, label: Username, required: true}
-            - {name: email, type: email, label: Email, required: true}
-            - {name: password, type: password, label: Password, required: true}
-          submit_text: Register
-  
   file_manager:
     id: file_manager
     type: file_manager
@@ -226,14 +308,15 @@ components:
   - $ref: modal_form
   - $ref: modal_message
   # - $ref: login
-  - $ref: registration_form
-  - type: file_upload_form
-    attributes:
-      label: Profile Picture
-      button: 
-        label: Upload
+#   - $ref: registration_form
+#   - type: file_upload_form
+#     attributes:
+#       label: Profile Picture
+#       button: 
+#         label: Upload
   # - type: file_manager
   #   files: get_files
   #   attributes:
   #     label: File Manager
-  - $ref: file_manager
+  # - $ref: file_manager
+  # - $ref: button

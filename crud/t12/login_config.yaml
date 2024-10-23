@@ -81,7 +81,7 @@ component_definitions:
     id: login_page
     type: layout_login
     attributes:
-      title: ZHY
+      title: YY
     children:
       #- $ref: form_test
       - $ref: login_form

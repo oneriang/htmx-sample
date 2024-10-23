@@ -1,0 +1,36 @@
+<!-- templates/albums.html -->
+{% extends "base.html" %}
+
+{% block title %}专辑管理{% endblock %}
+
+{% block content %}
+<h1>专辑管理</h1>
+
+<button hx-get="/albums/new" hx-target="#album-form" hx-swap="innerHTML">添加新专辑</button>
+
+<div id="album-form"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>标题</th>
+            <th>艺术家</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for album in albums %}
+        <tr>
+            <td>{{ album.AlbumId }}</td>
+            <td>{{ album.Title }}</td>
+            <td>{{ album.ArtistName }}</td>
+            <td>
+                <button hx-get="/albums/{{ album.AlbumId }}/edit" hx-target="#album-form" hx-swap="innerHTML">编辑</button>
+                <button hx-delete="/albums/{{ album.AlbumId }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="确定要删除这张专辑吗？">删除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
