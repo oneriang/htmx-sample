@@ -19,13 +19,17 @@ component_definitions:
     type: main_content
     children:
       - $ref: form_create
-      - type: blogs
-        attributes:
-          id: blogs
-          # hx-trigger: refresh, load, every 3600s
-          hx-get: /blog/posts
-          hx-swap: innerHTML
-          hx-trigger: load, newPost from:body, deletePost from:body
+      - $ref: blogs
+
+  blogs:
+    id: blogs
+    type: blogs
+    attributes:
+      id: blogs
+      # hx-trigger: refresh, load, every 3600s
+      # hx-get: /blog/posts?target=posts
+      # hx-swap: innerHTML
+      # hx-trigger: load, newPost from:body, deletePost from:body
 
   posts:
     id: posts

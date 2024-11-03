@@ -1791,19 +1791,15 @@ async def blog(request: Request):
     print(gv.component_dict['blogs'])
 
     hx_get = '/blog/posts?target=posts'
-    hx_push_url = '/blog?target=posts'
     if 'page_size' in query_params:
         hx_get = hx_get + '&' + 'page_size' + '=' + query_params['page_size']
-        hx_push_url = hx_push_url + '&' + 'page_size' + '=' + query_params['page_size']
     if 'page_number' in query_params:
         hx_get = hx_get + '&' + 'page_number' + '=' + query_params['page_number']
-        hx_push_url = hx_push_url + '&' + 'page_number' + '=' + query_params['page_number']
 
     blogs_attr = {
         'hx-get': hx_get,
         'hx-swap': 'innerHTML',
-        'hx-trigger': 'load, newPost from:body, deletePost from:body',
-        'hx-push-url': hx_push_url
+        'hx-trigger': 'load, newPost from:body, deletePost from:body'
     }
     gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
 
@@ -1820,7 +1816,10 @@ async def blog(request: Request):
 
 
 @app.get("/blog/posts", response_class=HTMLResponse)
-async def get_posts(request: Request):
+async def get_posts1(request: Request):
+    return get_posts(request)
+
+def get_posts(request: Request):
 
     query_params = dict(request.query_params)
 
@@ -1850,19 +1849,19 @@ async def get_posts(request: Request):
         gv.component_dict['posts']['data'] = result
 
         prev_attr = {
-                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number - 1}", 
+                    'hx-get': f"/blog?target=posts&page_size={page_size}&page_number={page_number - 1}", 
                     'hx-swap': 'innerHTML',
                     'hx-target': '#blogs',
-                    'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number - 1}",
+                    'hx-push-url': 'true'
                 }
         if no_prev:
             prev_attr['disabled'] = True
 
         next_attr = {
-                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number + 1}", 
+                    'hx-get': f"/blog?target=posts&page_size={page_size}&page_number={page_number + 1}", 
                     'hx-swap': 'innerHTML',
                     'hx-target': '#blogs',
-                    'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number + 1}",
+                    'hx-push-url': 'true'
                 }
         if no_next:
             next_attr['disabled'] = True
