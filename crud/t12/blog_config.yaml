@@ -1,0 +1,114 @@
+title: Blog
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    attributes:
+      title: Blog
+    children:
+      main_content:
+        - $ref: main_content
+      right_sidebar:
+        - type: alert
+          attributes:
+            class: alert alert-info
+            message: This is an informational message.
+      
+  main_content:
+    id: main_content
+    type: main_content
+    children:
+      - $ref: form_create
+      - type: blogs
+        attributes:
+          id: blogs
+          # hx-trigger: refresh, load, every 3600s
+          hx-get: /blog/posts
+          hx-swap: innerHTML
+          hx-trigger: load, newPost from:body, deletePost from:body
+
+  posts:
+    id: posts
+    type: posts
+  
+  form_create:
+    id: form_create
+    type: form_base_type_1
+    cols: 
+      title: {}
+      content: {}
+    config:
+      title: Create
+      mode: create
+    attributes:
+      title: Create
+      mode: create
+      hx-post: "/blog/post"
+      hx-target: "#target"
+      # 'hx-on::after-request': "htmx.trigger('#blogs', 'load')"
+   
+  main_data_card:
+    id: main_data_card
+    type: data-card
+    config: get_configs
+    data: get_table_data
+
+  button_logout:
+    id: button_logout
+    type: button
+    attributes: 
+      id: button_logout
+      text: logout
+      hx_get: /logout
+  
+  modal_message:
+    id: modal_message
+    type: modal_message
+    attributes:
+      id:
+        type: string
+        value: modal_message
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
+        
+  modal_form:
+    id: modal_form
+    type: modal_form
+    attributes:
+      id:
+        type: string
+        value: modal_form
+      title:
+        type: string
+        value: modal
+      content:
+        type: string
+        value: aaaaa
+        
+  stats:
+    id: stats
+    type: stats
+    children:
+      - type: stat
+        attributes:
+          label: File Manager
+          title: a
+          color: red
+          value: 1
+          desc: asdfg
+      - type: stat
+        attributes:
+          label: File Manager
+          title: a
+          color: red
+          value: 2
+          desc: asdfg
+
+components:
+  - $ref: main_layout
+  - $ref: modal_form
+  - $ref: modal_message

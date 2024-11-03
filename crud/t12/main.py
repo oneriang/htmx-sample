@@ -28,6 +28,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from functools import wraps
 
+import pprint
 import yaml
 import logging
 import copy
@@ -36,7 +37,7 @@ import gv as gv
 
 from pathlib import Path
 
-from transaction_module import convert_value
+from transaction_module import convert_value, TransactionModule
 
 app = FastAPI()
 
@@ -51,7 +52,7 @@ app.add_middleware(
 )
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="templates")
@@ -64,12 +65,16 @@ app.mount("/uploaded", StaticFiles(directory="uploaded"), name="uploaded")
 templates.env.globals['min'] = min
 
 # Database connection configuration
-DATABASE_URL = "sqlite:///./Chinook.db"
+DATABASE_URL = "sqlite:///./cms.db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()
 # Reflect existing database tables
 metadata.reflect(bind=engine, views=True)
+
+db = SessionLocal()
+
+TM = TransactionModule(engine = engine, db = db, metadata = metadata)
 
 # JWT 相关设置
 SECRET_KEY = "your-secret-key"
@@ -83,12 +88,12 @@ gv.YAML_CONFIG = None
 # 设置密码哈希
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
 def load_data_from_html(filename: str) -> Optional[str]:
     try:
@@ -110,43 +115,23 @@ def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
 
 def load_data():
     
-  gv.BASE_HTML = load_data_from_html('base_html.html')
+    gv.BASE_HTML = load_data_from_html('base_html.html')
   
-  gv.HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
+    gv.HTML_TEMPLATES = load_data_from_yaml('html_templates.yaml')
   
-  gv.YAML_CONFIG = load_data_from_yaml('main_config.yaml')
+    gv.YAML_CONFIG = load_data_from_yaml('main_config.yaml')
 
-  gv.icons = gv.HTML_TEMPLATES.get('icons', {})
-
-# class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
-#     print('CustomOAuth2PasswordBearer')
-#     async def __call__(self, request: Request) -> Optional[str]:
-#         try:
-#             return await super().__call__(request)
-#         except HTTPException as e:
-#             if e.status_code == status.HTTP_401_UNAUTHORIZED:
-#                 if "HX-Request" in request.headers:
-#                     # 如果是 HTMX 请求，重新抛出异常
-#                     raise
-#                 else:
-#                     # 如果是普通请求，重定向到登录页面
-#                     from fastapi.responses import RedirectResponse
-#                     return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
-#             raise
-
-# oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="token")
-
-# def get_oauth2_scheme():
-#   oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-#   return oauth2_scheme
+    gv.icons = gv.HTML_TEMPLATES.get('icons', {})
+    
+    gv.classes = gv.HTML_TEMPLATES.get('classes', {})
 
 def verify_password(plain_password, hashed_password):
-    print(plain_password)
-    print(hashed_password)
+    # print(plain_password)
+    # print(hashed_password)
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
-    print(password)
+    # print(password)
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -162,10 +147,10 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 #async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
 async def get_current_user(request: Request):
 
-    print('get_current_user')
+    # print('get_current_user')
 
     token = request.cookies.get("access_token")
-    print(token)
+    # print(token)
     
     if not token:
         return None
@@ -191,7 +176,7 @@ async def get_current_user(request: Request):
             # 如果不是 HTMX 请求，重定向到登录页面
             return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
 
-    db = SessionLocal()
+    # db = SessionLocal()
     try:
         user = db.execute(select(metadata.tables['Users']).where(
             metadata.tables['Users'].c.Username == username
@@ -213,7 +198,7 @@ def decode_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def login_required(func):
-    print('login_required')
+    # print('login_required')
     @wraps(func)
     async def wrapper(request: Request, *args, **kwargs):
         token = None
@@ -277,36 +262,49 @@ def get_tables():
 
 # 修改渲染函数
 def generate_html(component: Dict[str, Any]) -> str:
+
+    # print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+    # print(component)
+    # print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+
     for key in ['config', 'data', 'value', 'files']:
         if key in component and isinstance(component[key], str):
             if component[key] in globals():
                 component[key] = globals()[component[key]]()
+    
+    if 'cols' in component:
+        for key in component['cols']:
+            if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
+                component['cols'][key] = gv.posts_config['cols'][key]
+        
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(component['cols'])
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
 
     template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
-    
-    # rendered_children = {'_unnamed': []}
+
     rendered_children = {}
-    # print(component)
+
     if 'children' in component:
       if isinstance(component['children'], list):
-        print("这是一个数组（列表）")
+        # print("这是一个数组（列表）")
         rendered_children = [generate_html(resolve_component(child)) for child in component.get('children', [])]
       else:
-        print("这不是一个数组（列表）")
+        # print("这不是一个数组（列表）")
         for key, value in component['children'].items():
             if isinstance(key, str):  # Named children
                 rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
-            # elif isinstance(key, int):  # Unnamed children
-            #     rendered_children['_unnamed'].append(generate_html(resolve_component(value)))
-    # print(component)
+
     return template.render(
         attributes=component.get('attributes', {}),
-        configs=component.get('config', {}),
+        config=component.get('config', {}),
         data=component.get('data', {}),
         value=component.get('value', []),
         files=component.get('files', []),
+        cols=component.get('cols', {}),
         children=rendered_children,
         icons=gv.icons,
+        classes=gv.classes,
         min=min
     )
 
@@ -321,7 +319,7 @@ def load_page_config(config_name = None) -> Dict[str, Any]:
     # config = yaml.safe_load(YAML_CONFIG)
     gv.YAML_CONFIG = load_data_from_yaml(config_name)
     config = copy.deepcopy(gv.YAML_CONFIG)
-    # print(config)
+    # # print(config)
     gv.component_dict = {
         comp['id']: comp 
         for comp in config.get('component_definitions', {}).values()
@@ -342,58 +340,6 @@ def load_page_config(config_name = None) -> Dict[str, Any]:
 
     config['components'] = resolve_components(config['components'])
     
-    return config
-
-def generate_table_or_view_config1(engine, name, is_view=False):
-    inspector = inspect(engine)
-    columns = inspector.get_columns(name)
-    
-    config_path = f'table_configs/{name}_config.yaml'
-    
-    # Check if configuration file exists
-    if os.path.exists(config_path):
-        # Read existing configuration file
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-            return config
-        
-    config = {
-        "name": name,
-        "type": "view" if is_view else "table",
-        "columns": []
-    }
-
-    for column in columns:
-        column_config = {
-            "name": column['name'],
-            "label": column['name'],
-            "type": str(column['type']),
-            "nullable": column.get('nullable', True),  # Views might not have this information
-            "primary_key": column.get('primary_key', False)  # Views might not have this information
-        }
-
-        # Determine input type and additional properties
-        if isinstance(column['type'], String):
-            column_config['input_type'] = 'text'
-        elif isinstance(column['type'], (Integer, Float)):
-            column_config['input_type'] = 'number'
-        elif isinstance(column['type'], (DateTime, Date)):
-            column_config['input_type'] = 'date'
-        elif isinstance(column['type'], Boolean):
-            column_config['input_type'] = 'checkbox'
-        elif isinstance(column['type'], Enum):
-            column_config['input_type'] = 'select'
-            column_config['options'] = column['type'].enums
-        else:
-            column_config['input_type'] = 'text'
-
-        config['columns'].append(column_config)
-
-    # Save configuration to a YAML file
-    os.makedirs('table_configs', exist_ok=True)
-    with open(config_path, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
-
     return config
 
 def generate_table_or_view_config(engine, name, is_view=False):
@@ -460,11 +406,11 @@ def generate_table_or_view_config(engine, name, is_view=False):
 def generate_all_configs(engine):
     inspector = inspect(engine)
     
-    # Generate configs for tables
+    # Generate config for tables
     for table_name in inspector.get_table_names():
         generate_table_or_view_config(engine, table_name)
     
-    # Generate configs for views
+    # Generate config for views
     for view_name in inspector.get_view_names():
         generate_table_or_view_config(engine, view_name, is_view=True)
 
@@ -518,12 +464,6 @@ def generate_table_config(engine, table_name):
 
     return config
 
-# # Generate configurations for all tables
-# def generate_all_table_configs(engine):
-#     inspector = inspect(engine)
-#     for table_name in inspector.get_table_names():
-#         generate_table_config(engine, table_name)
-
 def get_table_config(table_name=None):
 
     request = gv.request
@@ -536,12 +476,12 @@ def get_table_config(table_name=None):
         table_name = search_params['table_name']
         
     if table_name is None:
-      table_name = 'Genre'
+      table_name = 'users'
       
     with open(f'table_configs/{table_name}_config.yaml', 'r') as f:
-        configs = yaml.safe_load(f)
-        configs['component_id'] = 'main_data_table'
-        return configs
+        config = yaml.safe_load(f)
+        config['component_id'] = 'main_data_table'
+        return config
 
 def get_primary_key(table):
     try:
@@ -556,141 +496,6 @@ def get_table_names():
 def get_view_names():
     inspector = inspect(engine)
     return inspector.get_view_names()
-
-def apply_search_filter1(query, table, column_config, value):
-    if value:
-        column = getattr(table.c, column_config['name'])
-        input_type = column_config.get('input_type', 'text')
-        
-        if input_type == 'text':
-            return query.where(column.ilike(f"%{value}%"))
-        elif input_type == 'number':
-            try:
-                value = float(value)
-                return query.where(column == value)
-            except ValueError:
-                return query
-        elif input_type in ('date', 'datetime'):
-            try:
-                value = datetime.strptime(value, "%Y-%m-%d")
-                return query.where(column == value)
-            except ValueError:
-                return query
-        elif input_type == 'checkbox':
-            value = value.lower() in ('true', '1', 'yes', 'on')
-            return query.where(column == value)
-        elif input_type == 'select':
-            return query.where(column == value)
-    return query
-
-def get_table_data1(
-        request: Request = None, 
-        table_name: str = None, 
-        page: int = 1, 
-        page_size: int = 5,
-        sort_column: str | None = None,
-        sort_direction: str = 'asc'
-    ):
-
-    print('get_table_data')
-
-    if request is None:
-        request = gv.request
-    
-    search_params = {}
-    if request:
-      # Get all query parameters
-      search_params = dict(request.query_params)
-      
-      print('*****************')
-      print(search_params)
-      print('*****************')
-      # Remove known parameters
-
-      if 'page' in search_params:
-        if search_params['page'] == '':
-          page = 1
-        else:
-          page = int(search_params['page'])
-
-      if 'page_size' in search_params:
-        if search_params['page_size'] == '':
-          page_size = 10
-        else:
-          page_size = int(search_params['page_size'])
-      
-      if 'sort_column' in search_params:
-        sort_column = search_params['sort_column']
-
-      if 'sort_direction' in search_params:
-        sort_direction = search_params['sort_direction']
-
-      if 'table_name' in search_params:
-        table_name = search_params['table_name']
-
-      for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
-          search_params.pop(param, None)
-
-    print(table_name)
-
-    if table_name is None:
-      table_name = 'Genre'
-
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    # table = metadata.tables[table_name]
-
-    table = None
-    if table_name in metadata.tables:
-        table = metadata.tables[table_name]
-    if table is None:
-        raise HTTPException(status_code=404, detail="Table not found")
-
-    table_config = get_table_config(table_name)
-    
-    # primary_key = next(col['name'] for col in table_config['columns'] if col.get('primary_key', False))
-    primary_key = next((col['name'] for col in table_config['columns'] if col.get('primary_key')), None)
-    offset = (page - 1) * page_size
-    
-    query = select(table.columns)
-    
-    # Apply search filters for each column based on JSON configuration
-    for column_config in table_config['columns']:
-        if 'keyword' in search_params:
-            query = apply_search_filter(query, table, column_config, search_params['keyword'])
-        else:
-            if column_config['name'] in search_params:
-                query = apply_search_filter(query, table, column_config, search_params[column_config['name']])
-    
-    # Apply sorting if a sort column is specified
-    if sort_column and sort_column in table.columns:
-        sort_func = desc if sort_direction.lower() == 'desc' else asc
-        query = query.order_by(sort_func(getattr(table.c, sort_column)))
-    
-    with SessionLocal() as session:
-        count_query = select(func.count()).select_from(query.alias())
-        total_items = session.execute(count_query).scalar()
-        result = session.execute(query.offset(offset).limit(page_size)).fetchall()
-        
-    total_pages = (total_items + page_size - 1) // page_size
-    
-    print(table_name)
-    
-    return {
-        "request": request,
-        "table_name": table_name,
-        "columns": [col['name'] for col in table_config['columns']],
-        "rows": result,
-        "primary_key": primary_key,
-        "page": page,
-        "page_size": page_size,
-        "total_items": total_items,
-        "total_pages": total_pages,
-        "table_config": table_config,
-        "sort_column": sort_column,
-        "sort_direction": sort_direction,
-        "search_params": search_params
-    }
 
 def apply_search_filter(query, table, column_config, value, is_keyword_search=False):
     """
@@ -753,7 +558,9 @@ def get_table_data(
         sort_column: str | None = None,
         sort_direction: str = 'asc'
     ):
-    print('get_table_data')
+    # print('get_table_data')
+    
+    # print(table_name)
 
     if request is None:
         request = gv.request
@@ -764,9 +571,9 @@ def get_table_data(
         # 从请求中获取查询参数
         search_params = dict(request.query_params)
         
-        print('*****************')
-        print(search_params)
-        print('*****************')
+        # print('*****************')
+        # print(search_params)
+        # print('*****************')
 
         # Process pagination parameters
         # 处理分页参数
@@ -798,12 +605,12 @@ def get_table_data(
         for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
             search_params.pop(param, None)
 
-    print(table_name)
+    # print(table_name)
 
     # Set default table if none specified
     # 如果未指定表，设置默认表
     if table_name is None:
-        table_name = 'Genre'
+        table_name = 'users'
 
     # Get table object and verify it exists
     # 获取表对象并验证其存在
@@ -859,11 +666,10 @@ def get_table_data(
     # 计算总页数
     total_pages = (total_items + page_size - 1) // page_size
     
-        
-    print('***********************')
-    print('sort_direction')
-    print(sort_direction)
-    print('***********************')
+    # # print('***********************')
+    # # print('sort_direction')
+    # # print(sort_direction)
+    # # print('***********************')
     
     # Return the complete result set
     # 返回完整的结果集
@@ -887,20 +693,18 @@ load_data()
 
 gv.tables = get_tables()
 
-# Generate table configurations
-#generate_all_table_configs(engine)
-
 generate_all_configs(engine)
 
 # 主渲染函数保持不变
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, current_user: dict = Depends(get_current_user)):
-    logger.debug(f"Home page requested. Current user: {current_user}")
+# async def home(request: Request, current_user: dict = Depends(get_current_user)):
+#     logger.debug(f"Home page requested. Current user: {current_user}")
     
-    if not current_user:
-        logger.info("Unauthenticated user redirected to login")
-        return RedirectResponse(url="/login", status_code=302)
-
+#     if not current_user:
+#         logger.info("Unauthenticated user redirected to login")
+#         return RedirectResponse(url="/login", status_code=302)
+async def home(request: Request):
+    
     gv.request = request
     
     load_data()
@@ -916,13 +720,33 @@ async def home(request: Request, current_user: dict = Depends(get_current_user))
     )
 
 @app.get("/login", response_class=HTMLResponse)
+# async def login(request: Request, current_user: dict = Depends(get_current_user)):
+#     """
+#     Handle GET requests to the login page
+#     处理登录页面的GET请求
+    
+#     Args:
+#         request: FastAPI request object
+#         current_user: Current user from JWT token dependency
+#     """
+#     # If user is already logged in, redirect to home page
+#     # 如果用户已经登录，重定向到主页
+#     if current_user:
+#         return RedirectResponse(url="/", status_code=302)
 async def login(request: Request):
+
     gv.request = request
     
-    load_data()  # 重新加载配置，确保使用最新的配置
+    # Load latest configuration
+    # 加载最新配置
+    load_data()
 
+    # Load login page configuration
+    # 加载登录页面配置
     page_config = load_page_config('login_config.yaml')
     
+    # Render login page components
+    # 渲染登录页面组件
     rendered_components = [generate_html(component) for component in page_config['components']]
     
     template = Template(gv.BASE_HTML)
@@ -934,18 +758,23 @@ async def login(request: Request):
     
 @app.post("/login")
 async def login(request: Request, response: Response):
+    """
+    Handle POST requests for login
+    处理登录的POST请求
+    """
     form_data = await request.form()
     params = {key: value for key, value in form_data.items()}
-    print(params)
+    
     try:
-        with SessionLocal() as db:
-            result = transaction_module.execute_transactions(
-                db, 
-                "UserLogin", 
-                params,
-                config_file="login_txn.yaml"
-            )
-        print(result)
+        # with SessionLocal() as db:
+        result = TM.execute_transactions(
+            transaction_name = "UserLogin", 
+            params = params,
+            config_file = "login_txn.yaml"
+        )
+
+        # # print(result)
+            
         user_data = gv.data.get("user_data", [])
 
         if not user_data or not verify_password(params['password'], user_data[0]["Password"]):
@@ -960,21 +789,47 @@ async def login(request: Request, response: Response):
         
         html_response = f"<div class='alert alert-success'>Login successful! Welcome</div>"
         response = HTMLResponse(content=html_response)
+        
+        # Set secure cookie with token
+        # 设置带有令牌的安全cookie
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,  # 只在HTTPS下传输
-            samesite='lax',  # 防止CSRF
+            secure=True,  # Only transmit over HTTPS
+            samesite='lax',  # Prevent CSRF
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
         )
+        
+        # Set cache control headers to prevent caching of login page
+        # 设置缓存控制头以防止登录页面被缓存
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
         response.headers['HX-Redirect'] = '/'
-        #logger.info(f"Successful login for user: {user.username}")
+        
         return response
         
     except Exception as e:
         return HTMLResponse(content=f"<div class='alert alert-error'>Login failed: {str(e)}</div>")
 
+@app.middleware("http")
+async def cache_control_middleware(request: Request, call_next):
+    """
+    Middleware to handle cache control headers
+    处理缓存控制头的中间件
+    """
+    response = await call_next(request)
+    
+    # Add cache control headers for login-related pages
+    # 为登录相关页面添加缓存控制头
+    if request.url.path in ["/login", "/register"]:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    
+    return response
+    
 @app.get("/logout")
 async def logout(request: Request):
     logger.info("Logout requested")
@@ -1004,16 +859,17 @@ async def register(request: Request):
 
 @app.post("/register", response_class=HTMLResponse)
 async def register(request: Request):
+    # print('------------------------')
+    # print('register')
+    # print('------------------------')
     form_data = await request.form()
     params = {key: value for key, value in form_data.items()}
     params['password'] = get_password_hash(params['password'])
-    print(params['password'])
     try:
         with SessionLocal() as db:
-            result = transaction_module.execute_transactions(
-                db, 
-                "RegisterUser", 
-                params,
+            result = TM.execute_transactions(
+                transaction_name = "RegisterUser", 
+                params = params,
                 config_file="register_txn.yaml"
             )
         #return f"<div class='alert alert-success'>User registered successfully!</div>"
@@ -1027,7 +883,8 @@ async def register(request: Request):
 
 
 @app.get("/component", response_class=HTMLResponse)
-async def rendered_component(request: Request, current_user: dict = Depends(get_current_user)):
+# async def rendered_component(request: Request, current_user: dict = Depends(get_current_user)):
+async def rendered_component(request: Request):
     gv.request = request
     query_params = dict(request.query_params)
 
@@ -1058,8 +915,8 @@ async def read_root(request: Request):
 
 @app.get("/table/{table_name}")
 async def read_table(request: Request, table_name: str):
-    print(str)
-    print(gv.models)
+    # print(str)
+    # print(gv.models)
     if table_name not in gv.models:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -1069,19 +926,6 @@ async def read_table(request: Request, table_name: str):
         "table_name": table_name,
         "table_config": table_config
     })
-
-# @app.get("/protected")
-# #@login_required
-# async def protected_route(request: Request, current_user: dict = Depends(get_current_user)):
-#     logger.debug(f"protected page requested. Current user: {current_user}")
-    
-#     if not current_user:
-#         logger.info("Unauthenticated user redirected to login")
-#         return RedirectResponse(url="/login", status_code=302)
-
-#     return {"message": "Hello"}
-
-
 
 @app.get("/table_content/{table_name}")
 async def read_table_content(
@@ -1131,10 +975,10 @@ async def read_table_content(
         
     total_pages = (total_items + page_size - 1) // page_size
     
-    print('***********************')
-    print('sort_direction')
-    print(sort_direction)
-    print('***********************')
+    # # print('***********************')
+    # # print('sort_direction')
+    # # print(sort_direction)
+    # # print('***********************')
 
     return templates.TemplateResponse("table_content.html", {
         "request": request,
@@ -1150,25 +994,6 @@ async def read_table_content(
         "sort_column": sort_column,
         "sort_direction": sort_direction,
         "search_params": search_params
-    })
-
-@app.get("/create1/{table_name}", response_class=HTMLResponse)
-async def create_form1(request: Request, table_name: str):
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    # table = metadata.tables[table_name]
-
-    table = None
-    if table_name in metadata.tables:
-        table = metadata.tables[table_name]
-    if table is None:
-        raise HTTPException(status_code=404, detail="Table not found")
-
-    columns = [col.name for col in table.columns if col.name != get_primary_key(table)]
-    return templates.TemplateResponse("create_form.html", {
-        "request": request, 
-        "table_name": table_name, 
-        "columns": columns,
     })
     
 @app.get("/create", response_class=HTMLResponse)
@@ -1187,10 +1012,10 @@ async def create_form(request: Request):
       id = query_params['id']
 
     if table_name is None:
-      table_name = 'Genre'
+      table_name = 'users'
     
-    if id is None:
-      id = 22
+    # if id is None:
+    #   id = 22
 
     table_config = get_table_config(table_name)
     
@@ -1225,7 +1050,7 @@ async def create_form(request: Request):
 
 @app.post("/create/{table_name}")
 async def create_item(table_name: str, request: Request):
-    print('post create_item')
+    # print('post create_item')
     table = None
     if table_name in metadata.tables:
         table = metadata.tables[table_name]
@@ -1238,17 +1063,29 @@ async def create_item(table_name: str, request: Request):
     table_config = get_table_config(table_name)
     
     for c in table_config['columns']:
-      print(c)
       if c['primary_key'] == 1:
-        if c['autoincrement'] == True:
+        if 'autoincrement' in c and c['autoincrement'] == True:
           data[c['name']] = None
-      
-    print(data)
-    # if data['id'] == '':
-    #     data['id'] = None
+
+    data_copy = copy.deepcopy(data)
     
-    for key in data:
-        data[key] = convert_value(table.c[key].type, data[key])
+    for key in data_copy:
+        auto_update = False
+        for c in table_config['columns']:
+            if key == c['name']:
+                if 'auto_update' in c.keys():
+                    if c['auto_update'] == True:
+                        auto_update = True
+                        break
+                        
+        if auto_update:
+            data[key] = datetime.now()
+        else:
+            data[key] = convert_value(table.c[key].type, data[key])
+            
+    
+    # for key in data:
+    #     data[key] = convert_value(table.c[key].type, data[key])
 
     try:
         with SessionLocal() as session:
@@ -1268,7 +1105,7 @@ async def create_item(table_name: str, request: Request):
             "search": "",
         })
     except SQLAlchemyError as e:
-        print(str(e))
+        # print(str(e))
         return {"success": False, "message": str(e)}
 
 @app.get("/edit", response_class=HTMLResponse)
@@ -1287,18 +1124,18 @@ async def edit_form(request: Request):
       id = query_params['id']
 
     if table_name is None:
-      table_name = 'Genre'
+      table_name = 'users'
     
     if id is None:
       id = 22
 
     table_config = get_table_config(table_name)
-    print('table_config')
-    print(table_config)
+    # # print('table_config')
+    # # print(table_config)
     table = metadata.tables[table_name]
     
     primary_key = next((c['name'] for c in table_config['columns'] if c['primary_key'] == 1), None)
-    print(primary_key)
+    # # print(primary_key)
 
     if primary_key is None:
         primary_key = get_primary_key(table)
@@ -1310,6 +1147,10 @@ async def edit_form(request: Request):
     if result:
       
         data = dict(result)
+        
+        # # print('###############')
+        # # print(data)
+        # # print('###############')
         
         component_id = None
     
@@ -1335,7 +1176,7 @@ async def edit_form(request: Request):
 
 @app.post("/edit/{table_name}/{id}")
 async def edit_item(table_name: str, id: str, request: Request):
-    print('edit_item')
+    # print('edit_item')
     # if table_name not in metadata.tables:
     #     raise HTTPException(status_code=404, detail="Table not found")
     # table = metadata.tables[table_name]
@@ -1350,9 +1191,24 @@ async def edit_item(table_name: str, id: str, request: Request):
     form_data = await request.form()
     data = {key: value for key, value in form_data.items() if key in table.columns.keys()}
     
-    for key in data:
-        data[key] = convert_value(table.c[key].type, data[key])
+    table_config = get_table_config(table_name)
+
+    data_copy = copy.deepcopy(data)
     
+    for key in data_copy:
+        auto_update = True
+        for c in table_config['columns']:
+            if key == c['name']:
+                if 'auto_update' in c.keys():
+                    if c['auto_update'] == False:
+                        auto_update = False
+                        break
+                        
+        if auto_update:
+            data[key] = convert_value(table.c[key].type, data[key])
+        else:
+            del data[key]
+            
     try:
         with SessionLocal() as session:
             stmt = update(table).where(getattr(table.c, primary_key) == id).values(**data)
@@ -1380,7 +1236,7 @@ async def delete_form(request: Request):
       id = query_params['id']
 
     if table_name is None:
-      table_name = 'Genre'
+      table_name = 'users'
     
     if id is None:
       id = 22
@@ -1421,7 +1277,7 @@ async def delete_form(request: Request):
         
     raise HTTPException(status_code=404, detail="Item not found")
 
-@app.delete("/delete/{table_name}/{id}")
+@app.post("/delete/{table_name}/{id}")
 async def delete_item(table_name: str, id: str):
     # if table_name not in metadata.tables:
     #     raise HTTPException(status_code=404, detail="Table not found")
@@ -1502,7 +1358,7 @@ async def get_record(table_name: str, id: str):
 def execute_transactions():
     try:
         with SessionLocal() as db:
-            return transaction_module.execute_all_transactions(db)
+            return TM.execute_all_transactions(db)
     except HTTPException as e:
         logger.error(f"Error executing transactions: {e.detail}")
         logger.error(traceback.format_exc())
@@ -1563,7 +1419,7 @@ def upload_file(
         
         # 执行事务
         try:
-            result = transaction_module.execute_transactions(
+            result = TM.execute_transactions(
                 transaction_name='file_operations',
                 params=transaction_params,
                 config_file='file_operations_txn.yaml'
@@ -1575,14 +1431,14 @@ def upload_file(
             # 根据结果返回适当的响应
             if isinstance(result, dict) and 'filename' in result:
                 load_page_config()
-                print(gv.component_dict.keys())
+                # # print(gv.component_dict.keys())
                 res = generate_html(gv.component_dict['file_manager'])
                 res = f'''
                 <div hx-swap-oob="innerHTML:#file-manager">
                     {res}
                 </div>
                 '''
-                print(res)
+                # # print(res)
                 return HTMLResponse(res)
                 # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
             else:
@@ -1600,7 +1456,7 @@ def upload_file(
         return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
 
 def get_files():
-    print('get_files')
+    # print('get_files')
     files = os.listdir("uploaded")
     return files
 
@@ -1636,34 +1492,356 @@ async def get_stats(request: Request):
 @app.get("/api/total_albums", response_class=HTMLResponse)
 async def get_total_albums(request: Request):
     with SessionLocal() as db:
-      result = transaction_module.execute_transactions(
-                db = db,
+      result = TM.execute_transactions(
                 transaction_name = 'get_total_albums',
                 config_file="main_txn.yaml"
             )
-    print(result)
-    for r in result:
-      print(r)
-      for k in r:
-        print(r[k])
+    # # print(result)
+    # for r in result:
+    #   # print(r)
+    #   for k in r:
+    #     # print(r[k])
     return HTMLResponse(str(result[0]['total_albums']))
 
 @app.get("/api/total_artists", response_class=HTMLResponse)
 async def get_total_albums(request: Request):
     with SessionLocal() as db:
-      result = transaction_module.execute_transactions(
-                db = db,
+      result = TM.execute_transactions(
                 transaction_name = 'get_total_artists',
                 config_file="main_txn.yaml"
             )
-    print(result)
-    for r in result:
-      print(r)
-      for k in r:
-        print(r[k])
+    # # print(result)
+    # for r in result:
+    #   # print(r)
+    #   for k in r:
+    #     # print(r[k])
     return HTMLResponse(str(result[0]['total_artists']))
    
+@app.get("/setup_customer_database", response_class=HTMLResponse)
+async def setup_customer_database(request: Request):
+    with SessionLocal() as db:
+      result = TM.execute_transactions(
+                transaction_name = 'setup_customer_database',
+                config_file="table_management_txn.yaml"
+            )
+    # # print(result)
+    # for r in result:
+    #   # print(r)
+    #   for k in r:
+    #     # print(r[k])
+    return HTMLResponse(str(result[0]['total_artists']))
+
+@app.get("/database_management", response_class=HTMLResponse)
+async def database_management(request: Request):
+    with SessionLocal() as db:
+      result = TM.execute_transactions(
+                transaction_name = 'create_new_database',
+                config_file="database_management_txn.yaml"
+            )
+    # print(result)
+    return HTMLResponse(str(result[0]['total_artists']))
+ 
+@app.get("/project_management_system", response_class=HTMLResponse)
+async def project_management_system(request: Request):
+    with SessionLocal() as db:
+      result = TM.execute_transactions(
+                transaction_name = 'create_base_tables',
+                config_file="project_management_system_txn.yaml"
+            )
+    # print(result)
+    # return HTMLResponse(str(result[0]['total_artists']))
+    return HTMLResponse('end')
+
+@app.get("/initialize_base_data", response_class=HTMLResponse)
+async def initialize_base_data(request: Request):
+    with SessionLocal() as db:
+      result = TM.execute_transactions(
+                transaction_name = 'initialize_base_data',
+                config_file="project_management_system_txn.yaml"
+            )
+    # print(result)
+    #return HTMLResponse(str(result[0]['total_artists']))
+    return HTMLResponse('end')
+
+@app.get("/pms", response_class=HTMLResponse)
+async def initialize_base_data(request: Request):
+    with SessionLocal() as db:
+        # result = TM.execute_transactions(
+        #             transaction_name = 'create_new_project',
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        # result = TM.execute_transactions(
+        #             transaction_name = 'add_project_member',
+        #             params={
+        #                 'project_id': 1,
+        #                 'user_id': 1
+        #             },
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        # result = TM.execute_transactions(
+        #             transaction_name = 'create_new_issue',
+        #             params={
+        #                 'subject': 'prj1'
+        #             },
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        # result = TM.execute_transactions(
+        #             transaction_name = 'update_issue_status',
+        #             params={
+        #                 'new_status_id': 3,
+        #                 'issue_id': 1,
+        #                 'current_user_id': 1,
+        #                 'new_status_name': 'In Progress'
+        #             },
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        '''
+        result = TM.execute_transactions(
+                    transaction_name = 'log_time_entry',
+                    params={
+                        'issue_id': 1,
+                        'user_id': 1,
+                        'hours': 1,
+                        'comments': 'コメント',
+                        'spent_on': "{{ current_timestamp }}", #spent_on
+                        'created_at': "{{ current_timestamp }}",
+                        'updated_at': "{{ current_timestamp }}",
+                    },
+                    config_file="project_management_system_txn.yaml"
+                )
+        # print(result)
+        '''
+        # result = TM.execute_transactions(
+        #             transaction_name = 'get_project_statistics',
+        #             params={
+        #                 'project_id': 1
+        #             },
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        # result = TM.execute_transactions(
+        #             transaction_name = 'create_new_database',
+        #             config_file="database_management_txn.yaml"
+        #         )
+        # # print(result)
+
+        # Database connection configuration
+        DATABASE_URL1 = "sqlite:///./project_management.db"
+        # Reflect existing database tables
+        TM1 = TransactionModule(database_url = DATABASE_URL1)
+
+        # result = TM1.execute_transactions(
+        #             transaction_name = 'create_base_tables',
+        #             config_file="project_management_system_txn.yaml"
+        #         )
+        # # print(result)
+        
+        # result = TM1.execute_transactions(
+        #         transaction_name = 'create_new_project',
+        #         config_file="project_management_system_txn.yaml"
+        #     )
+        # # print(result)
+        
+        result = TM1.execute_transactions(
+                    transaction_name = 'add_project_member',
+                    params={
+                        'project_id': 1,
+                        'user_id': 1
+                    },
+                    config_file="project_management_system_txn.yaml"
+                )
+        # # print(result)
+        
+    return HTMLResponse('end')
+    
+@app.get("/cms", response_class=HTMLResponse)
+async def initialize_base_data(request: Request):
+    # 7with SessionLocal() as db:
+
+        # result = TM.execute_transactions(
+        #           transaction_name = 'create_new_database',
+        #           config_file="cms.yaml"
+        #       )
+        # # print(result)
+    
+        # # Database connection configuration
+        # DATABASE_URL1 = "sqlite:///./cms.db"
+        # # Reflect existing database tables
+        # TM1 = TransactionModule(database_url = DATABASE_URL1)
+        
+        # result = TM1.execute_transactions(
+        #             transaction_name = 'create_base_tables',
+        #             config_file="cms.yaml"
+        #         )
+        # # print(result)
+        
+    # result = TM.execute_transactions(
+    #             transaction_name = 'initialize_base_data',
+    #             params={
+    #                 'hashed_password': '$2b$12$owwC890GCP59/Jsks0tz1eG4C9Z6hDpI1O/hHvsEhiINxvO/rQ.Qe'
+    #             },
+    #             config_file="cms.yaml"
+    #         )
+    result = TM.execute_transactions(
+                transaction_name = 'create_post',
+                params={
+                  'title': "3rd post",
+                  'slug': "3rd-post",
+                  'content': "This is my 3rd post!"
+                },
+                config_file="cms.yaml"
+            )
+    # # print(result)
+
+    # result = TM.execute_transactions(
+    #             transaction_name = 'get_posts_list',
+    #             # params={
+    #             #   'title': "2nd post",
+    #             #   'slug': "2nd-post",
+    #             #   'content': "This is my 2nd post!"
+    #             # },
+    #             config_file="cms.yaml"
+    #         )
+    # # print(result)
+    
+    return HTMLResponse('end')
+
+
+@app.post("/blog/post", response_class=HTMLResponse)
+async def blog_post(request: Request):
+    form_data = await request.form()
+    result = TM.execute_transactions(
+                transaction_name = 'create_post',
+                params={
+                  'title': form_data['title'],
+                  'slug': "slug",
+                  'content': form_data['content']
+                },
+                config_file="cms.yaml"
+            )
             
+    headers = {"HX-Trigger": "newPost"}
+    return HTMLResponse(content='ok', headers=headers)
+
+    #return HTMLResponse('ok')
+
+@app.delete("/blog/post", response_class=HTMLResponse)
+async def blog_post_delete(request: Request):
+    print('blog_post_delete')
+    query_params = dict(request.query_params)
+
+    result = TM.execute_transactions(
+                transaction_name = 'delete_post',
+                params={
+                  'id': query_params['id']
+                },
+                config_file="cms.yaml"
+            )
+            
+    headers = {"HX-Trigger": "deletePost"}
+    return HTMLResponse(content='ok', headers=headers)
+
+# 主渲染函数保持不变
+@app.get("/blog", response_class=HTMLResponse)
+async def blog(request: Request):
+    
+    gv.request = request
+
+    query_params = dict(request.query_params)
+    print(query_params)
+
+    load_data()
+
+    posts_config = get_table_config('posts')
+    # pprint.pprint(posts_config)
+    gv.posts_config = posts_config
+      
+    page_config = load_page_config('blog_config.yaml')
+    # pprint.pprint(page_config)
+
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    return template.render(
+        page_title=page_config['title'],
+        components=rendered_components,
+        min=min
+    )
+
+
+@app.get("/blog/posts", response_class=HTMLResponse)
+async def initialize_base_data(request: Request):
+
+    query_params = dict(request.query_params)
+
+    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+
+    result = TM.execute_transactions(
+                transaction_name = 'get_posts_list',
+                params={
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size
+                },
+                config_file="cms.yaml"
+            )
+    
+    no_next = False
+    if len(result) < page_size:
+        no_next = True
+    
+    no_prev = False
+    if page_number <= 1:
+        no_prev = True
+
+    h = ''
+    try:
+        load_page_config('blog_config.yaml')
+        gv.component_dict['posts']['data'] = result
+
+        prev_attr = {
+                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number - 1}", 
+                    'hx-swap': 'outerHTML',
+                    'hx-target': 'closest div',
+                    'hx-push-url': 'true'
+                }
+        if no_prev:
+            prev_attr['disabled'] = True
+
+        next_attr = {
+                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number + 1}", 
+                    'hx-swap': 'outerHTML',
+                    'hx-target': 'closest div',
+                    'hx-push-url': 'true'
+                }
+        if no_next:
+            next_attr['disabled'] = True
+
+        gv.component_dict['posts']['config'] = {
+            'prev': {
+                'attributes': prev_attr
+            },
+            'next': {
+                'attributes': next_attr
+            },
+            'del': {
+                'attributes': {
+                    # 'hx-delete': f"/post"
+                }
+            }
+        }
+        h = generate_html(gv.component_dict['posts'])
+    except Exception as e:
+        print(e)
+    
+    #headers = {"HX-Trigger": "newPost"}
+    #return HTMLResponse(content=h, headers=headers)
+    return HTMLResponse(content=h)
+    
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

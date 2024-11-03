@@ -49,34 +49,6 @@ component_definitions:
           text: Register
           href: /register
   
-          
-  form_test:
-    id: form_test
-    type: form
-    attributes:
-      class: mt-4 max-w-md mx-auto
-    children:
-      - type: input
-        attributes:
-          name: username
-          type: text
-          label: Username
-          placeholder: Enter your username
-          required: true
-      - type: input
-        attributes:
-          name: password
-          type: password
-          label: Password
-          placeholder: Enter your password
-          required: true
-      - type: button
-        attributes: 
-          id: button
-          text: ok
-          hx_get: /protected
-          onclick: modal_message.showModal()
-
   login_page:
     id: login_page
     type: layout_login

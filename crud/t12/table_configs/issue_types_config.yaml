@@ -1,0 +1,28 @@
+columns:
+- autoincrement: true
+  input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: name
+  name: name
+  nullable: false
+  primary_key: 0
+  type: VARCHAR(50)
+- input_type: text
+  label: description
+  name: description
+  nullable: true
+  primary_key: 0
+  type: TEXT
+- input_type: text
+  label: color
+  name: color
+  nullable: true
+  primary_key: 0
+  type: VARCHAR(7)
+name: issue_types
+type: table

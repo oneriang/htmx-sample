@@ -1,40 +1,34 @@
 columns:
 - autoincrement: true
   input_type: number
-  label: UserID
-  name: UserID
+  label: id
+  name: id
   nullable: true
   primary_key: 1
   type: INTEGER
 - input_type: text
-  label: Username
-  name: Username
+  label: name
+  name: name
   nullable: false
   primary_key: 0
-  type: TEXT
+  type: VARCHAR(50)
 - input_type: text
-  label: Password
-  name: Password
+  label: slug
+  name: slug
   nullable: false
   primary_key: 0
-  type: TEXT
+  type: VARCHAR(50)
 - input_type: text
-  label: Email
-  name: Email
-  nullable: true
-  primary_key: 0
-  type: TEXT
-- input_type: text
-  label: Role
-  name: Role
+  label: description
+  name: description
   nullable: true
   primary_key: 0
   type: TEXT
 - input_type: date
-  label: CreatedAt
-  name: CreatedAt
-  nullable: true
+  label: created_at
+  name: created_at
+  nullable: false
   primary_key: 0
   type: DATETIME
-name: Users
+name: tags
 type: table

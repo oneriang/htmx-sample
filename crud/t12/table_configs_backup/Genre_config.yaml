@@ -1,0 +1,15 @@
+columns:
+- input_type: number
+  label: ジャンルID
+  name: GenreId
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: ジャンル名称
+  name: Name
+  nullable: true
+  primary_key: 0
+  type: NVARCHAR(120)
+name: Genre
+component_edit_id: form_edit

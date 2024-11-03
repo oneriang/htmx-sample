@@ -1,0 +1,43 @@
+transactions:
+  # 完整的业务流程示例：创建表并插入数据
+  - name: aaa
+    steps:
+      # # 1. 创建客户表
+      # - action: create_table
+      #   table_name: customers
+      #   columns:
+      #     - name: id
+      #       type: integer
+      #       primary_key: true
+      #     - name: name
+      #       type: string
+      #       length: 100
+      #     - name: email
+      #       type: string
+      #       length: 200
+      # 问题类型表
+      - action: create_table
+        table_name: issue_types
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 50
+            nullable: false
+          - name: description
+            type: text
+          - name: color
+            type: string
+            length: 7
+            default: "#FFFFFF"
+
+      # 2. 插入测试数据
+      - action: insert
+        table: issue_types
+        values:
+          id: 1
+          name: "John Doe"
+          description: "john@example.com"
+

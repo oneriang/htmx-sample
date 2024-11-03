@@ -8,6 +8,8 @@ component_definitions:
     children:
       left_sidebar:
         - $ref: button
+        - $ref: button_pms
+        - $ref: button_cms
         - $ref: table_list
       main_content:
         - $ref: main_content
@@ -83,8 +85,29 @@ component_definitions:
     id: main_content
     type: main_content
     children:
-      # - $ref: main_data_table
+      - type: link
+        attributes: 
+          href: /blog
+          text: Blog
       - $ref: main_data_table
+    #   - type: table
+    #   - type: hero
+    #   - type: carousel
+    #   - type: tabs
+    #   - $ref: stats
+    # #   - $ref: main_data_table
+    #   - $ref: button
+    #   - type: tooltip
+    #     attributes:
+    #       tip: tip
+    #       text: tt
+    #   - type: stat
+    #     attributes:
+    #       label: File Manager
+    #     title: a
+    #     color: red
+    #     value: 1
+    #     desc: asdfg
 
   todo_list:
     id: todo_list
@@ -157,6 +180,22 @@ component_definitions:
       hx_get: /protected
       onclick: modal_message.showModal()
   
+  button_pms:
+    id: button_pms
+    type: button
+    attributes: 
+      id: button_pms
+      text: PMS
+      hx_get: /pms
+    
+  button_cms:
+    id: button_cms
+    type: button
+    attributes: 
+      id: button_cms
+      text: CMS
+      hx_get: /cms
+
   button_logout:
     id: button_logout
     type: button
@@ -209,99 +248,60 @@ component_definitions:
         
   form_create:
     id: form_create
-    type: form_create
+    type: form_base
+    config:
+      title: Create
+      mode: create
+    attributes:
+      title: Create
+      mode: create
 
   form_edit:
     id: form_edit
-    type: form_edit
+    type: form_base
+    config:
+      title: Edit
+      mode: edit
+    attributes:
+      title: Edit
+      mode: edit
 
   form_delete:
     id: form_delete
-    type: form_delete
-
-  registration_form1:
-    id: registration_form
-    type: form
+    type: form_base
+    config:
+      title: Delete
+      mode: delete
     attributes:
-      class:
-        type: string
-        value: mt-4 max-w-md mx-auto
-      fields:
-        type: list
-        value:
-          - {name: username, type: text, label: Username, placeholder: Enter your username, required: true}
-          - {name: email, type: email, label: Email, placeholder: Enter your email, required: true}
-          - {name: password, type: password, label: Password, placeholder: Enter your password, required: true}
-          - {name: age, type: number, label: Age, placeholder: Enter your age}
-          - {name: birthdate, type: date, label: Birth Date}
-          - {name: bio, type: textarea, label: Biography, placeholder: Tell us about yourself}
-          - name: country
-            type: select
-            label: Country
-            required: true
-            options:
-              - {value: us, label: United States}
-              - {value: uk, label: United Kingdom}
-              - {value: ca, label: Canada}
-          - name: newsletter
-            type: checkbox
-            label: Subscribe to newsletter
-            checkboxLabel: Yes, I want to receive updates
-          - name: gender
-            type: radio
-            label: Gender
-            options:
-              - {value: male, label: Male}
-              - {value: female, label: Female}
-              - {value: other, label: Other}
-          - name: profile_picture
-            type: file
-            label: Profile Picture
-            helpText: Please upload an image file (JPG, PNG)
-      submit_text:
-        type: string
-        value: Register
-
-  registration_form:
-    id: registration_form
-    type: form
-    attributes:
-      class: mt-4 max-w-md mx-auto
-      hx_post: /register
-      hx_target: "#registration-result"
-      hx_encoding: multipart/form-data
-      enctype: application/x-www-form-urlencoded
-    children:
-      - type: input
-        attributes:
-          name: profile_picture
-          type: file
-          label: Profile Picture
-          placeholder: select your picture
-          required: true
-      - type: button
-        attributes:
-          class: btn btn-primary w-full mt-4
-          id: btn_register
-          text: R
-
-  user_management1:
-    id: user_management
-    type: form
-    attributes:
-      id: login_form
-      class: mt-4 max-w-md mx-auto
-      fields:
-        - {name: username, type: text, label: Username, required: true}
-        - {name: password, type: password, label: Password, required: true}
-      submit_text: Login
-
+      title: Delete
+      mode: delete
+  
   file_manager:
     id: file_manager
     type: file_manager
     files: get_files
     attributes:
       label: File Manager
+      
+  stats:
+    id: stats
+    type: stats
+    children:
+      - type: stat
+        attributes:
+          label: File Manager
+          title: a
+          color: red
+          value: 1
+          desc: asdfg
+      - type: stat
+        attributes:
+          label: File Manager
+          title: a
+          color: red
+          value: 2
+          desc: asdfg
+      
 
 components:
   - $ref: main_layout

@@ -1,0 +1,34 @@
+columns:
+- autoincrement: true
+  input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: number
+  label: project_id
+  name: project_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: number
+  label: user_id
+  name: user_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: text
+  label: role
+  name: role
+  nullable: false
+  primary_key: 0
+  type: VARCHAR(50)
+- input_type: date
+  label: created_at
+  name: created_at
+  nullable: false
+  primary_key: 0
+  type: DATETIME
+name: project_members
+type: table

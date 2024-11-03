@@ -1,0 +1,139 @@
+transactions:
+  # 创建新表的示例
+  - name: create_customer_table
+    steps:
+      - action: create_table
+        table_name: customers
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 100
+            nullable: false
+          - name: email
+            type: string
+            length: 200
+            nullable: false
+          - name: birth_date
+            type: date
+            nullable: true
+          - name: credit_limit
+            type: decimal
+            precision: 10
+            scale: 2
+            default: 1000.00
+          - name: status
+            type: string
+            length: 20
+            default: "active"
+
+  # 创建带外键的订单表示例
+  - name: create_orders_table
+    steps:
+      - action: create_table
+        table_name: orders
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: customer_id
+            type: integer
+            nullable: false
+            foreign_key:
+              table: customers
+              column: id
+          - name: order_date
+            type: datetime
+            nullable: false
+          - name: total_amount
+            type: decimal
+            precision: 10
+            scale: 2
+          - name: status
+            type: string
+            length: 20
+            default: "pending"
+
+  # 修改表结构的示例
+  - name: modify_customers_table
+    steps:
+      # 添加新列
+      - action: alter_table
+        table_name: customers
+        operation: add_column
+        columns:
+          - name: phone
+            type: string
+            length: 20
+          - name: address
+            type: text
+            nullable: true
+
+      # 修改现有列
+      - action: alter_table
+        table_name: customers
+        operation: modify_column
+        columns:
+          - name: email
+            type: string
+            length: 300  # 增加长度
+            nullable: false
+
+      # 删除列
+      - action: alter_table
+        table_name: customers
+        operation: drop_column
+        columns:
+          - birth_date
+
+  # 删除表的示例
+  - name: drop_old_tables
+    steps:
+      - action: drop_table
+        table_name: old_customers
+
+  # 完整的业务流程示例：创建表并插入数据
+  - name: setup_customer_database
+    steps:
+      # 1. 创建客户表
+      - action: create_table
+        table_name: customers
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 100
+          - name: email
+            type: string
+            length: 200
+
+      # 2. 插入测试数据
+      - action: insert
+        table: customers
+        values:
+          id: 1
+          name: "John Doe"
+          email: "john@example.com"
+
+      # 3. 添加新列
+      - action: alter_table
+        table_name: customers
+        operation: add_column
+        columns:
+          - name: registration_date
+            type: date
+            nullable: true
+
+      # 4. 更新现有数据
+      - action: update
+        table: customers
+        values:
+          registration_date: "2024-01-01"
+        filter_values:
+          - field: id
+            operator: eq
+            value: 1

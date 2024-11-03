@@ -1,0 +1,32 @@
+columns:
+- input_type: number
+  label: InvoiceLineId
+  name: InvoiceLineId
+  nullable: false
+  primary_key: 1
+  type: INTEGER
+- input_type: number
+  label: InvoiceId
+  name: InvoiceId
+  nullable: false
+  primary_key: 0
+  type: INTEGER
+- input_type: number
+  label: TrackId
+  name: TrackId
+  nullable: false
+  primary_key: 0
+  type: INTEGER
+- input_type: text
+  label: UnitPrice
+  name: UnitPrice
+  nullable: false
+  primary_key: 0
+  type: NUMERIC(10, 2)
+- input_type: number
+  label: Quantity
+  name: Quantity
+  nullable: false
+  primary_key: 0
+  type: INTEGER
+name: InvoiceLine

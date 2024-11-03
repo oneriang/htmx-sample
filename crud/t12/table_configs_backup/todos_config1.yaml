@@ -1,0 +1,21 @@
+columns:
+- input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: title
+  name: title
+  nullable: false
+  primary_key: 0
+  type: TEXT
+- input_type: checkbox
+  label: completed
+  name: completed
+  nullable: false
+  primary_key: 0
+  type: BOOLEAN
+name: todos
+type: table

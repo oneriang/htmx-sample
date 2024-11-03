@@ -1,0 +1,239 @@
+columns:
+  - autoincrement: true
+    input_type: number
+    label: ID
+    name: id
+    nullable: true
+    primary_key: 1
+    type: INTEGER
+  - input_type: text
+    label: 标题
+    name: title
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(200)
+  - input_type: text
+    label: slug
+    name: slug
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(200)
+  - input_type: text
+    label: content
+    name: content
+    nullable: false
+    primary_key: 0
+    type: TEXT
+  - input_type: text
+    label: excerpt
+    name: excerpt
+    nullable: true
+    primary_key: 0
+    type: TEXT
+  - input_type: text
+    label: featured_image
+    name: featured_image
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  - input_type: number
+    label: author_id
+    name: author_id
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  - input_type: number
+    label: category_id
+    name: category_id
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  - input_type: text
+    label: status
+    name: status
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  - input_type: text
+    label: visibility
+    name: visibility
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  - input_type: text
+    label: password
+    name: password
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  - input_type: date
+    label: published_at
+    name: published_at
+    nullable: true
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  - input_type: date
+    label: created_at
+    name: created_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  - input_type: date
+    label: updated_at
+    name: updated_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  - input_type: number
+    label: views_count
+    name: views_count
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  - input_type: number
+    label: likes_count
+    name: likes_count
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  - input_type: checkbox
+    label: comments_enabled
+    name: comments_enabled
+    nullable: true
+    primary_key: 0
+    type: BOOLEAN
+cols:
+  id:
+    autoincrement: true
+    input_type: number
+    label: ID
+    name: id
+    nullable: true
+    primary_key: 1
+    type: INTEGER
+  title:
+    input_type: text
+    label: 标题
+    name: title
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(200)
+  slug:
+    input_type: text
+    label: slug
+    name: slug
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(200)
+  content:
+    input_type: text
+    label: 内容
+    name: content
+    nullable: false
+    primary_key: 0
+    type: TEXT
+  excerpt:
+    input_type: text
+    label: excerpt
+    name: excerpt
+    nullable: true
+    primary_key: 0
+    type: TEXT
+  featured_image:
+    input_type: text
+    label: featured_image
+    name: featured_image
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  author_id:
+    input_type: number
+    label: author_id
+    name: author_id
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  category_id:
+    input_type: number
+    label: category_id
+    name: category_id
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  status:
+    input_type: text
+    label: status
+    name: status
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  visibility:
+    input_type: text
+    label: visibility
+    name: visibility
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  password:
+    input_type: text
+    label: password
+    name: password
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  published_at:
+    input_type: date
+    label: published_at
+    name: published_at
+    nullable: true
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  created_at:
+    input_type: date
+    label: created_at
+    name: created_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  updated_at:
+    input_type: date
+    label: updated_at
+    name: updated_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  views_count:
+    input_type: number
+    label: views_count
+    name: views_count
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  likes_count:
+    input_type: number
+    label: likes_count
+    name: likes_count
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  comments_enabled:
+    input_type: checkbox
+    label: comments_enabled
+    name: comments_enabled
+    nullable: true
+    primary_key: 0
+    type: BOOLEAN
+name: posts
+type: table

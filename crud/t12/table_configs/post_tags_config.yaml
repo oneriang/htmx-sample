@@ -1,0 +1,21 @@
+columns:
+- input_type: number
+  label: post_id
+  name: post_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: number
+  label: tag_id
+  name: tag_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: date
+  label: created_at
+  name: created_at
+  nullable: false
+  primary_key: 0
+  type: DATETIME
+name: post_tags
+type: table

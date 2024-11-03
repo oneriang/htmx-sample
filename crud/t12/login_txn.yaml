@@ -1,6 +1,17 @@
 transactions:
   - name: UserLogin
     steps:
+      # - action: insert
+      #   table: customers
+      #   values:
+      #     name: "John Doe2"
+      #     email: "john@example.com2"
+      # - action: insert
+      #   table: issue_types
+      #   values:
+      #     name: "Feature"
+      #     description: "New feature request"
+      #     color: "#00FF00"
       - action: get
         table: Users
         fields:

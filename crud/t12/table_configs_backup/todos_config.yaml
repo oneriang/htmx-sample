@@ -1,0 +1,26 @@
+columns:
+- autoincrement: true
+  input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+  is_hidden: true
+  is_hidden_on_create: true
+- input_type: checkbox
+  label: completed
+  name: completed
+  nullable: false
+  primary_key: 0
+  type: BOOLEAN
+  is_hidden_on_create: true
+  is_hidden_on_delete: true
+- input_type: text
+  label: title
+  name: title
+  nullable: false
+  primary_key: 0
+  type: TEXT
+name: todos
+type: table

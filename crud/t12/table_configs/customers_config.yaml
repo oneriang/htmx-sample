@@ -1,0 +1,28 @@
+columns:
+- autoincrement: true
+  input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: text
+  label: name
+  name: name
+  nullable: true
+  primary_key: 0
+  type: VARCHAR(100)
+- input_type: text
+  label: email
+  name: email
+  nullable: true
+  primary_key: 0
+  type: VARCHAR(200)
+- input_type: date
+  label: registration_date
+  name: registration_date
+  nullable: true
+  primary_key: 0
+  type: DATE
+name: customers
+type: table

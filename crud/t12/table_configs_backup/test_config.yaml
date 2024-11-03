@@ -1,0 +1,9 @@
+columns:
+- input_type: text
+  label: ct
+  name: ct
+  nullable: true
+  primary_key: 0
+  type: 'NULL'
+name: test
+type: view

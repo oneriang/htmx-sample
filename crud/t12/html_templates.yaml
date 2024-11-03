@@ -65,16 +65,16 @@
             <div class="w-full navbar bg-base-300">
                 <div class="flex-none">
                     <label for="drawer-left" aria-label="toggle left sidebar" class="btn btn-square btn-ghost lg:hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </label>
+                        {{ icons.menu}}
+                     </label>
                     <label for="drawer-left" aria-label="toggle left sidebar" class="btn btn-square btn-ghost hidden lg:flex">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        {{ icons.menu }}
                     </label>
                 </div>
-                <div class="flex-1 px-2 mx-2">{{ attributes.title }}</div >
+                <div class="flex-1 px-2 mx-2"><a href="/">{{ attributes.title }}</a></div >
                 <div class="flex-none">
                     <label for="drawer-right" aria-label="open right sidebar" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        {{ icons.user }}
                     </label>
                 </div>
             </div>
@@ -82,7 +82,7 @@
                 {{ child | safe }}
             {% endfor %}
             <!-- Main content -->
-            <div class="grid mb-2 pb-2 px-2 mx-2 rounded-3xl bg-gray-100 border-4 border-green-400">
+            <div class="grid mb-2 pt-2 pb-2 px-2 rounded-3xl bg-gray-100 border-4 border-green-400">
                 {% for child in children.main_content %}
                     {{ child | safe }}
                 {% endfor %}
@@ -117,7 +117,7 @@
     
     <script>
         function closeDrawer() {
-            document.getElementById('drawer-left').checked = false;
+            // document.getElementById('drawer-left').checked = false;
         }
 
         // 为所有的li元素添加点击事件
@@ -163,25 +163,6 @@
       {% endfor %}
     </div>
 
-'card1': |
-    <div class="card w-full {{ attributes.class if attributes and attributes.class else '' }}"
-        {% for attr, value in attributes.items() %}
-            {% if attr not in ['class'] %}
-                {{ attr }}="{{ value }}"
-            {% endif %}
-        {% endfor %}
-    >
-        <div class="card-body">
-            <h2 class="card-title">{{ data.title if data and data.title else 'aaa'}}</h2>
-            <p class="content">{{ data.content if data and data.content else 'bbb'}}</p>
-            {% if children %}
-                {% for child in children %}
-                    {{ child | safe }}
-                {% endfor %}
-            {% endif %}
-        </div>
-    </div>
-
 'card': |
     <a class="transform  hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 xl:col-span-3 intro-y bg-white"
                                     href="#">
@@ -208,19 +189,6 @@
         </div>
     </a>
 
-'grid1': |
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4
-        {{ attributes.class if attributes and attributes.class }}"
-        {% for attr, value in attributes.items() %}
-            {% if attr not in ['class'] %}
-                {{ attr }}="{{ value }}"
-            {% endif %}
-        {% endfor %}>
-        {% for child in children %}
-            <div class="col-span-1">{{ child | safe }}</div>
-        {% endfor %}
-    </div>
-
 'grid': |
     <div class="grid grid-cols-12 gap-6">
         <div class="grid grid-cols-12 col-span-12 gap-6 xxl:col-span-9">
@@ -231,27 +199,6 @@
             </div>
         </div>
     </div>
-
-'list1': |
-    <ul class="menu bg-base-200 w-56 rounded-box">
-        {% for item in value %}
-            {% if item.get %}
-                <li>
-                    <a href="#"
-                        hx-get="{{- '/component?' -}}
-                        {{- 'table_name=' ~ item.text -}}&
-                        {{- 'component_id=' ~ item.component_id -}}"
-                        hx-target="#table-content"
-                        class="w-full" style="width:100%;">
-                        
-                            {{ item.text }}
-                            
-                        </a>
-            {% else %}
-                <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
-            {% endif %}
-        {% endfor %}
-    </ul>
     
 'list': |
     {% for item in value %}
@@ -285,12 +232,11 @@
       {% endfor %}
     </div>
     
-# 'data-table-1': |
 'data_table_content': |
     <div class="overflow-x-auto mt-0" id="table-content">
         <div class="flex space-x-2">
-            {{ configs.name }}
-            <button hx-get="/create?table_name={{ configs.name }}" 
+            {{ config.name }}
+            <button hx-get="/create?table_name={{ config.name }}" 
                     hx-target="#modal-content"
                     hx-trigger="click" onclick="modal_form.showModal()" 
                     class="text-blue-500 hover:underline">
@@ -301,14 +247,14 @@
             <thead>
                 <tr>
                     <th class="border px-4 py-2 sticky-left sticky-left-shadow max-w-24 w-24">Actions</th>
-                    {% for column in configs.columns %}
+                    {% for column in config.columns %}
                         {% if not column['is_hidden'] %}
                             <th class="border px-4 py-2" style="overflow: hidden; resize: horizontal;">
                                 <div>
                                     <a href="#"
                                     hx-get="{{- '/component?' -}}
-                                    table_name={{ configs.name }}&
-                                    {{- 'component_id=' ~ configs.component_id -}}&
+                                    table_name={{ config.name }}&
+                                    {{- 'component_id=' ~ config.component_id -}}&
                                     {{- 'page=' ~ data.page -}}&
                                     {{- 'search=' ~ data.search -}}&
                                     {{- 'sort_column=' ~ column['name'] -}}&
@@ -334,18 +280,18 @@
                 {% for row in data.rows %}
                     <tr class="hover:bg-gray-100">
                         <td class="border px-4 py-2 sticky-left sticky-left-shadow">
-                            <button hx-get="/edit?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                            <button hx-get="/edit?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                               hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">
                               <span class="hidden">Edit</span>
                               {{ icons.edit }}
                             </button>
-                            <button hx-get="/delete?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                            <button hx-get="/delete?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                               hx-trigger="click" onclick="modal_form.showModal()" class="text-red-500 hover:underline">
                               <span class="hidden">Delete</span>
                               {{ icons.delete }}
                             </button>
                         </td>
-                        {% for column in configs.columns %}
+                        {% for column in config.columns %}
                             {% if not column['is_hidden'] %}
                                 <td class="border px-4 py-2">{{ row[column['name']] or '' }}</td>
                             {% endif %}
@@ -358,13 +304,13 @@
 
 'data-card': |
     <div class="overflow-x-auto mt-0" id="table-content">
-        {{ configs.name }}
-        <button hx-get="/create?table_name={{ configs.name }}" hx-target="#modal-content"
+        {{ config.name }}
+        <button hx-get="/create?table_name={{ config.name }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Create</button>
         {% if True %}
         {% for row in data.rows %}
             <div class="card bg-base-100 w-96 shadow-xl hidden my-2">          
-                {% for column in configs.columns %}
+                {% for column in config.columns %}
                     {% if not column['is_hidden'] %}
                         {% if 'img' in column %}
                             <figure>
@@ -390,7 +336,7 @@
             </div>
             <div class="card lg:card-side bg-base-100 shadow-xl my-2">
                 <div class="card-body">
-                    {% for column in configs.columns %}
+                    {% for column in config.columns %}
                         {% if not column['is_hidden'] %}
                             {% if 'img' in column %}
                                 <figure>
@@ -405,9 +351,9 @@
                         {% endif %}
                     {% endfor %}
                     <div class="card-actions justify-end">
-                        <button hx-get="/edit?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                        <button hx-get="/edit?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
-                        <button hx-get="/delete?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                        <button hx-get="/delete?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-red-500 hover:underline">Delete</button>
                     </div>
                 </div>
@@ -427,7 +373,7 @@
               {% if data.page > 1 %}
                   <button
                       hx-get="{{- '/component?' -}}
-                      {{- 'component_id=' ~ configs.component_id -}}&
+                      {{- 'component_id=' ~ config.component_id -}}&
                       {{- 'page=' ~ (data.page - 1) -}}&
                       {{- 'page_size=' ~ data.page_size -}}&
                       {{- 'sort_column=' ~ data.sort_column -}}&
@@ -444,7 +390,7 @@
               {% if data.page < data.total_pages %} 
                   <button
                       hx-get="{{- '/component?' -}}
-                      {{- 'component_id=' ~ configs.component_id -}}&
+                      {{- 'component_id=' ~ config.component_id -}}&
                       {{- 'page=' ~ (data.page + 1) -}}&
                       {{- 'page_size=' ~ data.page_size -}}&
                       {{- 'sort_column=' ~ data.sort_column -}}&
@@ -460,7 +406,7 @@
               {% endif %}
                   <button
                       hx-get="{{- '/component?' -}}
-                      {{- 'component_id=' ~ configs.component_id -}}&
+                      {{- 'component_id=' ~ config.component_id -}}&
                       {{- 'page=' ~ data.page -}}&
                       {{- 'page_size=' ~ data.page_size -}}&
                       {{- 'sort_column=' ~ data.sort_column -}}&
@@ -479,7 +425,7 @@
     </div>
 
 'data_search_form': |
-    <form hx-get="/component/?component_id=main_data_table&table_name={{ configs.name }}" 
+    <form hx-get="/component/?component_id=main_data_table&table_name={{ config.name }}" 
         hx-target="#data-table" hx-swap="outerHTML" hx-push-url="false" 
         class="my-4 flex space-x-2 px-2">
         <input value="{{ data.search_params['keyword'] if 'keyword' in data.search_params else '' }}" 
@@ -518,8 +464,8 @@
             }
         </style>
         <div class="flex space-x-2">
-            {{ configs.name }}
-            <button hx-get="/create?table_name={{ configs.name }}" 
+            {{ config.name }}
+            <button hx-get="/create?table_name={{ config.name }}" 
                     hx-target="#modal-content"
                     hx-trigger="click" onclick="modal_form.showModal()" 
                     class="text-blue-500 hover:underline">
@@ -530,7 +476,7 @@
             {% for row in data.rows %}
                 <li class="flex justify-between gap-x-6 py-5">
                     <div class="flex min-w-0 gap-x-4">
-                        {% for column in configs.columns %}
+                        {% for column in config.columns %}
                         {% if not column['is_hidden'] %}
                             {% if 'img' in column %}
                                 <figure>
@@ -552,12 +498,12 @@
                         {% endfor %}
                     </div>
                     <div class="card-actions justify-end">
-                        <button hx-get="/edit?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                        <button hx-get="/edit?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">
                           <span class="hidden">Edit</span>
                           {{ icons.edit }}
                         </button>
-                        <button hx-get="/delete?table_name={{ configs.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
+                        <button hx-get="/delete?table_name={{ config.name }}&id={{ row[data.primary_key] }}" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-red-500 hover:underline">
                           <span class="hidden">Delete</span>
                           {{ icons.delete }}
@@ -578,7 +524,7 @@
                 {% if data.page > 1 %}
                     <button
                         hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
+                        {{- 'component_id=' ~ config.component_id -}}&
                         {{- 'page=' ~ (data.page - 1) -}}&
                         {{- 'page_size=' ~ data.page_size -}}&
                         {{- 'sort_column=' ~ data.sort_column -}}&
@@ -596,7 +542,7 @@
                 {% if data.page < data.total_pages %} 
                     <button
                         hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
+                        {{- 'component_id=' ~ config.component_id -}}&
                         {{- 'page=' ~ (data.page + 1) -}}&
                         {{- 'page_size=' ~ data.page_size -}}&
                         {{- 'sort_column=' ~ data.sort_column -}}&
@@ -613,7 +559,7 @@
                 {% endif %}
                     <button
                         hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
+                        {{- 'component_id=' ~ config.component_id -}}&
                         {{- 'page=' ~ data.page -}}&
                         {{- 'page_size=' ~ data.page_size -}}&
                         {{- 'sort_column=' ~ data.sort_column -}}&
@@ -633,7 +579,7 @@
         </div>
     </div>
     
-'table': |
+'table1': |
     <div class="overflow-x-auto">
         <table class="table {{ attributes.class.value }}">
             <thead>
@@ -655,228 +601,134 @@
         </table>
     </div>
 
+'table': |
+    <div class="overflow-x-auto">
+      <table class="table table-xs table-pin-rows table-pin-cols">
+        <thead>
+          <tr>
+            <th></th>
+            <td>Name</td>
+            <td>Job</td>
+            <td>company</td>
+            <td>location</td>
+            <td>Last Login</td>
+            <td>Favorite Color</td>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>1</th>
+            <td>Cy Ganderton</td>
+            <td>Quality Control Specialist</td>
+            <td>Littel, Schaden and Vandervort</td>
+            <td>Canada</td>
+            <td>12/16/2020</td>
+            <td>Blue</td>
+            <th>1</th>
+          </tr>
+          <tr>
+            <th>2</th>
+            <td>Hart Hagerty</td>
+            <td>Desktop Support Technician</td>
+            <td>Zemlak, Daniel and Leannon</td>
+            <td>United States</td>
+            <td>12/5/2020</td>
+            <td>Purple</td>
+            <th>2</th>
+          </tr>
+          <tr>
+            <th>3</th>
+            <td>Brice Swyre</td>
+            <td>Tax Accountant</td>
+            <td>Carroll Group</td>
+            <td>China</td>
+            <td>8/15/2020</td>
+            <td>Red</td>
+            <th>3</th>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th></th>
+            <td>Name</td>
+            <td>Job</td>
+            <td>company</td>
+            <td>location</td>
+            <td>Last Login</td>
+            <td>Favorite Color</td>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
 'data_pagination': |
-        <div class="mt-4 flex justify-between items-center">
-            <p>
-                {{ (data.page - 1) * data.page_size + 1 }} 
-                to 
-                {{ min(data.page * data.page_size, data.total_items) }} 
-                of 
-                {{ data.total_items }}
-            </p>
-            <div class="flex space-x-2">
-                {% if data.page > 1 %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page - 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#data-table"
-                        class="text-blue-500 hover:underline"
-                    >
-                        <span class="hidden">Previous</span>
-                        {{ icons.prev }}
-                    </button>
-                {% endif %}
-                {% if data.page < data.total_pages %} 
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ (data.page + 1) -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#data-table"
-                        class="text-blue-500 hover:underline"
-                    >
-                        <span class="hidden">Next</span>
-                        {{ icons.next }}
-                    </button>
-                {% endif %}
-                    <button
-                        hx-get="{{- '/component?' -}}
-                        {{- 'component_id=' ~ configs.component_id -}}&
-                        {{- 'page=' ~ data.page -}}&
-                        {{- 'page_size=' ~ data.page_size -}}&
-                        {{- 'sort_column=' ~ data.sort_column -}}&
-                        {{- 'sort_direction=' ~ data.sort_direction -}}
-                        {%- for key, value in data.search_params.items() -%}
-                            &{{ key }}={{ value }}
-                        {%- endfor -%}"
-                        hx-target="#data-table"
-                        id="btn-table-refresh"
-                        class="text-blue-500 hover:underline"
-                        
-                    >
-                        <span class="hidden">Refresh</span>
-                        {{ icons.refresh }}
-                    </button>
-            </div>
-        </div>
-        
-'form1': |
-    <form class="{{ attributes.class.value }}">
-        {% for field in attributes.fields.value %}
-            <div class="form-control w-full mb-4">
-                <label class="label">
-                    <span class="label-text">{{ field.label }}</span>
-                </label>
-                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
-                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% elif field.type == 'textarea' %}
-                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
-                {% elif field.type == 'select' %}
-                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
-                        {% for option in field.options %}
-                            <option value="{{ option.value }}">{{ option.label }}</option>
-                        {% endfor %}
-                    </select>
-                {% elif field.type == 'checkbox' %}
-                    <div class="flex items-center mt-2">
-                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
-                        <span class="ml-2">{{ field.checkboxLabel }}</span>
-                    </div>
-                {% elif field.type == 'radio' %}
-                    <div class="flex flex-col mt-2">
-                        {% for option in field.options %}
-                            <label class="flex items-center mb-2">
-                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
-                                <span class="ml-2">{{ option.label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                {% elif field.type == 'file' %}
-                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% endif %}
-                {% if field.helpText %}
-                    <label class="label">
-                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
-                    </label>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text.value }}</button>
-    </form>
-
-'form2': |
-    <form class="{{ attributes.class }}"
-          {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
-          {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
-          {% if attributes.hx_encoding %}hx-encoding="{{ attributes.hx_encoding }}"{% endif %}
-          {% if attributes.enctype %}enctype="{{ attributes.enctype }}"{% endif %}
-          {% for attr, value in attributes.items() %}
-              {% if attr not in ['class', 'fields', 'submit_text', 'hx_post', 'hx_target', 'hx_encoding', 'enctype'] %}
-                  {{ attr }}="{{ value }}"
-              {% endif %}
-          {% endfor %}>
-          {% if attributes.fields %}
-          {% for field in attributes.fields %}
-            <div class="form-control w-full mb-4">
-                <label class="label">
-                    <span class="label-text">{{ field.label }}</span>
-                </label>
-                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
-                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% elif field.type == 'textarea' %}
-                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
-                {% elif field.type == 'select' %}
-                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
-                        {% for option in field.options %}
-                            <option value="{{ option.value }}">{{ option.label }}</option>
-                        {% endfor %}
-                    </select>
-                {% elif field.type == 'checkbox' %}
-                    <div class="flex items-center mt-2">
-                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
-                        <span class="ml-2">{{ field.checkboxLabel }}</span>
-                    </div>
-                {% elif field.type == 'radio' %}
-                    <div class="flex flex-col mt-2">
-                        {% for option in field.options %}
-                            <label class="flex items-center mb-2">
-                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
-                                <span class="ml-2">{{ option.label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                {% elif field.type == 'file' %}
-                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% endif %}
-                {% if field.helpText %}
-                    <label class="label">
-                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
-                    </label>
-                {% endif %}
-            </div>
-        {% endfor %}
-        {% endif %}
-         {% if attributes.buttons %}
-            {% for btn in attributes.buttons %}
-                <button type="submit" class="btn btn-primary w-full mt-4">{{ attributes.submit_text }}</button>
-       
-            {% endfor %}
-        {% endif %}
-        
-        {% if children %}
-        <div class="form-control w-full mb-4">
-
-        {% for field in children %}
-        {{ field }}
-            {% if field.is_field %}
-                <label class="label">
-                    <span class="label-text">{{ field.label }}</span>
-                </label>
-                {% if field.type == 'text' or field.type == 'email' or field.type == 'password' or field.type == 'number' or field.type == 'date' %}
-                    <input {% if field.disabled %}disabled{% endif %} {% if field.readonly %}readonly{% endif %} type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="input input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% elif field.type == 'textarea' %}
-                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" class="textarea textarea-bordered w-full" {% if field.required %}required{% endif %}></textarea>
-                {% elif field.type == 'select' %}
-                    <select name="{{ field.name }}" class="select select-bordered w-full" {% if field.required %}required{% endif %}>
-                        {% for option in field.options %}
-                            <option value="{{ option.value }}">{{ option.label }}</option>
-                        {% endfor %}
-                    </select>
-                {% elif field.type == 'checkbox' %}
-                    <div class="flex items-center mt-2">
-                        <input type="checkbox" name="{{ field.name }}" class="checkbox" {% if field.required %}required{% endif %}>
-                        <span class="ml-2">{{ field.checkboxLabel }}</span>
-                    </div>
-                {% elif field.type == 'radio' %}
-                    <div class="flex flex-col mt-2">
-                        {% for option in field.options %}
-                            <label class="flex items-center mb-2">
-                                <input type="radio" name="{{ field.name }}" value="{{ option.value }}" class="radio" {% if field.required %}required{% endif %}>
-                                <span class="ml-2">{{ option.label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                {% elif field.type == 'file' %}
-                    <input type="file" name="{{ field.name }}" class="file-input file-input-bordered w-full" {% if field.required %}required{% endif %}>
-                {% endif %}
-                {% if field.helpText %}
-                    <label class="label">
-                        <span class="label-text-alt text-info">{{ field.helpText }}</span>
-                    </label>
-                {% endif %}
-            {% else %}
-            
-            {{ field }}
-            
+    <div class="mt-4 flex justify-between items-center">
+        <p>
+            {{ (data.page - 1) * data.page_size + 1 }} 
+            to 
+            {{ min(data.page * data.page_size, data.total_items) }} 
+            of 
+            {{ data.total_items }}
+        </p>
+        <div class="flex space-x-2">
+            {% if data.page > 1 %}
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ config.component_id -}}&
+                    {{- 'page=' ~ (data.page - 1) -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#data-table"
+                    class="text-blue-500 hover:underline"
+                >
+                    <span class="hidden">Previous</span>
+                    {{ icons.prev }}
+                </button>
             {% endif %}
-
-        {% endfor %}
+            {% if data.page < data.total_pages %} 
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ config.component_id -}}&
+                    {{- 'page=' ~ (data.page + 1) -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#data-table"
+                    class="text-blue-500 hover:underline"
+                >
+                    <span class="hidden">Next</span>
+                    {{ icons.next }}
+                </button>
+            {% endif %}
+                <button
+                    hx-get="{{- '/component?' -}}
+                    {{- 'component_id=' ~ config.component_id -}}&
+                    {{- 'page=' ~ data.page -}}&
+                    {{- 'page_size=' ~ data.page_size -}}&
+                    {{- 'sort_column=' ~ data.sort_column -}}&
+                    {{- 'sort_direction=' ~ data.sort_direction -}}
+                    {%- for key, value in data.search_params.items() -%}
+                        &{{ key }}={{ value }}
+                    {%- endfor -%}"
+                    hx-target="#data-table"
+                    id="btn-table-refresh"
+                    class="text-blue-500 hover:underline"
+                    
+                >
+                    <span class="hidden">Refresh</span>
+                    {{ icons.refresh }}
+                </button>
         </div>
-        
-        {% endif %}
-    </form>
+    </div>
 
 'form': |
     <form class="{{ attributes.class }}"
@@ -952,14 +804,6 @@
         </div>
     </div>
 
-'button1': |
-    <button class="btn {{ attributes.class.value if attributes.class and attributes.class.value else '' }}" 
-            {% if attributes.modal_target and attributes.modal_target.value %}data-modal-target="{{ attributes.modal_target.value }}"{% endif %}
-            {% if attributes.drawer_target and attributes.drawer_target.value %}data-drawer-target="{{ attributes.drawer_target.value }}"{% endif %}
-            {% if attributes.onclick and attributes.onclick.value %}onclick="{{ attributes.onclick.value }}"{% endif %}>
-        {{ attributes.text.value }}
-    </button>
-
 'modal_message': |
     <dialog id="{{ attributes.id.value }}" class="modal">
         <div method="dialog" class="modal-box">
@@ -987,109 +831,102 @@
       </div>
   </dialog>
 
-'form_create': |
-    <!-- templates/edit_form.html -->
-    <h2 class="text-xl font-bold mb-4">Create {{ configs.table_name }}</h2>
-    <form id="myForm" hx-post="/create/{{ configs.table_name }}" hx-target="#target">
-        {% for column in configs.table_config['columns'] %}
-            {% if column['is_hidden'] or column['is_hidden_on_create'] %}
-            {% else %}
-                <div class="mb-4">
-                    <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
-                        {% if column['label'] %}
-                        {{ column['label'] }}
-                        {% else %}
-                        {{ column['name'] }}
-                        {% endif %}
-                    </label>
-                    {% if column['input_type'] == 'text' %}
-                    <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'number' %}
-                    <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'date' %}
-                    <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}"  {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'checkbox' %}
-                    <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %} class="mr-2 leading-tight checkbox">
-                    {% elif column['input_type'] == 'select' %}
-                    <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        {% for option in column['options'] %}
-                        <option value="{{ option }}">{{ option }}</option>
-                        {% endfor %}
-                    </select>
-                    {% endif %}
-                </div>
-            {% endif %}
-        {% endfor %}
-        <div class="flex justify-end">
-            <button type="button" onclick="hideModal()"
-                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
-            <button type="submit"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Create</button>
-        </div>
-        <div style="display: none;" id="target"></div>
-    </form>
-
-    <script>
-        document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
-            console.log('Request completed');
-            document.getElementById('btn-table-refresh').click();
-            hideModal();
-        });
-    </script>
-
-'form_edit': |
-    <!-- templates/edit_form.html -->
-    <h2 class="text-xl font-bold mb-4">Edit {{ configs.table_name }}</h2>
-    <form id="myForm" hx-post="/edit/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
-        {% for column in configs.table_config['columns'] %}
+'form_base': |
+    <h2 class="text-xl font-bold mb-4">
+    {{ attributes.title }} {{ config.table_name }}
+    </h2>
+    <form id="myForm" hx-post="/{{ attributes.mode }}/{{ config.table_name }}/{{ config.id if config.id else '' }}" hx-target="#target">
+        {% for column in config.table_config['columns'] %}
             {% if column['is_hidden'] %}
             {% else %}
                 <div class="mb-4">
                     <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
                         {% if column['label'] %}
-                        {{ column['label'] }}
+                            {{ column['label'] }}
                         {% else %}
-                        {{ column['name'] }}
+                            {{ column['name'] }}
                         {% endif %}
                     </label>
                     {% if column['input_type'] == 'text' %}
-                    <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                      <input type="text" 
+                            id="{{ column['name'] }}" 
+                            name="{{ column['name'] }}" 
+                            value="{{ config.data[column['name']] }}" 
+                            {% if column['primary_key'] %}readonly{% endif %}
+                            {% if attributes.mode == 'delete' %}disabled {% endif %}
+                            class="{{ classes.input }}"
+                            {% if column['disabled'] %}disabled{% endif %} 
+                            {% if column['readonly'] %}readonly{% endif %}
+                      >
                     {% elif column['input_type'] == 'number' %}
-                    <input type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <input 
+                            type="number" 
+                            id="{{ column['name'] }}" name="{{ column['name'] }}" 
+                            value="{{ config.data[column['name']] }}" 
+                            {% if column['primary_key'] %}readonly{% endif %}
+                            class="{{ classes.input }}"
+                            {% if column['disabled'] %}disabled{% endif %} 
+                            {% if column['readonly'] %}readonly{% endif %}
+                        >
                     {% elif column['input_type'] == 'date' %}
-                    <input type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <input 
+                            type="date" 
+                            id="{{ column['name'] }}" 
+                            name="{{ column['name'] }}" 
+                            {% if config.data[column['name']] %}
+                                value="{{ config.data[column['name']].strftime('%Y-%m-%d') }}" 
+                            {% endif %}
+                            {% if column['primary_key'] %}readonly{% endif %}
+                            class="{{ classes.input }}"
+                            {% if column['disabled'] %}disabled{% endif %} 
+                            {% if column['readonly'] %}readonly{% endif %}
+                        >
                     {% elif column['input_type'] == 'checkbox' %}
-                    <input type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
-                        %}checked{% endif %} {% if column['primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
+                        <input 
+                            type="checkbox" 
+                            id="{{ column['name'] }}" 
+                            name="{{ column['name'] }}" 
+                            {% if config.data[column['name']] %} checked {% endif %} 
+                            {% if column['primary_key'] %}disabled{% endif %} 
+                            class="mr-2 leading-tight checkbox"
+                            {% if column['disabled'] %}disabled{% endif %} 
+                            {% if column['readonly'] %}readonly{% endif %}
+                        >
                     {% elif column['input_type'] == 'select' %}
-                    <select id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        {% for option in column['options'] %}
-                        <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
-                        {% endfor %}
-                    </select>
+                        <select 
+                            id="{{ column['name'] }}" 
+                            name="{{ column['name'] }}" 
+                            {% if column['primary_key'] %}disabled{% endif %}
+                            class="{{ classes.input }}">
+                            {% for option in column['options'] %}
+                                <option 
+                                    value="{{ option }}" 
+                                    {% if config.data[column['name']]==option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                            {% if column['disabled'] %}disabled{% endif %} 
+                            {% if column['readonly'] %}readonly{% endif %} 
+                        </select>
                     {% endif %}
                 </div>
             {% endif %}
         {% endfor %}
         <div class="flex justify-end">
             <button type="button" onclick="hideModal()"
-                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+                class="btn bg-gray-500 hover:bg-gray-700 text-white mr-2">Cancel</button>
+            {% if attributes.mode == 'create' %}
             <button type="submit"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Update</button>
+                class="btn bg-green-500 hover:bg-blue-700 text-white">Create</button>
+            {% endif %}
+            {% if attributes.mode == 'edit' %}
+            <button type="submit"
+                class="btn bg-blue-500 hover:bg-blue-700 text-white">Update</button>
+            {% endif %}
+            {% if attributes.mode == 'delete' %}
+            <button type="submit"
+                class="btn bg-red-500 hover:bg-red-700 text-white">Delete</button>
+            {% endif %}
         </div>
         <div style="display: none;" id="target"></div>
     </form>
@@ -1102,60 +939,110 @@
         });
     </script>
 
-'form_delete': |
-    <!-- templates/edit_form.html -->
-    <h2 class="text-xl font-bold mb-4">Delete {{ configs.table_name }}</h2>
-    <form id="myForm" hx-delete="/delete/{{ configs.table_name }}/{{ configs.id }}" hx-target="#target">
-        {% for column in configs.table_config['columns'] %}
-            {% if column['is_hidden'] or column['is_hidden_on_delete'] %}
+'form_base_type_1': |
+    <div id="target"></div>
+    <form id="myForm"
+        {% for attr, value in attributes.items() %}
+            {{ attr }}="{{ value }}"
+        {% endfor %}
+    >
+        {% for k, c in cols.items() %}
+            {% if c['is_hidden'] %}
             {% else %}
                 <div class="mb-4">
-                    <label for="{{ column['name'] }}" class="block text-sm font-bold mb-2">
-                        {% if column['label'] %}
-                        {{ column['label'] }}
+                    <label for="{{ c['name'] }}" class="block text-sm font-bold mb-2">
+                        {% if c['label'] %}
+                            {{ c['label'] }}
                         {% else %}
-                        {{ column['name'] }}
+                            {{ c['name'] }}
                         {% endif %}
                     </label>
-                    {% if column['input_type'] == 'text' %}
-                    <input type="text" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" readonly
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'number' %}
-                    <input readonly type="number" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'date' %}
-                    <input readonly type="date" id="{{ column['name'] }}" name="{{ column['name'] }}" value="{{ configs.data[column['name']] }}" {%
-                        if column['primary_key'] %}readonly{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    {% elif column['input_type'] == 'checkbox' %}
-                    <input readonly type="checkbox" id="{{ column['name'] }}" name="{{ column['name'] }}" {% if configs.data[column['name']]
-                        %}checked{% endif %} {% if column['primary_key'] %}disabled{% endif %} class="mr-2 leading-tight">
-                    {% elif column['input_type'] == 'select' %}
-                    <select disabled id="{{ column['name'] }}" name="{{ column['name'] }}" {% if column['primary_key'] %}disabled{% endif %}
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        {% for option in column['options'] %}
-                        <option value="{{ option }}" {% if configs.data[column['name']]==option %}selected{% endif %}>{{ option }}</option>
-                        {% endfor %}
-                    </select>
+                    {% if c['input_type'] == 'text' %}
+                      <input type="text" 
+                            id="{{ c['name'] }}" 
+                            name="{{ c['name'] }}" 
+                            value="{{ data[c['name']] }}" 
+                            {% if c['primary_key'] %}readonly{% endif %}
+                            {% if attributes.mode == 'delete' %}disabled {% endif %}
+                            class="{{ classes.input }}"
+                            {% if c['disabled'] %}disabled{% endif %} 
+                            {% if c['readonly'] %}readonly{% endif %}
+                      >
+                    {% elif c['input_type'] == 'number' %}
+                        <input 
+                            type="number" 
+                            id="{{ c['name'] }}" name="{{ c['name'] }}" 
+                            value="{{ data[c['name']] }}" 
+                            {% if c['primary_key'] %}readonly{% endif %}
+                            class="{{ classes.input }}"
+                            {% if c['disabled'] %}disabled{% endif %} 
+                            {% if c['readonly'] %}readonly{% endif %}
+                        >
+                    {% elif c['input_type'] == 'date' %}
+                        <input 
+                            type="date" 
+                            id="{{ c['name'] }}" 
+                            name="{{ c['name'] }}" 
+                            {% if data[c['name']] %}
+                                value="{{ data[c['name']].strftime('%Y-%m-%d') }}" 
+                            {% endif %}
+                            {% if c['primary_key'] %}readonly{% endif %}
+                            class="{{ classes.input }}"
+                            {% if c['disabled'] %}disabled{% endif %} 
+                            {% if c['readonly'] %}readonly{% endif %}
+                        >
+                    {% elif c['input_type'] == 'checkbox' %}
+                        <input 
+                            type="checkbox" 
+                            id="{{ c['name'] }}" 
+                            name="{{ c['name'] }}" 
+                            {% if data[c['name']] %} checked {% endif %} 
+                            {% if c['primary_key'] %}disabled{% endif %} 
+                            class="mr-2 leading-tight checkbox"
+                            {% if c['disabled'] %}disabled{% endif %} 
+                            {% if c['readonly'] %}readonly{% endif %}
+                        >
+                    {% elif c['input_type'] == 'select' %}
+                        <select 
+                            id="{{ c['name'] }}" 
+                            name="{{ c['name'] }}" 
+                            {% if c['primary_key'] %}disabled{% endif %}
+                            class="{{ classes.input }}">
+                            {% for option in c['options'] %}
+                                <option 
+                                    value="{{ option }}" 
+                                    {% if data[c['name']]==option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                            {% if c['disabled'] %}disabled{% endif %} 
+                            {% if c['readonly'] %}readonly{% endif %} 
+                        </select>
                     {% endif %}
                 </div>
             {% endif %}
         {% endfor %}
         <div class="flex justify-end">
-            <button type="button" onclick="hideModal()"
-                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Cancel</button>
+            <button type="button"
+                class="btn bg-gray-500 hover:bg-gray-700 text-white mr-2">Cancel</button>
+            {% if attributes.mode == 'create' %}
             <button type="submit"
-                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Delete</button>
+                class="btn bg-green-500 hover:bg-blue-700 text-white">Create</button>
+            {% endif %}
+            {% if attributes.mode == 'edit' %}
+            <button type="submit"
+                class="btn bg-blue-500 hover:bg-blue-700 text-white">Update</button>
+            {% endif %}
+            {% if attributes.mode == 'delete' %}
+            <button type="submit"
+                class="btn bg-red-500 hover:bg-red-700 text-white">Delete</button>
+            {% endif %}
         </div>
-        <div style="display: none;" id="target"></div>
     </form>
 
     <script>
         document.getElementById('myForm').addEventListener('htmx:afterRequest', function (evt) {
             console.log('Request completed');
-            document.getElementById('btn-table-refresh').click();
-            hideModal();
         });
     </script>
     
@@ -1164,7 +1051,7 @@
         {% for attr, value in attributes.items() %}
             {{ attr }}="{{ value }}"
         {% endfor %}>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        {{ icons.info }}
         <span>{{ attributes.message }}</span>
     </div>
 
@@ -1174,11 +1061,65 @@
 'badge': |
     <span class="badge {{ attributes.color.value }}">{{ attributes.text.value }}</span>
 
-'tabs': |
+'tabs1': |
     <div class="tabs {{ attributes.class.value }}">
         {% for tab in attributes.tabs.value %}
             <a class="tab {{ tab.class }}">{{ tab.text }}</a>
         {% endfor %}
+    </div>
+    
+'tabs': |
+    <div style="width: 100%;" class="overflow-x-auto">
+    <div role="tablist" class="tabs tabs-lifted" style="width: auto;">
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 1" />
+      <div role="tabpanel" style="width: auto;" class="tab-content bg-base-100 border-base-300 rounded-box p-6 w-full">
+        Tab content 1
+      </div>
+    
+      <input
+        type="radio"
+        name="my_tabs_2"
+        role="tab"
+        class="tab whitespace-nowrap"
+        aria-label="Tab 2"
+        checked="checked" />
+      <div role="tabpanel" style="width: 100%;" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 2
+      </div>
+    
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+    </div>
     </div>
 
 'collapse': |
@@ -1193,10 +1134,15 @@
     </div>
 
 'tooltip': |
-    <div class="tooltip" data-tip="{{ attributes.tip.value }}">
-        <button class="btn">{{ attributes.text.value }}</button>
+    <div class="tooltip" data-tip="{{ attributes.tip }}">
+        <button class="btn">{{ attributes.text }}</button>
     </div>
 
+'stat1': |
+    <div class="tooltip" data-tip="{{ attributes.tip }}">
+        <button class="btn">{{ attributes.text }}</button>
+    </div>
+    
 'dropdown': |
     <div class="dropdown">
         <label tabindex="0" class="btn m-1">{{ attributes.label.value }}</label>
@@ -1207,17 +1153,17 @@
         </ul>
     </div>
 
-'stat': |
-    <div class="stat">
-        <div class="stat-figure text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-        </div>
-        <div class="stat-title">{{ attributes.title.value }}</div>
-        <div class="stat-value text-primary">{{ attributes.value.value }}</div>
-        <div class="stat-desc">{{ attributes.description.value }}</div>
-    </div>
+# 'stat': |
+#     <div class="stat">
+#         <div class="stat-figure text-primary">
+#             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+#         </div>
+#         <div class="stat-title">{{ attributes.title.value }}</div>
+#         <div class="stat-value text-primary">{{ attributes.value.value }}</div>
+#         <div class="stat-desc">{{ attributes.description.value }}</div>
+#     </div>
 
-'carousel': |
+'carousel1': |
     <div class="carousel w-full">
         {% for item in attributes.items.value %}
             <div id="slide{{ loop.index }}" class="carousel-item relative w-full">
@@ -1230,6 +1176,68 @@
         {% endfor %}
     </div>
 
+'carousel': |
+    <div class="carousel carousel-center rounded-box">
+      <div class="carousel-item">
+        <img src="https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp" alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1565098772267-60af42b81ef2.webp"
+          alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp"
+          alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1494253109108-2e30c049369b.webp"
+          alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img src="https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp" alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img src="https://img.daisyui.com/images/stock/photo-1559181567-c3190ca9959b.webp" alt="Pizza" />
+      </div>
+      <div class="carousel-item">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1601004890684-d8cbf643f5f2.webp"
+          alt="Pizza" />
+      </div>
+    </div>
+    
+    
+    <div class="carousel w-full">
+      <div id="item1" class="carousel-item w-full">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1625726411847-8cbb60cc71e6.webp"
+          class="w-full" />
+      </div>
+      <div id="item2" class="carousel-item w-full">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1609621838510-5ad474b7d25d.webp"
+          class="w-full" />
+      </div>
+      <div id="item3" class="carousel-item w-full">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1414694762283-acccc27bca85.webp"
+          class="w-full" />
+      </div>
+      <div id="item4" class="carousel-item w-full">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1665553365602-b2fb8e5d1707.webp"
+          class="w-full" />
+      </div>
+    </div>
+    <div class="flex w-full justify-center gap-2 py-2">
+      <a href="#item1" class="btn btn-xs">1</a>
+      <a href="#item2" class="btn btn-xs">2</a>
+      <a href="#item3" class="btn btn-xs">3</a>
+      <a href="#item4" class="btn btn-xs">4</a>
+    </div>
 'modal': |
     <div class="modal" id="{{ attributes.id.value }}">
         <div class="modal-box">
@@ -1286,16 +1294,45 @@
         {% endfor %}
     </ul>
 
-'hero': |
-    <div class="hero min-h-screen" style="background-image: url({{ attributes.background_image.value }});">
+'hero1': |
+    <div class="hero min-h-screen" style="background-image: url({{ attributes.background_image }});">
         <div class="hero-overlay bg-opacity-60"></div>
         <div class="hero-content text-center text-neutral-content">
             <div class="max-w-md">
                 <h1 class="mb-5 text-5xl font-bold">{{ attributes.title.value }}</h1>
-                <p class="mb-5">{{ attributes.description.value }}</p>
-                <button class="btn btn-primary">{{ attributes.button_text.value }}</button>
+                <p class="mb-5">{{ attributes.description }}</p>
+                <button class="btn btn-primary">{{ attributes.button_text }}</button>
             </div>
         </div>
+    </div>
+    
+'hero': |
+    <div class="hero rounded bg-base-200 min-h-screen">
+      <div class="hero-content flex-col lg:flex-row">
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1635805737707-575885ab0820.webp"
+          class="max-w-sm rounded-lg shadow-2xl" />
+        <div>
+          <h1 class="text-5xl font-bold">Box Office News!</h1>
+          <p class="py-6">
+            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
+            quasi. In deleniti eaque aut repudiandae et a id nisi.
+          </p>
+          <button class="btn btn-primary">Get Started</button>
+        </div>
+      </div>
+    </div>
+    <div class="hero bg-base-200 min-h-screen">
+      <div class="hero-content text-center">
+        <div class="max-w-md">
+          <h1 class="text-5xl font-bold">Hello there</h1>
+          <p class="py-6">
+            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
+            quasi. In deleniti eaque aut repudiandae et a id nisi.
+          </p>
+          <button class="btn btn-primary">Get Started</button>
+        </div>
+      </div>
     </div>
 
 'chat_bubble': |
@@ -1316,19 +1353,21 @@
     </div>
 
 'stats': |
-    <div class="stats shadow">
-        {% for stat in attributes.stats.value %}
-        <div class="stat">
-            <div class="stat-figure text-{{ stat.color }}">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ stat.icon }}"></path></svg>
-            </div>
-            <div class="stat-title">{{ stat.title }}</div>
-            <div class="stat-value text-{{ stat.color }}">{{ stat.value }}</div>
-            <div class="stat-desc">{{ stat.desc }}</div>
-        </div>
+    <div class="stats stats-vertical shadow">
+        {% for child in children %}
+            {{ child | safe }}
         {% endfor %}
     </div>
 
+'stat': |
+    <div class="stats stats-vertical shadow">
+      <div class="stat">
+        <div class="stat-title">{{ attributes.title }}</div>
+        <div class="stat-value">{{ attributes.value }}</div>
+        <div class="stat-desc">{{ attributes.desc }}</div>
+      </div>
+    </div>
+    
 'file_input': |
     <div class="form-control w-full max-w-xs">
         <label class="label">
@@ -1419,10 +1458,13 @@
     </button>
 
 'link': |
-    <a
+    <a class="link {{ attributes.class if attributes and attributes.class else '' }}"
         {% for attr, value in attributes.items() %}
-            {{ attr }}="{{ value }}"
-        {% endfor %}>
+            {% if attr not in ['class'] %}
+                {{ attr }}="{{ value }}"
+            {% endif %}
+        {% endfor %}
+    >
         {{ attributes.text }}
     </a>
 
@@ -1521,7 +1563,76 @@
         </div>
         <div id="preview"></div>
     </div>
+
+'blogs': |
+    <div
+        {% for attr, value in attributes.items() %}
+            {% if attr not in ['class'] %}
+                {{ attr }}="{{ value }}"
+            {% endif %}
+        {% endfor %}>
+        Blogs
+    </div>
     
+'posts': |
+    <div>
+      <button 
+          type="submit"
+          class="btn bg-green-500 hover:bg-blue-700 text-white"
+          {% for attr, value in config.prev.attributes.items() %}
+              {% if attr not in ['class'] %}
+                  {{ attr }}="{{ value }}"
+              {% endif %}
+          {% endfor %}
+      >
+      Prev
+      </button>
+      <button 
+          type="submit"
+          class="btn bg-green-500 hover:bg-blue-700 text-white"
+          {% for attr, value in config.next.attributes.items() %}
+              {% if attr not in ['class'] %}
+                  {{ attr }}="{{ value }}"
+              {% endif %}
+          {% endfor %}
+      >
+      Next
+      </button>
+            
+      {% for d in data %}
+          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
+              {% for attr, value in attributes.items() %}
+                  {% if attr not in ['class'] %}
+                      {{ attr }}="{{ value }}"
+                  {% endif %}
+              {% endfor %}
+          >
+              <div class="card-body">
+                <div class="card-actions justify-end">
+                    <button class="btn btn-square btn-sm"
+                    hx-delete="/blog/post?id={{ d.id }}"
+                    {% for attr, value in config.del.attributes.items() %}
+                        {% if attr not in ['class', 'hx-delete'] %}
+                                {{ attr }}="{{ value }}"
+                        {% endif %}
+                    {% endfor %}
+                    >
+                        {{ icons.remove }}
+                    </button>
+                </div>
+                  <h1 class="card-title">{{ d.id if d and d.id else '+++'}}</h1>
+                  <h2 class="card-title">{{ d.title if d and d.title else 'aaa'}}</h2>
+                  <p class="content">{{ d.content if d and d.content else 'bbb'}}</p>
+                  {% if children %}
+                      {% for child in children %}
+                          {{ child | safe }}
+                      {% endfor %}
+                  {% endif %}
+              </div>
+          </div>
+      {% endfor %}
+    </div>
+
 'icons':
   'add': |
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -1555,6 +1666,23 @@
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
       <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
     </svg>
+  'user': |
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+    </svg>
+  'menu': |
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+    </svg>
+  'info': |
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+    </svg>
+
+
+'classes':
+  'input': |
+    shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline
 
 
 

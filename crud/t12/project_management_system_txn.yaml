@@ -1,0 +1,576 @@
+# Project Management System Schema and Operations
+transactions:
+  # 1. 创建基础表结构
+  - name: create_base_tables
+    steps:
+      # # 用户表
+      # - action: create_table
+      #   table_name: users
+      #   columns:
+      #     - name: id
+      #       type: integer
+      #       primary_key: true
+      #     - name: username
+      #       type: string
+      #       length: 100
+      #       nullable: false
+      #     - name: email
+      #       type: string
+      #       length: 200
+      #       nullable: false
+      #     - name: password_hash
+      #       type: string
+      #       length: 255
+      #       nullable: false
+      #     - name: full_name
+      #       type: string
+      #       length: 100
+      #     - name: status
+      #       type: string
+      #       length: 20
+      #       default: "active"
+      #     - name: created_at
+      #       type: datetime
+      #       nullable: false
+      #     - name: updated_at
+      #       type: datetime
+      #       nullable: false
+
+      # 项目表
+      - action: create_table
+        table_name: projects
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 100
+            nullable: false
+          - name: description
+            type: text
+          - name: identifier
+            type: string
+            length: 50
+            nullable: false
+          - name: status
+            type: string
+            length: 20
+            default: "active"
+          - name: created_at
+            type: datetime
+            nullable: false
+          - name: updated_at
+            type: datetime
+            nullable: false
+          - name: created_by
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+
+      # 项目成员表
+      - action: create_table
+        table_name: project_members
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: project_id
+            type: integer
+            foreign_key:
+              table_name: projects
+              column: id
+          - name: user_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: role
+            type: string
+            length: 50
+            nullable: false
+          - name: created_at
+            type: datetime
+            nullable: false
+
+      # 问题类型表
+      - action: create_table
+        table_name: issue_types
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 50
+            nullable: false
+          - name: description
+            type: text
+          - name: color
+            type: string
+            length: 7
+            default: "#FFFFFF"
+
+      # 问题状态表
+      - action: create_table
+        table_name: issue_statuses
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 50
+            nullable: false
+          - name: description
+            type: text
+          - name: is_closed
+            type: boolean
+            default: false
+          - name: sort_order
+            type: integer
+            default: 0
+
+      # 问题优先级表
+      - action: create_table
+        table_name: priorities
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: name
+            type: string
+            length: 50
+            nullable: false
+          - name: description
+            type: text
+          - name: color
+            type: string
+            length: 7
+            default: "#FFFFFF"
+          - name: sort_order
+            type: integer
+            default: 0
+
+      # 问题表
+      - action: create_table
+        table_name: issues
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: project_id
+            type: integer
+            foreign_key:
+              table_name: projects
+              column: id
+          - name: issue_type_id
+            type: integer
+            foreign_key:
+              table_name: issue_types
+              column: id
+          - name: status_id
+            type: integer
+            foreign_key:
+              table_name: issue_statuses
+              column: id
+          - name: priority_id
+            type: integer
+            foreign_key:
+              table_name: priorities
+              column: id
+          - name: subject
+            type: string
+            length: 255
+            nullable: false
+          - name: description
+            type: text
+          - name: assigned_to_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: author_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: created_at
+            type: datetime
+            nullable: false
+          - name: updated_at
+            type: datetime
+            nullable: false
+          - name: start_date
+            type: date
+          - name: due_date
+            type: date
+          - name: estimated_hours
+            type: float
+          - name: parent_id
+            type: integer
+            foreign_key:
+              table_name: issues
+              column: id
+
+      # 评论表
+      - action: create_table
+        table_name: comments
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: issue_id
+            type: integer
+            foreign_key:
+              table_name: issues
+              column: id
+          - name: user_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: content
+            type: text
+            nullable: false
+          - name: created_at
+            type: datetime
+            nullable: false
+          - name: updated_at
+            type: datetime
+            nullable: false
+
+      # 附件表
+      - action: create_table
+        table_name: attachments
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: issue_id
+            type: integer
+            foreign_key:
+              table_name: issues
+              column: id
+          - name: filename
+            type: string
+            length: 255
+            nullable: false
+          - name: disk_filename
+            type: string
+            length: 255
+            nullable: false
+          - name: filesize
+            type: integer
+            nullable: false
+          - name: content_type
+            type: string
+            length: 255
+          - name: author_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: created_at
+            type: datetime
+            nullable: false
+
+      # 工时记录表
+      - action: create_table
+        table_name: time_entries1
+        columns:
+          - name: id
+            type: integer
+            primary_key: true
+          - name: issue_id
+            type: integer
+            foreign_key:
+              table_name: issues
+              column: id
+          - name: user_id
+            type: integer
+            foreign_key:
+              table_name: users
+              column: id
+          - name: hours
+            type: float
+            nullable: false
+          - name: comments
+            type: text
+          - name: spent_on
+            type: date
+            nullable: false
+          - name: created_at
+            type: datetime
+            nullable: false
+          - name: updated_at
+            type: datetime
+            nullable: false
+
+  # 2. 初始化基础数据
+  - name: initialize_base_data
+    steps:
+      # 创建问题类型
+      - action: insert
+        table_name: issue_types
+        values:
+          id: 2
+          name: "Bug"
+          description: "Software bug that needs to be fixed"
+          color: "#FF0000"
+
+      - action: insert
+        table_name: issue_types
+        values:
+          id: 3
+          name: "Feature"
+          description: "New feature request"
+          color: "#00FF00"
+
+      - action: insert
+        table_name: issue_types
+        values:
+          id: 4
+          name: "Task"
+          description: "General task"
+          color: "#0000FF"
+
+      # 创建问题状态
+      - action: insert
+        table_name: issue_statuses
+        values:
+          id: 2
+          name: "New"
+          description: "A new issue"
+          is_closed: false
+          sort_order: 1
+
+      - action: insert
+        table_name: issue_statuses
+        values:
+          id: 3
+          name: "In Progress"
+          description: "Currently being worked on"
+          is_closed: false
+          sort_order: 2
+
+      - action: insert
+        table_name: issue_statuses
+        values:
+          id: 4
+          name: "Resolved"
+          description: "Work is completed"
+          is_closed: true
+          sort_order: 3
+
+      # 创建优先级
+      - action: insert
+        table_name: priorities
+        values:
+          id: 1
+          name: "Low"
+          description: "Low priority"
+          color: "#CCCCCC"
+          sort_order: 1
+
+      - action: insert
+        table_name: priorities
+        values:
+          id: 2
+          name: "Normal"
+          description: "Normal priority"
+          color: "#3366FF"
+          sort_order: 2
+
+      - action: insert
+        table_name: priorities
+        values:
+          id: 3
+          name: "High"
+          description: "High priority"
+          color: "#FF3366"
+          sort_order: 3
+
+  # 3. 业务流程示例：创建新项目
+  - name: create_new_project
+    steps:
+      - action: insert
+        table_name: projects
+        values:
+          name: "Website Redesign"
+          description: "Complete redesign of company website"
+          identifier: "website-redesign"
+          status: "active"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+          created_by: "{{ current_user_id }}"
+
+  # 4. 业务流程示例：添加项目成员
+  - name: add_project_member
+    steps:
+      - action: insert
+        table_name: project_members
+        values:
+          project_id: "{{ project_id }}"
+          user_id: "{{ user_id }}"
+          role: "developer"
+          created_at: "{{ current_timestamp }}"
+
+  # 5. 业务流程示例：创建新问题
+  - name: create_new_issue
+    steps:
+      - action: insert
+        table_name: issues
+        values:
+          project_id: "{{ project_id }}"
+          issue_type_id: 1
+          status_id: 1
+          priority_id: 2
+          subject: "{{ subject }}"
+          description: "{{ description }}"
+          assigned_to_id: "{{ assigned_to_id }}"
+          author_id: "{{ current_user_id }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+          start_date: "{{ start_date }}"
+          due_date: "{{ due_date }}"
+          estimated_hours: "{{ estimated_hours }}"
+
+  # 6. 业务流程示例：更新问题状态
+  - name: update_issue_status
+    steps:
+      - action: update
+        table_name: issues
+        values:
+          status_id: "{{ new_status_id }}"
+          updated_at: "{{ current_timestamp }}"
+        filter_values:
+          - field: id
+            operator: eq
+            value: "{{ issue_id }}"
+
+      # 添加状态变更评论
+      - action: insert
+        table_name: comments
+        values:
+          issue_id: "{{ issue_id }}"
+          user_id: "{{ current_user_id }}"
+          content: "Status changed to {{ new_status_name }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+
+  # 7. 业务流程示例：记录工时
+  - name: log_time_entry
+    steps:
+      - action: insert
+        table_name: time_entries
+        values:
+          issue_id: "{{ issue_id }}"
+          user_id: "{{ current_user_id }}"
+          hours: "{{ hours }}"
+          comments: "{{ comments }}"
+          spent_on: "{{ spent_on }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+
+  # 8. 业务流程示例：添加评论和附件
+  - name: add_comment_with_attachment
+    steps:
+      - action: insert
+        table_name: comments
+        values:
+          issue_id: "{{ issue_id }}"
+          user_id: "{{ current_user_id }}"
+          content: "{{ comment_content }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+
+      - action: upload_file
+        file: "{{ file }}"
+        folder_path: "attachments"
+        file_name: "{{ generated_filename }}"
+
+      - action: insert
+        table_name: attachments
+        values:
+          issue_id: "{{ issue_id }}"
+          filename: "{{ original_filename }}"
+          disk_filename: "{{ generated_filename }}"
+          filesize: "{{ filesize }}"
+          content_type: "{{ content_type }}"
+          author_id: "{{ current_user_id }}"
+          created_at: "{{ current_timestamp }}"
+
+  # 9. 业务流程示例：查询项目统计信息
+  - name: get_project_statistics
+    steps:
+      - action: get
+        table_name: issues
+        fields:
+          - field: status_id
+          - field: id
+            function: count
+            label: issue_count
+        filter_values:
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+          # - field: created_at
+          #   operator: ge
+          #   value: "{{ start_date }}"
+          # - field: created_at
+          #   operator: le
+          #   value: "{{ end_date }}"
+        group_by:
+          - status_id
+      # - action: get
+      #   table_name: time_entries
+      #   fields:
+      #     - field: hours
+      #       function: sum
+      #       label: total_hours
+      #   filter_values:
+      #     - field: issue_id
+      #       operator: in
+      #       subquery:
+      #         table_name: issues
+      #         fields:
+      #           - field: id
+      #         filter_values:
+      #           - field: project_id
+      #             operator: eq
+      #             value: "{{ project_id }}"
+
+  # 10. 业务流程示例：获取用户待办事项
+  - name: get_user_todo_list
+    steps:
+      - action: get
+        table_name: issues
+        fields:
+          - field: id
+          - field: subject
+          - field: priority_id
+          - field: due_date
+          - table_name: projects
+            field: name
+            label: project_name
+        join:
+          - left_table_name: issues
+            right_table_name: projects
+            type: left
+            on:
+              - left_column: project_id
+                right_column: id
+        filter_values:
+          - field: assigned_to_id
+            operator: eq
+            value: "{{ current_user_id }}"
+          - field: status_id
+            operator: in
+            value: [1, 2]  # New and In Progress statuses
+        order_by:
+          - field: due_date
+            direction: asc
+          - field: priority_id
+            direction: desc

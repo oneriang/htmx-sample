@@ -1,0 +1,105 @@
+# Updated Database Management YAML Examples
+transactions:
+  # 修改表结构的示例
+  - name: alter_table_example
+    steps:
+      # 添加新列
+      - action: alter_table
+        table_name: users
+        operation: add_column
+        columns:
+          - name: phone
+            type: string
+            length: 20
+            nullable: true
+          - name: address
+            type: text
+            nullable: true
+            default: "'Not provided'"
+
+      # 删除列
+      - action: alter_table
+        table_name: users
+        operation: drop_column
+        columns:
+          - old_column1
+          - old_column2
+
+      # 修改列
+      - action: alter_table
+        table_name: users
+        operation: modify_column
+        columns:
+          - name: email
+            type: string
+            length: 300
+            nullable: false
+
+  # 完整的表结构迁移示例
+  - name: migrate_table_structure
+    steps:
+      # 1. 备份数据库
+      - action: backup_database
+        database_name: "project_management.db"
+        backup_path: "backups/project_management_before_migration.db"
+
+      # 2. 添加新列
+      - action: alter_table
+        table_name: users
+        operation: add_column
+        columns:
+          - name: mobile
+            type: string
+            length: 20
+            nullable: true
+          - name: department
+            type: string
+            length: 100
+            nullable: true
+            default: "'General'"
+
+      # 3. 修改现有列
+      - action: alter_table
+        table_name: users
+        operation: modify_column
+        columns:
+          - name: email
+            type: string
+            length: 300
+            nullable: false
+
+      # 4. 删除不需要的列
+      - action: alter_table
+        table_name: users
+        operation: drop_column
+        columns:
+          - deprecated_field1
+          - deprecated_field2
+
+  # 数据库结构升级示例
+  - name: upgrade_database_structure
+    steps:
+      # 1. 获取数据库信息
+      - action: database_info
+        database_name: "project_management.db"
+        data_to: db_info
+
+      # 2. 备份数据库
+      - action: backup_database
+        database_name: "project_management.db"
+        backup_path: "backups/project_management_{{ timestamp }}.db"
+
+      # 3. 添加新的审计字段到所有表
+      - action: for_each
+        data_from: "db_info.tables"
+        steps:
+          - action: alter_table
+            table_name: "{{ item.name }}"
+            operation: add_column
+            columns:
+              - name: last_modified_at
+                type: datetime
+                nullable: true
+              - name: last_modified_by
+                type: integer
+                nullable: true

@@ -9,7 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <!-- <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script> -->
 
   <style>
     .loader {
@@ -58,11 +58,16 @@
   </div>
 
   <script>
+  
+      document.getElementById('loading-indicator').style.display = 'none';
+      
     document.body.addEventListener('htmx:beforeRequest', function () {
+      console.log('beforeRequest');
       document.getElementById('loading-indicator').style.display = 'block';
     });
 
     document.body.addEventListener('htmx:afterRequest', function () {
+      console.log('afterRequest');
       document.getElementById('loading-indicator').style.display = 'none';
     });
   </script>

@@ -1,0 +1,40 @@
+columns:
+- autoincrement: true
+  input_type: number
+  label: id
+  name: id
+  nullable: true
+  primary_key: 1
+  type: INTEGER
+- input_type: number
+  label: issue_id
+  name: issue_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: number
+  label: user_id
+  name: user_id
+  nullable: true
+  primary_key: 0
+  type: INTEGER
+- input_type: text
+  label: content
+  name: content
+  nullable: false
+  primary_key: 0
+  type: TEXT
+- input_type: date
+  label: created_at
+  name: created_at
+  nullable: false
+  primary_key: 0
+  type: DATETIME
+- input_type: date
+  label: updated_at
+  name: updated_at
+  nullable: false
+  primary_key: 0
+  type: DATETIME
+name: comments
+type: table

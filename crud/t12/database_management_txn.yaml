@@ -1,0 +1,93 @@
+# Database Management YAML Examples
+transactions:
+  # 1. 创建新数据库
+  - name: create_new_database
+    steps:
+      - action: create_database
+        database_name: "project_management.db"
+
+  # # 2. 备份数据库
+  # - name: backup_database
+  #   steps:
+  #     - action: backup_database
+  #       database_name: "project_management.db"
+  #       backup_path: "backups/project_management_{{ timestamp }}.db"
+
+  # # 3. 恢复数据库
+  # - name: restore_database
+  #   steps:
+  #     - action: restore_database
+  #       database_name: "project_management.db"
+  #       backup_path: "backups/project_management_20240125.db"
+
+  # # 4. 删除数据库
+  # - name: drop_database
+  #   steps:
+  #     - action: drop_database
+  #       database_name: "old_project_management.db"
+
+  # # 5. 列出所有数据库
+  # - name: list_all_databases
+  #   steps:
+  #     - action: list_databases
+  #       directory: "."
+
+  # # 6. 获取数据库信息
+  # - name: get_db_info
+  #   steps:
+  #     - action: database_info
+  #       database_name: "project_management.db"
+
+  # # 7. 完整的数据库迁移流程示例
+  # - name: migrate_database
+  #   steps:
+  #     # 备份原数据库
+  #     - action: backup_database
+  #       database_name: "project_management.db"
+  #       backup_path: "backups/project_management_before_migration.db"
+
+  #     # 创建新数据库
+  #     - action: create_database
+  #       database_name: "project_management_new.db"
+
+  #     # 创建表结构
+  #     - action: create_table
+  #       database_name: "project_management_new.db"
+  #       table_name: "users"
+  #       columns:
+  #         - name: id
+  #           type: integer
+  #           primary_key: true
+  #         - name: username
+  #           type: string
+  #           length: 100
+  #           nullable: false
+  #         # ... 其他列定义 ...
+
+  #     # 验证新数据库
+  #     - action: database_info
+  #       database_name: "project_management_new.db"
+
+  # # 8. 数据库维护流程示例
+  # - name: database_maintenance
+  #   steps:
+  #     # 列出所有数据库
+  #     - action: list_databases
+  #       directory: "."
+  #       data_to: all_databases
+
+  #     # 循环处理每个数据库
+  #     - action: for_each
+  #       data_from: all_databases
+  #       steps:
+  #         # 备份每个数据库
+  #         - action: backup_database
+  #           database_name: "{{ item.name }}"
+  #           backup_path: "backups/{{ item.name }}_{{ timestamp }}.db"
+
+  #         # 获取数据库信息
+  #         - action: database_info
+  #           database_name: "{{ item.name }}"
+  #           data_to: db_info
+
+  #         # 可以添加其他维护步骤，如优化、清理等

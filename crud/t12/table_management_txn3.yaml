@@ -1,0 +1,368 @@
+# Project Management System Queries and Reports
+transactions:
+  # 11. 项目仪表板统计查询
+  - name: get_project_dashboard_stats
+    steps:
+      # 获取问题统计（按状态分组）
+      - action: get
+        table: issues
+        fields:
+          - field: status_id
+          - table: issue_statuses
+            field: name
+            label: status_name
+          - field: id
+            function: count
+            label: issue_count
+        join:
+          - left_table: issues
+            right_table: issue_statuses
+            type: left
+            on:
+              - left_column: status_id
+                right_column: id
+        filter_values:
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+        group_by:
+          - field: status_id
+          - field: status_name
+        data_to: status_stats
+
+      # 获取优先级分布
+      - action: get
+        table: issues
+        fields:
+          - field: priority_id
+          - table: priorities
+            field: name
+            label: priority_name
+          - field: id
+            function: count
+            label: issue_count
+        join:
+          - left_table: issues
+            right_table: priorities
+            type: left
+            on:
+              - left_column: priority_id
+                right_column: id
+        filter_values:
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+        group_by:
+          - field: priority_id
+          - field: priority_name
+        data_to: priority_stats
+
+      # 获取每周工时统计
+      - action: get
+        table: time_entries
+        fields:
+          - field: spent_on
+            function: date_trunc
+            part: week
+            label: week_start
+          - field: hours
+            function: sum
+            label: total_hours
+        filter_values:
+          - field: issue_id
+            operator: in
+            subquery:
+              table: issues
+              fields:
+                - field: id
+              filter_values:
+                - field: project_id
+                  operator: eq
+                  value: "{{ project_id }}"
+        group_by:
+          - field: week_start
+        order_by:
+          - field: week_start
+            direction: asc
+        data_to: weekly_hours
+
+  # 12. 项目进度报告
+  - name: get_project_progress_report
+    steps:
+      # 获取里程碑完成情况
+      - action: get
+        table: issues
+        fields:
+          - field: due_date
+          - field: id
+            function: count
+            label: total_issues
+          - field: id
+            function: sum
+            case:
+              when:
+                - condition: status_id
+                  operator: in
+                  value: [3]  # Resolved status
+              then: 1
+              else: 0
+            label: completed_issues
+          - field: estimated_hours
+            function: sum
+            label: total_estimated_hours
+          - field: id
+            function: count
+            case:
+              when:
+                - condition: due_date
+                  operator: lt
+                  value: "{{ current_date }}"
+                - condition: status_id
+                  operator: not_in
+                  value: [3]  # Not resolved
+              then: 1
+              else: 0
+            label: overdue_issues
+        filter_values:
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+          - field: due_date
+            operator: is_not_null
+        group_by:
+          - field: due_date
+        order_by:
+          - field: due_date
+            direction: asc
+        data_to: milestone_progress
+
+      # 获取团队成员工作量分布
+      - action: get
+        table: issues
+        fields:
+          - field: assigned_to_id
+          - table: users
+            field: full_name
+            label: assignee_name
+          - field: id
+            function: count
+            label: assigned_issues
+          - field: estimated_hours
+            function: sum
+            label: total_estimated_hours
+          - field: id
+            function: count
+            case:
+              when:
+                - condition: status_id
+                  operator: eq
+                  value: 3  # Resolved
+              then: 1
+              else: 0
+            label: completed_issues
+        join:
+          - left_table: issues
+            right_table: users
+            type: left
+            on:
+              - left_column: assigned_to_id
+                right_column: id
+        filter_values:
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+          - field: assigned_to_id
+            operator: is_not_null
+        group_by:
+          - field: assigned_to_id
+          - field: assignee_name
+        data_to: team_workload
+
+  # 13. 活动日志查询
+  - name: get_project_activity_log
+    steps:
+      - action: get
+        table: comments
+        fields:
+          - field: id
+          - field: content
+          - field: created_at
+          - field: user_id
+          - table: users
+            field: full_name
+            label: author_name
+          - table: issues
+            field: subject
+            label: issue_subject
+        join:
+          - left_table: comments
+            right_table: users
+            type: left
+            on:
+              - left_column: user_id
+                right_column: id
+          - left_table: comments
+            right_table: issues
+            type: left
+            on:
+              - left_column: issue_id
+                right_column: id
+        filter_values:
+          - field: issue_id
+            operator: in
+            subquery:
+              table: issues
+              fields:
+                - field: id
+              filter_values:
+                - field: project_id
+                  operator: eq
+                  value: "{{ project_id }}"
+        order_by:
+          - field: created_at
+            direction: desc
+        limit: 50
+        data_to: activity_log
+
+  # 14. 用户工作量报告
+  - name: get_user_workload_report
+    steps:
+      # 获取当前分配的任务
+      - action: get
+        table: issues
+        fields:
+          - field: id
+          - field: subject
+          - field: due_date
+          - field: estimated_hours
+          - table: projects
+            field: name
+            label: project_name
+          - table: issue_statuses
+            field: name
+            label: status_name
+        join:
+          - left_table: issues
+            right_table: projects
+            type: left
+            on:
+              - left_column: project_id
+                right_column: id
+          - left_table: issues
+            right_table: issue_statuses
+            type: left
+            on:
+              - left_column: status_id
+                right_column: id
+        filter_values:
+          - field: assigned_to_id
+            operator: eq
+            value: "{{ user_id }}"
+          - field: status_id
+            operator: not_in
+            value: [3]  # Not resolved
+        order_by:
+          - field: due_date
+            direction: asc
+        data_to: current_tasks
+
+      # 获取每日工时记录
+      - action: get
+        table: time_entries
+        fields:
+          - field: spent_on
+          - field: hours
+            function: sum
+            label: total_hours
+          - field: issue_id
+            function: count
+            distinct: true
+            label: issues_worked_on
+        filter_values:
+          - field: user_id
+            operator: eq
+            value: "{{ user_id }}"
+          - field: spent_on
+            operator: ge
+            value: "{{ start_date }}"
+          - field: spent_on
+            operator: le
+            value: "{{ end_date }}"
+        group_by:
+          - field: spent_on
+        order_by:
+          - field: spent_on
+            direction: desc
+        data_to: daily_hours
+
+  # 15. 查询项目风险（过期或即将过期的任务）
+  - name: get_project_risks
+    steps:
+      - action: get
+        table: issues
+        fields:
+          - field: id
+          - field: subject
+          - field: due_date
+          - field: priority_id
+          - table: users
+            field: full_name
+            label: assignee_name
+          - field: estimated_hours
+          - field: due_date
+            function: date_diff
+            with: CURRENT_DATE
+            label: days_until_due
+        join:
+          - left_table: issues
+            right_table: users
+            type: left
+            on:
+              - left_column: assigned_to_id
+                right_column: id
+        filter_values:
+          - type: or
+            conditions:
+              - field: due_date
+                operator: lt
+                value: "{{ current_date }}"
+              - field: due_date
+                operator: between
+                value: ["{{ current_date }}", "{{ week_later }}"]
+          - field: status_id
+            operator: not_in
+            value: [3]  # Not resolved
+          - field: project_id
+            operator: eq
+            value: "{{ project_id }}"
+        order_by:
+          - field: due_date
+            direction: asc
+        data_to: risk_issues
+
+      # 统计风险等级分布
+      - action: get
+        table: issues
+        fields:
+          - field: priority_id
+          - table: priorities
+            field: name
+            label: priority_name
+          - field: id
+            function: count
+            label: issue_count
+        join:
+          - left_table: issues
+            right_table: priorities
+            type: left
+            on:
+              - left_column: priority_id
+                right_column: id
+        filter_values:
+          - field: id
+            operator: in
+            value: "{{ risk_issues.map(issue => issue.id) }}"
+        group_by:
+          - field: priority_id
+          - field: priority_name
+        data_to: risk_distribution
