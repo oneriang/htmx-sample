@@ -58,6 +58,7 @@
             }
         }
     </style>
+    
     <div class="drawer">
         <input id="drawer-left" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex flex-col">
@@ -78,23 +79,19 @@
                     </label>
                 </div>
             </div>
-            {% for child in children.generic %}
-                {{ child | safe }}
-            {% endfor %}
+            {{ format_children(children.generic) }}
             <!-- Main content -->
-            <div class="grid mb-2 pt-2 pb-2 px-2 rounded-3xl bg-gray-100 border-4 border-green-400">
-                {% for child in children.main_content %}
-                    {{ child | safe }}
-                {% endfor %}
+            <div 
+              
+              class="grid mb-2 pt-2 pb-2 px-2 rounded-3xl bg-gray-100 border-4 border-green-400">
+                {{ format_children(children.main_content) }}
             </div>
         </div>
         <!-- Left drawer -->
         <div class="drawer-side drawer-side-left">
             <label for="drawer-left" aria-label="close left sidebar" class="drawer-overlay"></label>
             <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content overflow-y-auto">
-                {% for child in children.left_sidebar %}
-                    {{ child | safe }}
-                {% endfor %}
+                {{ format_children(children.left_sidebar) }}
             </ul>
         </div>
     </div>
@@ -108,13 +105,12 @@
         <div class="drawer-side">
             <label for="drawer-right" aria-label="close right sidebar" class="drawer-overlay"></label>
             <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-                {% for child in children.right_sidebar %}
-                    {{ child | safe }}
-                {% endfor %}
+                {{ format_children(children.right_sidebar) }}
             </ul>
         </div>
     </div>
     
+        
     <script>
         function closeDrawer() {
             // document.getElementById('drawer-left').checked = false;
@@ -130,9 +126,7 @@
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
             <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
-            {% for child in children %}
-                {{ child | safe }}
-            {% endfor %}
+            {{ format_children(children) }}
         </div>
     </div>
 
@@ -140,27 +134,20 @@
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
             <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
-            {% for child in children %}
-                {{ child | safe }}
-            {% endfor %}
+            {{ format_children(children) }}
         </div>
     </div>
 
 'drawer_content': |
-    {% for child in children %}
-        {{ child | safe }}
-    {% endfor %}
+    {{ format_children(children) }}
 
 'main_content': |
-    {% for child in children %}
-        {{ child | safe }}
-    {% endfor %}
-
+  <div {{ format_attr(attributes) if attributes }}>
+    {{ format_children(children) }}
+  </div>
 'container': |
     <div class="container mx-auto {{ attributes.class.value }}">
-      {% for child in children %}
-        {{ child | safe }}
-      {% endfor %}
+      {{ format_children(children) }}
     </div>
 
 'card': |
@@ -193,9 +180,7 @@
     <div class="grid grid-cols-12 gap-6">
         <div class="grid grid-cols-12 col-span-12 gap-6 xxl:col-span-9">
             <div class="grid col-span-12 gap-6 mt-5">
-                {% for child in children %}
-                    {{ child | safe }}
-                {% endfor %}
+                {{ format_children(children) }}
             </div>
         </div>
     </div>
@@ -221,15 +206,9 @@
 
 'data-table': |
     <div id="data-table" class="overflow-x-auto mt-0">
-      {% for child in children.header %}
-          {{ child }}
-      {% endfor %}
-      {% for child in children.content %}
-          {{ child }}
-      {% endfor %}
-      {% for child in children.footer %}
-          {{ child }}
-      {% endfor %}
+      {{ format_children(children.header) }}
+      {{ format_children(children.content) }}
+      {{ format_children(children.footer) }}
     </div>
     
 'data_table_content': |
@@ -446,12 +425,8 @@
     </form>
 
 'data-list': |
-    {% for child in children.header %}
-        {{ child }}
-    {% endfor %}
-    {% for child in children.content %}
-        {{ child }}
-    {% endfor %}
+    {{ format_children(children.header) }}
+    {{ format_children(children.content) }}
 
 'data_list_content': |
     <div class="overflow-x-auto mt-0" id="table-content">
@@ -742,9 +717,7 @@
           {% endif %}
       {% endfor %}>
         <div class="form-control w-full mb-4">
-            {% for child in children %}
-                {{ child }}
-            {% endfor %}
+            {{ format_children(children) }}
         </div>
     </form>
 
@@ -1114,7 +1087,6 @@
         Tab content 3
       </div>
       
-          
       <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
       <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
         Tab content 3
@@ -1152,16 +1124,6 @@
             {% endfor %}
         </ul>
     </div>
-
-# 'stat': |
-#     <div class="stat">
-#         <div class="stat-figure text-primary">
-#             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-#         </div>
-#         <div class="stat-title">{{ attributes.title.value }}</div>
-#         <div class="stat-value text-primary">{{ attributes.value.value }}</div>
-#         <div class="stat-desc">{{ attributes.description.value }}</div>
-#     </div>
 
 'carousel1': |
     <div class="carousel w-full">
@@ -1354,9 +1316,7 @@
 
 'stats': |
     <div class="stats stats-vertical shadow">
-        {% for child in children %}
-            {{ child | safe }}
-        {% endfor %}
+        {{ format_children(children) }}
     </div>
 
 'stat': |
@@ -1563,59 +1523,38 @@
         </div>
         <div id="preview"></div>
     </div>
-
+    
 'blogs': |
-    <div
-        {% for attr, value in attributes.items() %}
-            {% if attr not in ['class'] %}
-                {{ attr }}="{{ value }}"
-            {% endif %}
-        {% endfor %}>
+    <div {{ format_attr(attributes) }} >
         Blogs
     </div>
-    
+
 'posts': |
     <div>
       <button 
           type="submit"
           class="btn bg-green-500 hover:bg-blue-700 text-white"
-          {% for attr, value in config.prev.attributes.items() %}
-              {% if attr not in ['class'] %}
-                  {{ attr }}="{{ value }}"
-              {% endif %}
-          {% endfor %}
+          {{ format_attr(config.prev.attributes) }}
       >
       Prev
       </button>
       <button 
           type="submit"
           class="btn bg-green-500 hover:bg-blue-700 text-white"
-          {% for attr, value in config.next.attributes.items() %}
-              {% if attr not in ['class'] %}
-                  {{ attr }}="{{ value }}"
-              {% endif %}
-          {% endfor %}
+          {{ format_attr(config.next.attributes) }}
       >
       Next
       </button>
             
       {% for d in data %}
           <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
-              {% for attr, value in attributes.items() %}
-                  {% if attr not in ['class'] %}
-                      {{ attr }}="{{ value }}"
-                  {% endif %}
-              {% endfor %}
+              {{ format_attr(attributes) }}
           >
               <div class="card-body">
                 <div class="card-actions justify-end">
                     <button class="btn btn-square btn-sm"
                     hx-delete="/blog/post?id={{ d.id }}"
-                    {% for attr, value in config.del.attributes.items() %}
-                        {% if attr not in ['class', 'hx-delete'] %}
-                                {{ attr }}="{{ value }}"
-                        {% endif %}
-                    {% endfor %}
+                    {{ format_attr(config.del.attributes) }}
                     >
                         {{ icons.remove }}
                     </button>
@@ -1628,10 +1567,85 @@
                           {{ child | safe }}
                       {% endfor %}
                   {% endif %}
+                  {{ format_children(children) }}
+                  <div class="card-actions justify-end">
+                    <button class="btn btn-square btn-sm"
+                    hx-get="/blog/post?post_id={{ d.id }}"
+                    hx-target="#blogs"
+                    {{ format_attr(config.del.attributes) }}
+                    >
+                        {{ icons.arrow_right }}
+                  </button>
+                </div>
+              </div>
+          </div>
+      {% endfor %}
+      <button 
+          type="submit"
+          class="btn bg-green-500 hover:bg-blue-700 text-white"
+          {{ format_attr(config.prev.attributes) }}
+      >
+      Prev
+      </button>
+      <button 
+          type="submit"
+          class="btn bg-green-500 hover:bg-blue-700 text-white"
+          {{ format_attr(config.next.attributes) }}
+      >
+      Next
+      </button>
+    </div>
+
+'post': |
+    <div>
+      {% for d in data %}
+          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
+              {{ format_attr(attributes) }}
+          >
+              <div class="card-body">
+                  <h1 class="card-title">{{ d.id if d and d.id else '+++'}}</h1>
+                  <h2 class="card-title">{{ d.title if d and d.title else 'aaa'}}</h2>
+                  <p class="content">{{ d.content if d and d.content else 'bbb'}}</p>
+                  {{ format_children(children) }}
+                <div class="card-actions justify-end">
+                    <button class="btn btn-square btn-sm"
+                    hx-get="/blog/posts"
+                    hx-target="#blogs"
+                    {{ format_attr(config.del.attributes) }}
+                    >
+                        {{ icons.arrow_left }}
+                    </button>
+                </div>
               </div>
           </div>
       {% endfor %}
     </div>
+
+'pg': |
+    <div id="content">
+      <!-- Initial content here -->
+    </div>
+    
+    <div id="pagination">
+      <button class="btn" 
+              id="p1"
+              hx-get="/api/data?page=1" 
+              hx-target="#content" 
+              hx-push-url="true" 
+              hx-trigger="click">
+        Page 1
+      </button>
+      <button class="btn"
+              id="p2"
+              hx-get="/api/data?page=2" 
+              hx-target="#content" 
+              hx-push-url="true" 
+              hx-trigger="click">
+        Page 2
+      </button>
+      <!-- More pagination buttons -->
+    </div>
+
 
 'icons':
   'add': |
@@ -1678,7 +1692,14 @@
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
       <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
     </svg>
-
+  'arrow_right': |
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+    </svg>
+  'arrow_left': |
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+    </svg>
 
 'classes':
   'input': |

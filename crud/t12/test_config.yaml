@@ -1,0 +1,19 @@
+title: Test
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    attributes:
+      title: Test
+    children:
+      main_content:
+        - $ref: main_content
+
+  main_content:
+    id: main_content
+    type: main_content
+    children:
+      - type: pg
+
+components:
+  - $ref: main_layout

@@ -450,36 +450,49 @@ transactions:
       - action: get
         table_name: posts
         fields:
-          - field: "*"
-          - table_name: users
-            field: display_name
-            label: author_name
-          - table_name: users
-            field: avatar_url
-            label: author_avatar
-          - table_name: categories
-            field: name
-            label: category_name
-          - table_name: categories
-            field: slug
-            label: category_slug
-        join:
-          - left_table_name: posts
-            right_table_name: users
-            type: left
-            on:
-              - left_column: author_id
-                right_column: id
-          - left_table_name: posts
-            right_table_name: categories
-            type: left
-            on:
-              - left_column: category_id
-                right_column: id
-        filter_values:
+          # - field: "*"
+          - field: id
+          - field: title
           - field: slug
+          - field: content
+          - field: excerpt
+          - field: featured_image
+          - field: status
+          - field: published_at
+          - field: views_count
+          # - table_name: users
+          #   field: display_name
+          #   label: author_name
+        #   - table_name: users
+        #     field: avatar_url
+        #     label: author_avatar
+        #   - table_name: categories
+        #     field: name
+        #     label: category_name
+        #   - table_name: categories
+        #     field: slug
+        #     label: category_slug
+        # join:
+        #   - left_table_name: posts
+        #     right_table_name: users
+        #     type: left
+        #     on:
+        #       - left_column: author_id
+        #         right_column: id
+        #   - left_table_name: posts
+        #     right_table_name: categories
+        #     type: left
+        #     on:
+        #       - left_column: category_id
+        #         right_column: id
+        # filter_values:
+        #   - field: slug
+        #     operator: eq
+        #     value: "{{ post_slug }}"
+        filter_values:
+          - field: id
             operator: eq
-            value: "{{ post_slug }}"
+            value: "{{ post_id }}"
         data_to: post_info
 
       # 获取文章标签
@@ -1022,7 +1035,8 @@ transactions:
   #   steps:
   #     # 获取文章基本信息
   #     - action: get
-  #       table_name: posts
+  #       
+  
   #       fields:
   #         - field: "*"
   #         - table_name: users

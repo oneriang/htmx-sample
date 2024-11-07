@@ -4,8 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ page_title }}</title>
-  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
@@ -50,7 +49,7 @@
 
 
   {% for component in components %}
-  {{ component | safe }}
+    {{ component | safe }}
   {% endfor %}
 
   <div id="loading-indicator">
@@ -58,17 +57,76 @@
   </div>
 
   <script>
-  
-      document.getElementById('loading-indicator').style.display = 'none';
-      
+
+    var is_popstate = false;
+
+    htmx.config.historyEnabled = false;
+
+    document.getElementById('loading-indicator').style.display = 'none';
+
     document.body.addEventListener('htmx:beforeRequest', function () {
       console.log('beforeRequest');
       document.getElementById('loading-indicator').style.display = 'block';
+      console.log(event);
     });
 
-    document.body.addEventListener('htmx:afterRequest', function () {
+    document.body.addEventListener('htmx:afterRequest', function (event) {
       console.log('afterRequest');
       document.getElementById('loading-indicator').style.display = 'none';
+
+      console.log(event);
+
+      if (is_popstate == false) {
+        if(event.detail.requestConfig.verb == 'get') {
+          // history.pushState({}, '', event.detail.pathInfo.responsePath);
+          history.pushState({}, '', event.detail.pathInfo.responsePath.replace('/posts', ''));
+          // history.pushState({}, '', event.detail.elt.attributes['hx-url']['value']);
+        }
+      } else {
+        is_popstate = false;
+      }
+
+    });
+
+    document.body.addEventListener('htmx:historyRestore', function (event) {
+      // 在这里处理浏览器前进后退的逻辑，例如加载对应的内容
+      console.log('URL restored:');
+      console.log(event);
+    });
+
+    // 监听浏览器的前进和后退事件
+    window.addEventListener('popstate', function (event) {
+      console.log('popstate');
+      console.log(event);
+      console.log('window.location.search');
+      console.log(window.location.search);
+      
+      console.log(window.location.pathname + window.location.search);
+      
+      is_popstate = true;
+      // const elements = document.querySelectorAll(`[hx-get*="${window.location.pathname + '/posts' + window.location.search}"]`);
+      const elements = document.querySelectorAll(`[hx-url*="${window.location.pathname + window.location.search}"]`);
+      elements.forEach(element => {
+        console.log(element);
+        htmx.trigger(element, "click");
+      });
+    });
+
+
+    document.body.addEventListener('htmx:pushedIntoHistory', function (event) {
+      console.log('pushedIntoHistory');
+      console.log(event);
+      //history.pushState({}, '', event.detail.path);
+   
+      //localStorage.removeItem('htmx-history-cache');
+    });
+
+    document.body.addEventListener('htmx:beforeHistoryUpdate', function (event) {
+      console.log('beforeHistoryUpdate');
+      const proposedUrl = event.detail.history.path;
+      console.log(proposedUrl);
+      const customUrl = proposedUrl.replace(/\/include\/htmx\/.*\.html/, '');
+      //event.detail.history.path = customUrl;
     });
   </script>
 
@@ -121,10 +179,10 @@
   </script>
 
   <script>
-    document.body.addEventListener('htmx:responseError', function(evt) {
-        if (evt.detail.xhr.status === 401) {
-            // window.location.href = '/login';
-        }
+    document.body.addEventListener('htmx:responseError', function (evt) {
+      if (evt.detail.xhr.status === 401) {
+        // window.location.href = '/login';
+      }
     });
   </script>
 

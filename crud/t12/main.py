@@ -1,5 +1,6 @@
 import os
 import uvicorn
+import json
 
 from fastapi import FastAPI, Response, Request, Form, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -22,7 +23,19 @@ from sqlalchemy import inspect, String, Integer, Float, DateTime, Date, Boolean,
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Union, Optional
-from jinja2 import Template
+from jinja2 import Template, Environment
+
+from jinja2 import Environment, FileSystemLoader
+
+
+'''
+# Set up the Jinja2 environment
+env = Environment(loader=FileSystemLoader('.'))
+
+# Define globals
+env.globals['site_name'] = "My Awesome Site"
+# env.globals['get_user'] = lambda user_id: fetch_user_from_db(user_id)  # A function
+'''
 
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -63,6 +76,7 @@ app.mount("/uploaded", StaticFiles(directory="uploaded"), name="uploaded")
 
 # 添加 min 函数到模板上下文
 templates.env.globals['min'] = min
+templates.env.globals['site_name'] = '6666'
 
 # Database connection configuration
 DATABASE_URL = "sqlite:///./cms.db"
@@ -305,9 +319,26 @@ def generate_html(component: Dict[str, Any]) -> str:
         children=rendered_children,
         icons=gv.icons,
         classes=gv.classes,
-        min=min
+        min=min,
+        site_name='7777',
+        format_attr=format_attr,
+        format_children=format_children
     )
 
+def format_attr(attributes):
+  s = ''
+  for attr, value in attributes.items():
+    if attr not in ['class']:
+      s+=f' {attr}="{value}" '
+  return s
+  
+def format_children(children):
+  s = ''
+  if children:
+    for child in children:
+      s += child
+  return s
+  
 # 辅助函数：解析组件引用
 def resolve_component(comp):
     if isinstance(comp, dict) and '$ref' in comp:
@@ -1496,11 +1527,6 @@ async def get_total_albums(request: Request):
                 transaction_name = 'get_total_albums',
                 config_file="main_txn.yaml"
             )
-    # # print(result)
-    # for r in result:
-    #   # print(r)
-    #   for k in r:
-    #     # print(r[k])
     return HTMLResponse(str(result[0]['total_albums']))
 
 @app.get("/api/total_artists", response_class=HTMLResponse)
@@ -1510,11 +1536,6 @@ async def get_total_albums(request: Request):
                 transaction_name = 'get_total_artists',
                 config_file="main_txn.yaml"
             )
-    # # print(result)
-    # for r in result:
-    #   # print(r)
-    #   for k in r:
-    #     # print(r[k])
     return HTMLResponse(str(result[0]['total_artists']))
    
 @app.get("/setup_customer_database", response_class=HTMLResponse)
@@ -1524,11 +1545,6 @@ async def setup_customer_database(request: Request):
                 transaction_name = 'setup_customer_database',
                 config_file="table_management_txn.yaml"
             )
-    # # print(result)
-    # for r in result:
-    #   # print(r)
-    #   for k in r:
-    #     # print(r[k])
     return HTMLResponse(str(result[0]['total_artists']))
 
 @app.get("/database_management", response_class=HTMLResponse)
@@ -1538,7 +1554,6 @@ async def database_management(request: Request):
                 transaction_name = 'create_new_database',
                 config_file="database_management_txn.yaml"
             )
-    # print(result)
     return HTMLResponse(str(result[0]['total_artists']))
  
 @app.get("/project_management_system", response_class=HTMLResponse)
@@ -1549,7 +1564,6 @@ async def project_management_system(request: Request):
                 config_file="project_management_system_txn.yaml"
             )
     # print(result)
-    # return HTMLResponse(str(result[0]['total_artists']))
     return HTMLResponse('end')
 
 @app.get("/initialize_base_data", response_class=HTMLResponse)
@@ -1745,33 +1759,6 @@ async def blog_post_delete(request: Request):
     headers = {"HX-Trigger": "deletePost"}
     return HTMLResponse(content='ok', headers=headers)
 
-# # 主渲染函数保持不变
-# @app.get("/blog", response_class=HTMLResponse)
-# async def blog(request: Request):
-    
-#     gv.request = request
-
-#     query_params = dict(request.query_params)
-#     print(query_params)
-
-#     load_data()
-
-#     posts_config = get_table_config('posts')
-#     # pprint.pprint(posts_config)
-#     gv.posts_config = posts_config
-      
-#     page_config = load_page_config('blog_config.yaml')
-#     # pprint.pprint(page_config)
-
-#     rendered_components = [generate_html(component) for component in page_config['components']]
-
-#     template = Template(gv.BASE_HTML)
-#     return template.render(
-#         page_title=page_config['title'],
-#         components=rendered_components,
-#         min=min
-#     )
-
 # 主渲染函数保持不变
 @app.get("/blog", response_class=HTMLResponse)
 async def blog(request: Request):
@@ -1779,7 +1766,8 @@ async def blog(request: Request):
     gv.request = request
 
     query_params = dict(request.query_params)
-    print(query_params)
+    if query_params is None:
+      query_params = []
 
     load_data()
 
@@ -1788,37 +1776,42 @@ async def blog(request: Request):
       
     page_config = load_page_config('blog_config.yaml')
 
-    print(gv.component_dict['blogs'])
-
+    '''
+    if 'page_size' not in query_params:
+        query_params['page_size'] = '5'
+    
+    if 'page_number' not in query_params:
+        query_params['page_number'] = '1'
+    '''
+    
     hx_get = '/blog/posts?target=posts'
-    hx_push_url = '/blog?target=posts'
+    hx_url = '/blog?target=posts'
     if 'page_size' in query_params:
-        hx_get = hx_get + '&' + 'page_size' + '=' + query_params['page_size']
-        hx_push_url = hx_push_url + '&' + 'page_size' + '=' + query_params['page_size']
+        hx_get = hx_get + '&' + 'page_size' + '=' + str(query_params['page_size'])
+        hx_url = hx_url + '&' + 'page_size' + '=' + str(query_params['page_size'])
     if 'page_number' in query_params:
-        hx_get = hx_get + '&' + 'page_number' + '=' + query_params['page_number']
-        hx_push_url = hx_push_url + '&' + 'page_number' + '=' + query_params['page_number']
+        hx_get = hx_get + '&' + 'page_number' + '=' + str(query_params['page_number'])
+        hx_url = hx_url + '&' + 'page_number' + '=' + str(query_params['page_number'])
 
     blogs_attr = {
         'hx-get': hx_get,
         'hx-swap': 'innerHTML',
         'hx-trigger': 'load, newPost from:body, deletePost from:body',
-        'hx-push-url': hx_push_url
+        'hx-url': hx_url
     }
     gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
-
-    print(gv.component_dict['blogs'])
 
     rendered_components = [generate_html(component) for component in page_config['components']]
 
     template = Template(gv.BASE_HTML)
-    return template.render(
+    h = template.render(
         page_title=page_config['title'],
         components=rendered_components,
         min=min
     )
 
-
+    return h;
+    
 @app.get("/blog/posts", response_class=HTMLResponse)
 async def get_posts(request: Request):
 
@@ -1850,19 +1843,22 @@ async def get_posts(request: Request):
         gv.component_dict['posts']['data'] = result
 
         prev_attr = {
-                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number - 1}", 
+                    'id': 'prev',
+                    'hx-get': f"/blog/posts?target=posts&page_size={page_size}&page_number={page_number - 1}", 
                     'hx-swap': 'innerHTML',
                     'hx-target': '#blogs',
-                    'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number - 1}",
+                    'hx-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number - 1}",
+                    #'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number - 1}",
                 }
         if no_prev:
             prev_attr['disabled'] = True
 
         next_attr = {
-                    'hx-get': f"/blog/posts?page_size={page_size}&page_number={page_number + 1}", 
+                    'hx-get': f"/blog/posts?target=posts&page_size={page_size}&page_number={page_number + 1}", 
                     'hx-swap': 'innerHTML',
                     'hx-target': '#blogs',
-                    'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number + 1}",
+                    'hx-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number + 1}",
+                    #'hx-push-url': f"/blog?target=posts&page_size={page_size}&page_number={page_number + 1}",
                 }
         if no_next:
             next_attr['disabled'] = True
@@ -1883,10 +1879,81 @@ async def get_posts(request: Request):
         h = generate_html(gv.component_dict['posts'])
     except Exception as e:
         print(e)
-    
-    #headers = {"HX-Trigger": "newPost"}
-    #return HTMLResponse(content=h, headers=headers)
+
     return HTMLResponse(content=h)
+    
+    
+@app.get("/blog/post", response_class=HTMLResponse)
+async def get_post(request: Request):
+
+    query_params = dict(request.query_params)
+
+    if 'post_id' not in query_params:
+      return 'no data'
+      
+    post_id = int(query_params['post_id'])
+ 
+    result = TM.execute_transactions(
+                transaction_name = 'get_post_detail',
+                params={
+                    'post_id': post_id
+                },
+                config_file="cms.yaml"
+            )
+            
+    print(result)
+    
+    h = ''
+    try:
+        load_page_config('blog_config.yaml')
+        gv.component_dict['post']['data'] = result
+
+        gv.component_dict['post']['config'] = {
+            'del': {
+                'attributes': {
+                    # 'hx-delete': f"/post"
+                }
+            }
+        }
+        h = generate_html(gv.component_dict['post'])
+    except Exception as e:
+        print(e)
+
+    return HTMLResponse(content=h)
+    
+@app.get("/test", response_class=HTMLResponse)
+async def blog(request: Request):
+    
+    gv.request = request
+
+    query_params = dict(request.query_params)
+    print(query_params)
+
+    load_data()
+
+    page_config = load_page_config('test_config.yaml')
+
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    h = template.render(
+        page_title=page_config['title'],
+        components=rendered_components,
+        min=min
+    )
+    
+    return h;
+    
+    
+@app.get("/api/data", response_class=HTMLResponse)
+async def api_data(request: Request):
+    
+    gv.request = request
+
+    query_params = dict(request.query_params)
+    print(query_params)
+
+    return str(query_params);
     
 if __name__ == "__main__":
     uvicorn.run(

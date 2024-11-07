@@ -89,6 +89,10 @@ component_definitions:
         attributes: 
           href: /blog
           text: Blog
+      - type: link
+        attributes: 
+          href: /test
+          text: Test
       - $ref: main_data_table
     #   - type: table
     #   - type: hero

@@ -17,6 +17,8 @@ component_definitions:
   main_content:
     id: main_content
     type: main_content
+    attributes:
+      id: main_content
     children:
       - $ref: form_create
       - $ref: blogs
@@ -35,6 +37,10 @@ component_definitions:
     id: posts
     type: posts
   
+  post:
+    id: post
+    type: post
+
   form_create:
     id: form_create
     type: form_base_type_1
