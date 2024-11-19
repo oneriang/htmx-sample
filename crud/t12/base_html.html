@@ -67,66 +67,110 @@
     document.body.addEventListener('htmx:beforeRequest', function () {
       console.log('beforeRequest');
       document.getElementById('loading-indicator').style.display = 'block';
-      console.log(event);
     });
 
+    function show_loading() {
+        document.getElementById('loading-indicator').style.display = 'block';
+    };
+    
+    function hide_loading() {
+        document.getElementById('loading-indicator').style.display = 'none';
+    };
+    
     document.body.addEventListener('htmx:afterRequest', function (event) {
       console.log('afterRequest');
       document.getElementById('loading-indicator').style.display = 'none';
-
-      console.log(event);
-
+      console.log(event)
+           
       if (is_popstate == false) {
         if(event.detail.requestConfig.verb == 'get') {
-          // history.pushState({}, '', event.detail.pathInfo.responsePath);
-          history.pushState({}, '', event.detail.pathInfo.responsePath.replace('/posts', ''));
-          // history.pushState({}, '', event.detail.elt.attributes['hx-url']['value']);
-        }
-      } else {
-        is_popstate = false;
-      }
+          
+          console.log(event.detail.pathInfo.responsePath);
+          
+          let url = event.detail.pathInfo.responsePath;
 
+          // 找到最后一个 '&' 或 '?' 的位置
+          let index = url.lastIndexOf('&');
+          if (index === -1) {
+            index = url.lastIndexOf('?');
+            // 移除最后一个参数
+            if (index !== -1) {
+              url = url.slice(0, index);
+            }
+          } else {
+            // 移除最后一个参数
+            if (index !== -1) {
+              url = url.slice(0, index);
+            }
+          }
+          
+          console.log(url); // 输出 '/page?name=John'
+          
+          history.pushState({}, '', url);
+          
+          /*
+          const url = new URL(event.detail.pathInfo.responsePath);
+          console.log(url);
+     
+          if (event.detail.pathInfo.responsePath.includes('&')) {
+          
+              // 获取所有查询参数
+            const searchParams = url.searchParams;
+            
+            // 找到最后一个参数并删除它
+            const lastParamKey = Array.from(searchParams.keys()).pop();
+            if (lastParamKey) {
+                searchParams.delete(lastParamKey);
+            }
+            
+            console.log(url.toString()); // 输出 'https://example.com:8080/path/to/page?name=John'
+            
+            history.pushState({}, '', url.toString());
+          }
+          else {
+              // 只保留问号前的部分
+            const baseUrl = `${url.origin}${url.pathname}`;
+            
+            console.log(baseUrl); // 输出 'https://example.com:8080/path/to/page'
+            history.pushState({}, '', baseUrl);
+    
+          }
+          */
+          /*
+          if (event.detail.pathInfo.responsePath.endsWith('?posts')) {
+            history.pushState({}, '', event.detail.pathInfo.responsePath.replace('?posts', ''));
+          }
+          else if (event.detail.pathInfo.responsePath.endsWith('&posts')) {
+            history.pushState({}, '', event.detail.pathInfo.responsePath.replace('&posts', ''));
+          }
+          */
+        }
+      }
+      is_popstate = false;
     });
 
     document.body.addEventListener('htmx:historyRestore', function (event) {
       // 在这里处理浏览器前进后退的逻辑，例如加载对应的内容
       console.log('URL restored:');
-      console.log(event);
     });
 
     // 监听浏览器的前进和后退事件
     window.addEventListener('popstate', function (event) {
       console.log('popstate');
-      console.log(event);
-      console.log('window.location.search');
-      console.log(window.location.search);
-      
-      console.log(window.location.pathname + window.location.search);
-      
       is_popstate = true;
-      // const elements = document.querySelectorAll(`[hx-get*="${window.location.pathname + '/posts' + window.location.search}"]`);
-      const elements = document.querySelectorAll(`[hx-url*="${window.location.pathname + window.location.search}"]`);
+      const elements = document.querySelectorAll(`[hx-url="${window.location.pathname + window.location.search}"]`);
       elements.forEach(element => {
         console.log(element);
         htmx.trigger(element, "click");
       });
     });
 
-
     document.body.addEventListener('htmx:pushedIntoHistory', function (event) {
       console.log('pushedIntoHistory');
-      console.log(event);
-      //history.pushState({}, '', event.detail.path);
-   
-      //localStorage.removeItem('htmx-history-cache');
     });
 
     document.body.addEventListener('htmx:beforeHistoryUpdate', function (event) {
       console.log('beforeHistoryUpdate');
-      const proposedUrl = event.detail.history.path;
-      console.log(proposedUrl);
-      const customUrl = proposedUrl.replace(/\/include\/htmx\/.*\.html/, '');
-      //event.detail.history.path = customUrl;
     });
   </script>
 

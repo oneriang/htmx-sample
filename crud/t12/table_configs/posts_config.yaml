@@ -124,6 +124,7 @@ cols:
     nullable: false
     primary_key: 0
     type: VARCHAR(200)
+    default: '😄'
   slug:
     input_type: text
     label: slug
@@ -138,6 +139,7 @@ cols:
     nullable: false
     primary_key: 0
     type: TEXT
+    default: '🌋🔥🔥🥵🌹🦮🐢🌹🎉😹🌡️🌹👇🌹🎉🌹🌋'
   excerpt:
     input_type: text
     label: excerpt

@@ -1,0 +1,518 @@
+11:13:28 I initDevice 9.4
+11:13:28 D initDevice MANUFACTURER:motorola DEVICE:lyriq MODEL:motorola edge 40 BRAND:motorola BOARD:lyriq HARDWARE:mt6893 SDK_INT:34
+11:13:28 E CameraId: 0 CameraRawSizes: [4096x3072]
+11:13:28 E CameraId: 1 CameraRawSizes: [3264x2448]
+11:13:28 E CameraId: 2 CameraRawSizes: [4208x3120]
+11:13:28 E CameraId: 3 CameraRawSizes: [4096x3072]
+11:13:29 E GetFilteredCameraIDs 0,2,1
+11:13:29 I Back  Main Lens Id 0
+11:13:29 I Front Main Lens Id 1
+11:13:29 W setAuxKey auxKey:0 => cameraId:0
+11:13:29 I AGC initMenuValue
+11:13:29 I AGC initInfoPage
+11:13:29 I Device Interface CameraID:0 0 => redfin => redfin
+11:13:29 W experimentalKeys 0
+11:13:29 I getZslFrameCount 9
+11:13:29 I getZslFrameCount 12
+11:13:29 I getZslFrameCount 7
+11:13:29 I getZslFrameCount 20
+11:13:29 W default library gcastartup
+11:13:29 E load gcam library gcastartup
+11:13:29 I Default CameraIdList [0, 1]
+11:13:29 W getSwitchCameraList [0, 1]
+11:13:29 I App returns to the foreground
+11:13:31 I App enter the background
+11:13:39 E this.d 13
+11:13:39 I App returns to the foreground
+11:13:39 I Device Interface CameraID:0 0 => redfin => redfin
+11:13:39 W iru imageReaderFormat PRIVATE(34)
+11:13:39 W iru is48MP false
+11:13:39 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:13:39 I HDR+ Model CameraID:0 redfin => redfin
+11:13:39 W getViewfinderFormat 35
+11:13:39 E this.d 20
+11:13:39 D WB_CALIB_GR_OVER_GB_RATIO 1.0029297
+11:13:39 D getImageFormatArr [32]
+11:13:39 E [32]
+11:13:39 I IsSupportLEVEL3 CameraID:0 true
+11:13:39 I HDR+ Model CameraID:0 redfin => redfin
+11:13:39 E jbn.a() [32]
+11:13:39 I IsSupportLEVEL3 CameraID:0 true
+11:13:39 E jbn.b() [32]
+11:13:39 E this.d 11
+11:13:39 D WB_CALIB_GR_OVER_GB_RATIO 1.0029297
+11:13:39 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:13:39 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:13:39 E getEnumMap Hardware isLevel3 true
+11:13:39 I IsSupportLEVEL3 CameraID:0 true
+11:13:39 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:13:39 E this.d 12
+11:13:39 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:13:39 E this.d 10
+11:13:39 D getStreamMode 0
+11:13:39 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:13:39 E this.d 9
+11:13:40 E this.d 4
+11:13:40 E this.d 6
+11:13:40 E this.d 7
+11:13:40 E this.d 8
+11:13:40 E this.d 0
+11:13:40 E setSMode PHOTO
+11:13:40 W iru imageReaderFormat PRIVATE(34)
+11:13:40 W iru is48MP false
+11:13:40 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:13:40 E this.d 14
+11:13:58 I App enter the background
+11:13:58 W iru imageReaderFormat PRIVATE(34)
+11:13:58 W iru is48MP false
+11:13:58 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:13:58 I App returns to the foreground
+11:13:58 W getViewfinderFormat 35
+11:13:58 E jbn.a() [32]
+11:13:58 E jbn.b() [32]
+11:13:58 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:13:58 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:13:58 E getEnumMap Hardware isLevel3 true
+11:13:58 I IsSupportLEVEL3 CameraID:0 true
+11:13:58 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:13:58 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:13:58 D getStreamMode 0
+11:13:58 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:13:58 E this.d 4
+11:13:58 E this.d 6
+11:13:58 E this.d 7
+11:13:58 E this.d 8
+11:13:58 E this.d 0
+11:14:04 D loc 1 45
+11:14:04 D loc 2 1113
+11:14:07 I App enter the background
+11:14:07 W iru imageReaderFormat PRIVATE(34)
+11:14:07 W iru is48MP false
+11:14:07 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:14:07 W getViewfinderFormat 35
+11:14:07 I App returns to the foreground
+11:14:07 E jbn.a() [32]
+11:14:07 E jbn.b() [32]
+11:14:07 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:14:07 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:07 E getEnumMap Hardware isLevel3 true
+11:14:07 I IsSupportLEVEL3 CameraID:0 true
+11:14:07 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:14:07 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:14:07 D getStreamMode 0
+11:14:07 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:07 E this.d 4
+11:14:07 E this.d 6
+11:14:07 E this.d 7
+11:14:07 E this.d 8
+11:14:07 E this.d 0
+11:14:11 W iru imageReaderFormat PRIVATE(34)
+11:14:11 W iru is48MP false
+11:14:11 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:14:11 W getViewfinderFormat 35
+11:14:11 E jbn.a() [32]
+11:14:11 E jbn.b() [32]
+11:14:11 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:14:11 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:11 E getEnumMap Hardware isLevel3 true
+11:14:11 I IsSupportLEVEL3 CameraID:0 true
+11:14:11 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:14:11 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:14:11 D getStreamMode 0
+11:14:11 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:11 E this.d 4
+11:14:11 E this.d 6
+11:14:11 E this.d 7
+11:14:11 E this.d 8
+11:14:11 E this.d 0
+11:14:20 I 3A_METADATA_AF null
+11:14:20 I 3A_METADATA_AF null
+11:14:22 W isFiltered false
+11:14:25 I App enter the background
+11:14:30 E setSMode PHOTO
+11:14:30 W iru imageReaderFormat PRIVATE(34)
+11:14:30 W iru is48MP false
+11:14:30 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:14:30 I App returns to the foreground
+11:14:30 W getViewfinderFormat 35
+11:14:30 E jbn.a() [32]
+11:14:30 E jbn.b() [32]
+11:14:30 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:14:30 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:30 E getEnumMap Hardware isLevel3 true
+11:14:30 I IsSupportLEVEL3 CameraID:0 true
+11:14:30 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:14:30 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:14:30 D getStreamMode 0
+11:14:30 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:14:30 E this.d 4
+11:14:30 E this.d 8
+11:14:30 E this.d 6
+11:14:30 E this.d 7
+11:14:30 E this.d 0
+11:14:33 I App enter the background
+11:15:25 W iru imageReaderFormat PRIVATE(34)
+11:15:25 W iru is48MP false
+11:15:25 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:25 W getViewfinderFormat 35
+11:15:25 E jbn.a() [32]
+11:15:25 E jbn.b() [32]
+11:15:25 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:25 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:25 E getEnumMap Hardware isLevel3 true
+11:15:25 I IsSupportLEVEL3 CameraID:0 true
+11:15:25 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:25 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:25 I App returns to the foreground
+11:15:25 E this.d 11
+11:15:25 D getStreamMode 0
+11:15:25 E this.d 12
+11:15:25 E this.d 10
+11:15:25 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:25 E this.d 9
+11:15:25 E this.d 4
+11:15:25 E this.d 6
+11:15:25 E this.d 7
+11:15:25 E setSMode PHOTO
+11:15:25 W iru imageReaderFormat PRIVATE(34)
+11:15:25 E this.d 8
+11:15:25 W iru is48MP false
+11:15:25 E this.d 0
+11:15:25 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:25 I App enter the background
+11:15:29 E this.d 14
+11:15:30 W iru imageReaderFormat PRIVATE(34)
+11:15:30 W iru is48MP false
+11:15:30 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:30 W getViewfinderFormat 35
+11:15:30 I App returns to the foreground
+11:15:30 E jbn.a() [32]
+11:15:30 E jbn.b() [32]
+11:15:30 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:30 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:30 E getEnumMap Hardware isLevel3 true
+11:15:30 I IsSupportLEVEL3 CameraID:0 true
+11:15:30 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:30 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:30 D getStreamMode 0
+11:15:30 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:30 E this.d 4
+11:15:30 E this.d 6
+11:15:30 E this.d 7
+11:15:30 E this.d 8
+11:15:30 E this.d 0
+11:15:37 I App enter the background
+11:15:38 I App returns to the foreground
+11:15:45 I App enter the background
+11:15:46 I App returns to the foreground
+11:15:50 W iru imageReaderFormat PRIVATE(34)
+11:15:50 W iru is48MP false
+11:15:50 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:50 W getViewfinderFormat 35
+11:15:50 E jbn.a() [32]
+11:15:50 E jbn.b() [32]
+11:15:50 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:50 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:50 E getEnumMap Hardware isLevel3 true
+11:15:50 I IsSupportLEVEL3 CameraID:0 true
+11:15:50 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:50 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:50 D getStreamMode 0
+11:15:50 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:50 E this.d 4
+11:15:50 E this.d 6
+11:15:50 E this.d 7
+11:15:50 E this.d 8
+11:15:50 E this.d 0
+11:15:51 E onRestart sMode:  android.media.action.STILL_IMAGE_CAMERA
+11:15:52 I initDevice 9.4
+11:15:52 D initDevice MANUFACTURER:motorola DEVICE:lyriq MODEL:motorola edge 40 BRAND:motorola BOARD:lyriq HARDWARE:mt6893 SDK_INT:34
+11:15:52 E CameraId: 0 CameraRawSizes: [4096x3072]
+11:15:52 E CameraId: 1 CameraRawSizes: [3264x2448]
+11:15:52 E CameraId: 2 CameraRawSizes: [4208x3120]
+11:15:52 E CameraId: 3 CameraRawSizes: [4096x3072]
+11:15:52 E GetFilteredCameraIDs 0,2,1
+11:15:52 I Back  Main Lens Id 0
+11:15:52 I Front Main Lens Id 1
+11:15:52 I AGC initMenuValue
+11:15:52 I AGC initInfoPage
+11:15:52 I Device Interface CameraID:0 0 => redfin => redfin
+11:15:52 W experimentalKeys 0
+11:15:52 I getZslFrameCount 9
+11:15:52 I getZslFrameCount 12
+11:15:52 I getZslFrameCount 7
+11:15:52 I getZslFrameCount 20
+11:15:52 W default library gcastartup
+11:15:52 E load gcam library gcastartup
+11:15:52 I Default CameraIdList [0, 1]
+11:15:52 W getSwitchCameraList [0, 1]
+11:15:52 E this.d 13
+11:15:52 W iru imageReaderFormat PRIVATE(34)
+11:15:52 W iru is48MP false
+11:15:52 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:52 W getViewfinderFormat 35
+11:15:52 E this.d 20
+11:15:52 D getImageFormatArr [32]
+11:15:52 E [32]
+11:15:52 E jbn.a() [32]
+11:15:52 E jbn.b() [32]
+11:15:52 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:52 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:52 E getEnumMap Hardware isLevel3 true
+11:15:52 I IsSupportLEVEL3 CameraID:0 true
+11:15:52 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:52 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:52 D getStreamMode 0
+11:15:52 I App returns to the foreground
+11:15:52 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:52 I IsSupportLEVEL3 CameraID:0 true
+11:15:52 I IsSupportLEVEL3 CameraID:0 true
+11:15:52 E this.d 11
+11:15:52 I Device Interface CameraID:0 0 => redfin => redfin
+11:15:52 I HDR+ Model CameraID:0 redfin => redfin
+11:15:52 D WB_CALIB_GR_OVER_GB_RATIO 1.0029297
+11:15:52 I HDR+ Model CameraID:0 redfin => redfin
+11:15:52 D WB_CALIB_GR_OVER_GB_RATIO 1.0029297
+11:15:52 E this.d 12
+11:15:52 E this.d 4
+11:15:52 E this.d 10
+11:15:52 E this.d 6
+11:15:52 E this.d 7
+11:15:52 E this.d 9
+11:15:52 E this.d 8
+11:15:52 E this.d 0
+11:15:52 E setSMode PHOTO
+11:15:53 W iru imageReaderFormat PRIVATE(34)
+11:15:53 W iru is48MP false
+11:15:53 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:53 I App enter the background
+11:15:53 W iru imageReaderFormat PRIVATE(34)
+11:15:53 W iru is48MP false
+11:15:53 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:53 W getViewfinderFormat 35
+11:15:53 I App returns to the foreground
+11:15:53 E jbn.a() [32]
+11:15:53 E jbn.b() [32]
+11:15:53 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:53 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:53 E getEnumMap Hardware isLevel3 true
+11:15:53 I IsSupportLEVEL3 CameraID:0 true
+11:15:53 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:53 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:53 D getStreamMode 0
+11:15:53 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:53 E this.d 4
+11:15:53 E this.d 6
+11:15:53 E this.d 7
+11:15:53 E this.d 8
+11:15:53 E this.d 0
+11:15:54 E this.d 14
+11:15:57 I App enter the background
+11:15:58 W iru imageReaderFormat PRIVATE(34)
+11:15:58 W iru is48MP false
+11:15:58 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:58 W getViewfinderFormat 35
+11:15:58 E jbn.a() [32]
+11:15:58 E jbn.b() [32]
+11:15:58 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:58 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:58 E getEnumMap Hardware isLevel3 true
+11:15:58 E this.d 11
+11:15:58 I App returns to the foreground
+11:15:58 I IsSupportLEVEL3 CameraID:0 true
+11:15:58 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:58 E this.d 12
+11:15:58 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:58 E this.d 10
+11:15:58 D getStreamMode 0
+11:15:58 E this.d 9
+11:15:58 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:58 E this.d 4
+11:15:58 E this.d 6
+11:15:58 E this.d 7
+11:15:58 E setSMode PHOTO
+11:15:58 W iru imageReaderFormat PRIVATE(34)
+11:15:58 W iru is48MP false
+11:15:58 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:58 E this.d 8
+11:15:58 E this.d 0
+11:15:59 I App enter the background
+11:15:59 W iru imageReaderFormat PRIVATE(34)
+11:15:59 W iru is48MP false
+11:15:59 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:15:59 I App returns to the foreground
+11:15:59 W getViewfinderFormat 35
+11:15:59 E jbn.a() [32]
+11:15:59 E jbn.b() [32]
+11:15:59 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:15:59 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:59 E getEnumMap Hardware isLevel3 true
+11:15:59 I IsSupportLEVEL3 CameraID:0 true
+11:15:59 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:15:59 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:15:59 D getStreamMode 0
+11:15:59 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:15:59 E this.d 4
+11:15:59 E this.d 6
+11:15:59 E this.d 7
+11:15:59 E this.d 8
+11:15:59 E this.d 0
+11:16:00 E this.d 14
+11:16:04 I App enter the background
+11:16:04 W iru imageReaderFormat PRIVATE(34)
+11:16:04 W iru is48MP false
+11:16:04 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:16:04 W getViewfinderFormat 35
+11:16:04 I App returns to the foreground
+11:16:04 E jbn.a() [32]
+11:16:04 E jbn.b() [32]
+11:16:04 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:16:04 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:04 E getEnumMap Hardware isLevel3 true
+11:16:04 I IsSupportLEVEL3 CameraID:0 true
+11:16:04 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:16:04 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:16:04 D getStreamMode 0
+11:16:04 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:04 E this.d 4
+11:16:04 E this.d 8
+11:16:04 E this.d 6
+11:16:04 E this.d 7
+11:16:04 E this.d 0
+11:16:05 I 3A_METADATA_AF null
+11:16:05 I 3A_METADATA_AF null
+11:16:06 I App enter the background
+11:16:06 W iru imageReaderFormat PRIVATE(34)
+11:16:06 W iru is48MP false
+11:16:06 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:16:06 I App returns to the foreground
+11:16:06 W getViewfinderFormat 35
+11:16:06 E jbn.a() [32]
+11:16:06 E jbn.b() [32]
+11:16:06 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:16:06 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:06 E getEnumMap Hardware isLevel3 true
+11:16:06 I IsSupportLEVEL3 CameraID:0 true
+11:16:06 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:16:06 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:16:06 D getStreamMode 0
+11:16:06 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:06 E this.d 4
+11:16:06 E this.d 6
+11:16:06 E this.d 7
+11:16:06 E this.d 8
+11:16:06 E this.d 0
+11:16:07 W isFiltered false
+11:16:07 I 3A_METADATA_AF null
+11:16:07 I 3A_METADATA_AF null
+11:16:09 I App enter the background
+11:16:09 W isFiltered false
+11:16:12 E setSMode PHOTO
+11:16:12 W iru imageReaderFormat PRIVATE(34)
+11:16:12 W iru is48MP false
+11:16:12 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:16:12 I App returns to the foreground
+11:16:12 W getViewfinderFormat 35
+11:16:12 E jbn.a() [32]
+11:16:12 E jbn.b() [32]
+11:16:12 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:16:12 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:12 E getEnumMap Hardware isLevel3 true
+11:16:12 I IsSupportLEVEL3 CameraID:0 true
+11:16:12 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:16:12 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:16:12 D getStreamMode 0
+11:16:12 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:16:12 E this.d 4
+11:16:12 E this.d 6
+11:16:12 E this.d 7
+11:16:12 E this.d 8
+11:16:12 E this.d 0
+11:16:13 I App enter the background
+11:17:04 E setSMode PHOTO
+11:17:04 W iru imageReaderFormat PRIVATE(34)
+11:17:04 W iru is48MP false
+11:17:04 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:17:04 W getViewfinderFormat 35
+11:17:04 I App returns to the foreground
+11:17:04 E jbn.a() [32]
+11:17:04 E jbn.b() [32]
+11:17:04 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:17:04 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:04 E getEnumMap Hardware isLevel3 true
+11:17:04 I IsSupportLEVEL3 CameraID:0 true
+11:17:04 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:17:04 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:17:04 D getStreamMode 0
+11:17:04 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:04 E this.d 4
+11:17:04 E this.d 6
+11:17:04 E this.d 8
+11:17:04 E this.d 7
+11:17:04 E this.d 0
+11:17:06 I App enter the background
+11:17:24 W iru imageReaderFormat PRIVATE(34)
+11:17:24 W iru is48MP false
+11:17:24 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:17:24 I App returns to the foreground
+11:17:24 W getViewfinderFormat 35
+11:17:24 E setSMode PHOTO
+11:17:24 E jbn.a() [32]
+11:17:24 E jbn.b() [32]
+11:17:24 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:17:24 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:24 E getEnumMap Hardware isLevel3 true
+11:17:24 I IsSupportLEVEL3 CameraID:0 true
+11:17:24 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:17:24 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:17:24 D getStreamMode 0
+11:17:24 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:25 E this.d 4
+11:17:25 E this.d 8
+11:17:25 E this.d 6
+11:17:25 E this.d 7
+11:17:25 E this.d 0
+11:17:26 I App enter the background
+11:17:27 W iru imageReaderFormat PRIVATE(34)
+11:17:27 W iru is48MP false
+11:17:27 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:17:27 W getViewfinderFormat 35
+11:17:27 I App returns to the foreground
+11:17:27 E setSMode PHOTO
+11:17:27 E jbn.a() [32]
+11:17:27 E jbn.b() [32]
+11:17:27 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:17:27 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:27 E getEnumMap Hardware isLevel3 true
+11:17:27 I IsSupportLEVEL3 CameraID:0 true
+11:17:27 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:17:27 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:17:27 D getStreamMode 0
+11:17:27 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:27 E this.d 4
+11:17:27 E this.d 6
+11:17:27 E this.d 7
+11:17:27 E this.d 8
+11:17:27 E this.d 0
+11:17:32 I App enter the background
+11:17:33 I App returns to the foreground
+11:17:33 W iru imageReaderFormat PRIVATE(34)
+11:17:33 W iru is48MP false
+11:17:33 W iru characteristics.i() Rect(0, 0 - 4096, 3072)
+11:17:33 W getViewfinderFormat 35
+11:17:33 E jbn.a() [32]
+11:17:33 E jbn.b() [32]
+11:17:33 I Non-Pixel -> jbp [RAW_HDRPLUS]
+11:17:33 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:34 E getEnumMap Hardware isLevel3 true
+11:17:34 I IsSupportLEVEL3 CameraID:0 true
+11:17:34 I Non-Pixel [RAW_HDRPLUS, VIEWFINDER]
+11:17:34 D getStreamConfig sMode:0 key:pref_opmode_photo_key value:0
+11:17:34 D getStreamMode 0
+11:17:34 D Hardware Level: LEVEL_3(3) => LEVEL_3(3)
+11:17:34 E this.d 4
+11:17:34 E this.d 6
+11:17:34 E this.d 7
+11:17:34 E this.d 8
+11:17:34 E this.d 0
+11:17:35 I App enter the background

@@ -340,12 +340,12 @@ transactions:
   # 3. 创建文章
   - name: create_post
     steps:
-      # 上传特色图片
-      - action: upload_file
-        folder_path: "uploads/images"
-        file_name: "{{ file_name }}"
-        file: "{{ featured_image }}"
-        data_to: image_upload
+      # # 上传特色图片
+      # - action: upload_file
+      #   folder_path: "uploads/images"
+      #   file_name: "{{ file_name }}"
+      #   file: "{{ featured_image }}"
+      #   data_to: image_upload
 
       # 创建文章
       - action: insert
@@ -395,12 +395,12 @@ transactions:
         values:
           title: "{{ title }}"
           content: "{{ content }}"
-          status: "{{ status }}"
+          status: "{{ new_status }}"
           updated_at: "{{ current_timestamp }}"
         filter_values:
           - field: id
             operator: eq
-            value: "{{ id }}"
+            value: "{{ post_id }}"
 
   - name: delete_post
     steps:
@@ -589,7 +589,7 @@ transactions:
       # 更新浏览次数
       - action: execute
         sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = {{ post_info[0].id }}"
-
+e
   # 6. 添加评论
   - name: add_comment
     steps:

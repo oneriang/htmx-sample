@@ -41,7 +41,7 @@ import gv as gv
 # Set up logging
 logging.basicConfig(level=logging.CRITICAL)
 logger = logging.getLogger(__name__)
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
 def convert_value(column_type: Any, value: Any) -> Any:
@@ -271,19 +271,19 @@ class TransactionModule:
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
     def allowed_file(self, filename: str) -> bool:
-        return os.path.splitext(filename)[1].lower() in ALLOWED_EXTENSIONS
+        return os.path.splitext(filename)[1].lower() in self.ALLOWED_EXTENSIONS
 
     def validate_file_type(self, file: UploadFile) -> bool:
         mime = magic.Magic(mime=True)
         file_type = mime.from_buffer(file.file.read(1024))
         file.file.seek(0)  # Reset file pointer
-        return file_type.split('/')[1] in [ext.lstrip('.') for ext in ALLOWED_EXTENSIONS]
+        return file_type.split('/')[1] in [ext.lstrip('.') for ext in self.ALLOWED_EXTENSIONS]
 
     def validate_file_size(self, file: UploadFile) -> bool:
         file.file.seek(0, 2)  # Move to the end of the file
         file_size = file.file.tell()  # Get the position (size)
         file.file.seek(0)  # Reset file pointer
-        return file_size <= MAX_FILE_SIZE
+        return file_size <= self.MAX_FILE_SIZE
 
     def create_database(self, step: Dict[str, Any]) -> Dict[str, Any]:
         """创建新数据库"""
@@ -580,17 +580,20 @@ class TransactionModule:
             raise ValueError("Only .db extension is supported for SQLite databases")
 
     def execute_step(self, step: Dict[str, Any]) -> Any:
-        print('execute_step')
+        print('execute_step1')
         """执行单个步骤，包含增强的错误处理"""
         try:
             # 记录开始执行的步骤
-            logger.info(f"Executing step: {step.get('action', 'unknown')} "
-                    f"on table: {step.get('table_name', 'unknown')}")
+            #logger.info(f"Executing step: {step.get('action', 'unknown')} "
+            #        f"on table: {step.get('table_name', 'unknown')}")
             
             action = step["action"]
-            if action != "create_table":
+            print(action)
+            if action != "create_table" and 'table_name' in step:
                 table = Table(step["table_name"], self.metadata, autoload_with=self.engine)
-
+                
+            print(action)
+            
             try:
                 
                 # 处理步骤中的动态参数
@@ -757,8 +760,11 @@ class TransactionModule:
                 #         raise ValueError(f"File not found: {file_path}")
                 #     return FileResponse(file_path, filename=os.path.basename(file_path))
                 elif action == "upload_file":
+                    print('upload_file')
                     file: UploadFile = step.get("file")
                     destination: str = step.get("folder_path", "") + '/' + step.get("file_name", "")
+                    print(file)
+                    print(destination)
                     if not file:
                         raise ValueError("No file provided for upload")
                     if not destination:
@@ -766,7 +772,7 @@ class TransactionModule:
                     
                     # 文件类型验证
                     if not self.allowed_file(file.filename):
-                        raise ValueError(f"File type not allowed. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}")
+                        raise ValueError(f"File type not allowed. Allowed types are: {', '.join(self.ALLOWED_EXTENSIONS)}")
                     
                     # # 文件内容类型验证
                     # if not self.validate_file_type(file):
@@ -774,7 +780,7 @@ class TransactionModule:
                     
                     # 文件大小验证
                     if not self.validate_file_size(file):
-                        raise ValueError(f"File size exceeds the maximum limit of {MAX_FILE_SIZE / (1024 * 1024)} MB")
+                        raise ValueError(f"File size exceeds the maximum limit of {self.MAX_FILE_SIZE / (1024 * 1024)} MB")
                     
                     os.makedirs(os.path.dirname(destination), exist_ok=True)
                     with open(destination, "wb") as buffer:
@@ -789,7 +795,7 @@ class TransactionModule:
                     
                     # 验证文件类型（可选，取决于您的需求）
                     if not self.allowed_file(file_path):
-                        raise ValueError(f"File type not allowed for download. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}")
+                        raise ValueError(f"File type not allowed for download. Allowed types are: {', '.join(self.ALLOWED_EXTENSIONS)}")
                     
                     return FileResponse(file_path, filename=os.path.basename(file_path))
                 else:
@@ -1015,7 +1021,7 @@ class TransactionModule:
     def handle_conditions(self, conditions: List[Dict[str, Any]], table: Table) -> List[Any]:
         return self.build_filter_expressions(conditions, table)
 
-    def handle_operator(self, column: Any, operator: str, value: Any) -> Any:
+    def handle_operator1(self, column: Any, operator: str, value: Any) -> Any:
         operators = {
             "eq": column.__eq__,
             "ne": column.__ne__,
@@ -1034,6 +1040,29 @@ class TransactionModule:
             return operators[operator](value)
         except KeyError:
             raise ValueError(f"不支持的操作符: {operator}")
+            
+    def handle_operator(self, column: Any, operator: str, value: Any) -> Any:
+        # 定义支持的操作符字典，键为操作符名称，值为相应的SQLAlchemy表达式
+        operators = {
+            "eq": column.__eq__,        # 等于（=），用于判断字段值是否等于指定值
+            "ne": column.__ne__,        # 不等于（!=），用于判断字段值是否不等于指定值
+            "lt": column.__lt__,        # 小于（<），用于判断字段值是否小于指定值
+            "gt": column.__gt__,        # 大于（>），用于判断字段值是否大于指定值
+            "le": column.__le__,        # 小于或等于（<=），用于判断字段值是否小于或等于指定值
+            "ge": column.__ge__,        # 大于或等于（>=），用于判断字段值是否大于或等于指定值
+            "like": column.like,        # 模糊匹配，用于检查字段值是否包含指定的部分值（区分大小写）
+            "ilike": column.ilike,      # 不区分大小写的模糊匹配，用于检查字段值是否包含指定的部分值
+            "in": column.in_,           # 包含于集合，用于判断字段值是否在指定集合中
+            "not_in": lambda x: ~column.in_(x),  # 不包含于集合，用于判断字段值是否不在指定集合中
+            "is_null": lambda: column.is_(None), # 为空值，用于判断字段值是否为 NULL
+            "is_not_null": lambda: column.isnot(None) # 不为空值，用于判断字段值是否不为 NULL
+        }
+        try:
+            # 根据传入的操作符名称调用相应的表达式
+            return operators[operator](value)
+        except KeyError:
+            # 如果操作符不支持，抛出异常
+            raise ValueError(f"不支持的操作符: {operator}")
 
     def load_data_from_yaml(self, filename: str) -> Dict[str, Any]:
         try:
@@ -1043,6 +1072,74 @@ class TransactionModule:
             logger.error(f"Error loading YAML data from {filename}: {e}")
             return {}
 
+    def replace_dynamic_values1(self, condition, params):
+        """
+        递归地遍历 filter_values，替换 {{ search_term }} 等占位符
+        """
+        print('replace_dynamic_values')
+        # 如果是一个条件字典
+        if isinstance(condition, dict):
+          
+            print(condition)
+            
+            # 处理嵌套的 conditions 列表
+            if "conditions" in condition:
+                for cond in condition["conditions"]:
+                    self.replace_dynamic_values(cond, params)
+            
+            # 替换 `value` 中的占位符
+            if "value" in condition and isinstance(condition["value"], str):
+                # 替换 {{ search_term }} 为实际参数值
+                #condition["value"] = condition["value"].replace("{{ search_term }}", params.get("search_term", ""))
+                print(condition['value'])
+                if isinstance(condition['value'], str):
+                #and condition['value'].startswith('{{') and condition['value'].endswith('}}'):
+                    matches = re.findall(r'\{\{(.*?)\}\}', condition['value'])
+                    # 去除多余的空格
+                    matches = [match.strip() for match in matches]
+                    if matches:
+                        param_name = matches[0].strip()
+                                    
+                        # param_name = condition['value'].strip('{} ')
+                        print(param_name)
+                        if param_name in params:
+                          condition['value'] = params.get(param_name, condition['value'])
+                        '''
+                        else:
+                          condition['field'] = '1'
+                          condition['value'] = '1'
+                        '''
+
+    def replace_dynamic_values(self, condition, params):
+        """
+        递归地遍历 filter_values，替换 {{ status }} 等占位符。
+        如果参数未赋值，则忽略该条件。
+        """
+        # 如果是一个条件字典
+        if isinstance(condition, dict):
+            # 处理嵌套的 conditions 列表
+            if "conditions" in condition:
+                # 遍历并过滤空参数的条件
+                condition["conditions"] = [
+                    self.replace_dynamic_values(cond, params) for cond in condition["conditions"]
+                    if self.replace_dynamic_values(cond, params) is not None
+                ]
+            
+            # 替换 `value` 中的占位符，或忽略该条件
+            if "value" in condition and isinstance(condition["value"], str):
+                param_name = re.findall(r"\{\{\s*(\w+)\s*\}\}", condition["value"])
+                if param_name:
+                    # 获取参数值
+                    param_value = params.get(param_name[0], None)
+                    
+                    # 如果参数存在，则替换占位符；否则返回 None 表示忽略该条件
+                    if param_value:
+                        condition["value"] = condition["value"].replace(f"{{{{ {param_name[0]} }}}}", str(param_value))
+                    else:
+                        return None  # 忽略该条件
+        
+        return condition  # 返回更新后的条件
+        
     def execute_transactions(
         self, 
         transaction_name: str = None,
@@ -1072,12 +1169,17 @@ class TransactionModule:
                 )
                 
             print("bbb")
+            
+            print(transaction_data)
 
             transaction = Transaction(**transaction_data)
             result = None
             
+            print(transaction)
+            
             try:
                 for step in transaction.steps:
+                    print(step)
                     if params:
                         # 替换参数和处理上传文件
                         if 'values' in step:
@@ -1092,13 +1194,30 @@ class TransactionModule:
                                             step['values'][key] = params.get(param_name, value)
                                         else:
                                             step['values'][key] = params.get(param_name, None)
-                                                            
+                        '''                                    
                         if 'filter_values' in step:
+                            print(step['filter_values'])
                             for filter_item in step['filter_values']:
+                                print(filter_item)
                                 if isinstance(filter_item['value'], str) and filter_item['value'].startswith('{{') and filter_item['value'].endswith('}}'):
                                     param_name = filter_item['value'].strip('{} ')
+                                    print(param_name)
                                     filter_item['value'] = params.get(param_name, filter_item['value'])
-                        
+                        '''
+                        '''
+                        # 替换 filter_values 中的占位符
+                        if 'filter_values' in step:
+                            for filter_item in step['filter_values']:
+                                self.replace_dynamic_values(filter_item, params)
+                        '''
+
+                        # 在替换 filter_values 中的占位符时使用
+                        if 'filter_values' in step:
+                            step['filter_values'] = [
+                                self.replace_dynamic_values(filter_item, params) for filter_item in step['filter_values']
+                                if self.replace_dynamic_values(filter_item, params) is not None
+                            ]
+
                         if 'limit' in step and 'limit' in params:
                             step['limit'] = params['limit']
 
@@ -1123,6 +1242,7 @@ class TransactionModule:
                 # 重新抛出，保留原始错误信息
                 raise
         except TransactionError as te:
+            print('TransactionError')
             # 记录详细错误信息并重新抛出
             error_msg = (
                 f"\nTransaction execution failed: {transaction_name}\n"
@@ -1135,6 +1255,7 @@ class TransactionModule:
             raise
             
         except Exception as e:
+            print('Exception')
             print(str(e))
             # 处理意外错误
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1158,16 +1279,19 @@ class TransactionModule:
                 original_error=e
             )
         except SQLAlchemyError as e:
+            print('HTTPException')
             print(str(e))
             if self.db:
                 self.db.rollback()
             logger.error(f"Error executing transaction {transaction_name} from {config_file}: {e}")
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         except HTTPException as e:
+            print('HTTPException')
             print(str(e))
             # 重新抛出 HTTP 异常
             raise he
         except Exception as e:
+            print('Exception')
             print(str(e))
             
             if self.db:

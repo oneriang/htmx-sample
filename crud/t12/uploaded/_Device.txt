@@ -1,0 +1,82 @@
+Device:
+
+Device Info:
+MANUFACTURER:motorola DEVICE:lyriq MODEL:motorola edge 40 BRAND:motorola BOARD:lyriq HARDWARE:mt6893 SDK_INT:34
+
+Device Interface:
+redfin
+
+HDR+ Model:
+redfin
+
+Shot Mode:
+--
+
+Device ID:
+--
+
+Camera ID:
+0
+
+Sensor ID:
+0
+
+Merge Method:
+0 (wiener滤波器)(0)
+
+allowSabre:
+false
+
+allowSpatialRgb:
+false
+
+shastaEnabled:
+false
+
+shastaForced:
+false
+
+Google Camera Logic:
+自动(0)
+
+FrameCount:
+--
+
+Expastro:
+--
+
+Stream OpMode:
+AUTO(0)
+
+Stream Session:
+0. Auto(0)
+
+Image Reader Format:
+自动(0)
+
+ExposureTimeMs:
+--
+
+AstroExposureTimeMs:
+--
+
+IsoTime:
+--
+
+HardwareLevel:
+LEVEL_3(3) => LEVEL_3(3)
+
+Preview:
+YUV_420_888(35)
+
+C2ALevel3:
+false
+
+Leica:
+false
+
+DCI-P3:
+false
+
+FocusDistance:
+3.4028235E38

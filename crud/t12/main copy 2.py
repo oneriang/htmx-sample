@@ -290,8 +290,7 @@ def generate_html(component: Dict[str, Any]) -> str:
     if 'cols' in component:
         for key in component['cols']:
             if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
-                # component['cols'][key] = gv.posts_config['cols'][key]
-                component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+                component['cols'][key] = gv.posts_config['cols'][key]
         
         print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
         print(component['cols'])
@@ -1425,8 +1424,8 @@ def validate_file_size(file: UploadFile) -> bool:
     
 @app.post("/upload", response_class=HTMLResponse)
 def upload_file(
-        file: UploadFile = File(...)
-    ):
+    file: UploadFile = File(...)
+):
     try:
         # 文件验证
         if not allowed_file(file.filename):
@@ -1453,13 +1452,11 @@ def upload_file(
         
         # 执行事务
         try:
-            print('1111')
             result = TM.execute_transactions(
                 transaction_name='file_operations',
                 params=transaction_params,
                 config_file='file_operations_txn.yaml'
             )
-            print('2222')
             
             # # 删除临时文件
             # os.remove(temp_file_path)
@@ -1770,7 +1767,7 @@ async def get_blog(request: Request):
     blogs_attr = {
         'hx-get': hx_get,
         'hx-swap': 'innerHTML',
-        'hx-trigger': 'load, newPost from:body, updatePost from:body, deletePost from:body',
+        'hx-trigger': 'load, newPost from:body, deletePost from:body',
         'hx-url': hx_get
     }
     gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
@@ -1829,7 +1826,7 @@ async def get_posts(request: Request):
             },
             'edit': {
               'hx-post': f"/blog/post/form?post_id={d['id']}&post",
-              'hx-target': '#form_container'
+              'hx-target': '#form_edit'
             },
             'go': {
               'hx-get': f"/blog/post?post_id={d['id']}&post",
@@ -1940,50 +1937,40 @@ async def get_post_form(request: Request):
 
     query_params = dict(request.query_params)
 
-    result = []
+    if 'post_id' not in query_params:
+      return 'no data'
+      
+    post_id = int(query_params['post_id'])
+ 
+    result = TM.execute_transactions(
+                transaction_name = 'get_post_detail',
+                params={
+                    'post_id': post_id
+                },
+                config_file="cms.yaml"
+            )
+    result = [dict(row) for row in result]  # 转换为字典列表
+    print(result)
     
-    if 'post_id' in query_params:
-      #return 'no data'
-      
-      post_id = int(query_params['post_id'])
-   
-      result = TM.execute_transactions(
-                  transaction_name = 'get_post_detail',
-                  params={
-                      'post_id': post_id
-                  },
-                  config_file="cms.yaml"
-              )
-      result = [dict(row) for row in result]  # 转换为字典列表
-      print(result)
-    
-      h = ''
-      try:
-          if len(result) > 0:
-              load_page_config('blog_config.yaml')
-              gv.component_dict['form_edit']['data'] = result[0]
-              
-              h = generate_html(gv.component_dict['form_edit'])
-      except Exception as e:
-          print(e)
-  
-      return HTMLResponse(content=h)
-      
-    else:
-      
-      h = ''
-      try:
-          if True:
-              load_page_config('blog_config.yaml')
-              gv.component_dict['form_edit']['data'] = result
-              
-              h = generate_html(gv.component_dict['form_create'])
-      except Exception as e:
-          print(e)
-  
-      return HTMLResponse(content=h)
+    h = ''
+    try:
+        if len(result) > 0:
+            load_page_config('blog_config.yaml')
+            gv.component_dict['form_edit']['data'] = result[0]
 
-      
+            gv.component_dict['form_edit']['config'] = {
+                'back': {
+                    'attributes': {
+                        'hx-get': f'{parsed_url.path}?{parsed_url.query}&posts',
+                    }
+                }
+            }
+            h = generate_html(gv.component_dict['form_edit'])
+    except Exception as e:
+        print(e)
+
+    return HTMLResponse(content=h)
+
 @app.post("/blog/post", response_class=HTMLResponse)
 async def post_blog_post(request: Request):
     form_data = await request.form()
@@ -2007,7 +1994,7 @@ async def put_blog_post(request: Request):
     result = TM.execute_transactions(
                 transaction_name = 'update_post',
                 params={
-                    'id': form_data['id'],
+                    'id': form_data['post_id'],
                     'title': form_data['title'],
                     'content': form_data['content'],
                     'status': form_data['status']
