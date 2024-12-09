@@ -1,3 +1,4 @@
+#%YAML 1.2
 transactions:
   # 1. 创建新数据库
   - name: create_new_database
@@ -9,7 +10,7 @@ transactions:
     steps:
       # 用户表
       - action: create_table
-        table_name: users
+        table: users
         columns:
           - name: id
             type: integer
@@ -58,7 +59,7 @@ transactions:
 
       # 分类表
       - action: create_table
-        table_name: categories
+        table: categories
         columns:
           - name: id
             type: integer
@@ -77,7 +78,7 @@ transactions:
           - name: parent_id
             type: integer
             foreign_key:
-              table_name: categories
+              table: categories
               column: id
           - name: featured_image
             type: string
@@ -94,7 +95,7 @@ transactions:
 
       # 标签表
       - action: create_table
-        table_name: tags
+        table: tags
         columns:
           - name: id
             type: integer
@@ -116,7 +117,7 @@ transactions:
 
       # 文章表
       - action: create_table
-        table_name: posts
+        table: posts
         columns:
           - name: id
             type: integer
@@ -141,12 +142,12 @@ transactions:
           - name: author_id
             type: integer
             foreign_key:
-              table_name: users
+              table: users
               column: id
           - name: category_id
             type: integer
             foreign_key:
-              table_name: categories
+              table: categories
               column: id
           - name: status
             type: string
@@ -179,17 +180,17 @@ transactions:
 
       # 文章-标签关联表
       - action: create_table
-        table_name: post_tags
+        table: post_tags
         columns:
           - name: post_id
             type: integer
             foreign_key:
-              table_name: posts
+              table: posts
               column: id
           - name: tag_id
             type: integer
             foreign_key:
-              table_name: tags
+              table: tags
               column: id
           - name: created_at
             type: datetime
@@ -197,7 +198,7 @@ transactions:
 
       # 评论表
       - action: create_table
-        table_name: comments
+        table: comments
         columns:
           - name: id
             type: integer
@@ -205,17 +206,17 @@ transactions:
           - name: post_id
             type: integer
             foreign_key:
-              table_name: posts
+              table: posts
               column: id
           - name: user_id
             type: integer
             foreign_key:
-              table_name: users
+              table: users
               column: id
           - name: parent_id
             type: integer
             foreign_key:
-              table_name: comments
+              table: comments
               column: id
           - name: content
             type: text
@@ -236,7 +237,7 @@ transactions:
 
       # 媒体库表
       - action: create_table
-        table_name: media
+        table: media
         columns:
           - name: id
             type: integer
@@ -259,7 +260,7 @@ transactions:
           - name: uploaded_by
             type: integer
             foreign_key:
-              table_name: users
+              table: users
               column: id
           - name: title
             type: string
@@ -278,7 +279,7 @@ transactions:
 
       # SEO元数据表
       - action: create_table
-        table_name: seo_metadata
+        table: seo_metadata
         columns:
           - name: id
             type: integer
@@ -286,7 +287,7 @@ transactions:
           - name: post_id
             type: integer
             foreign_key:
-              table_name: posts
+              table: posts
               column: id
           - name: meta_title
             type: string
@@ -315,7 +316,7 @@ transactions:
     steps:
       # 创建管理员用户
       - action: insert
-        table_name: users
+        table: users
         values:
           username: "admin"
           email: "admin@example.com"
@@ -329,7 +330,7 @@ transactions:
 
       # 创建默认分类
       - action: insert
-        table_name: categories
+        table: categories
         values:
           name: "未分类"
           slug: "uncategorized"
@@ -349,17 +350,21 @@ transactions:
 
       # 创建文章
       - action: insert
-        table_name: posts
+        data_from: image_upload
+        table: posts
         values:
           title: "{{ title }}"
           slug: "{{ slug }}"
           content: "{{ content }}"
           excerpt: "{{ excerpt }}"
-          featured_image: "{{ image_upload.destination }}"
+          featured_image: 
+              data_from: image_upload
+              data_key: destination
           author_id: "{{ current_user_id }}"
           category_id: "{{ category_id }}"
           status: "{{ status }}"
           visibility: "{{ visibility }}"
+          author_id: "{{author_id}}"
           published_at: "{{ published_at }}"
           created_at: "{{ current_timestamp }}"
           updated_at: "{{ current_timestamp }}"
@@ -370,7 +375,7 @@ transactions:
       #   data_from: "{{ tags }}"
       #   steps:
       #     - action: insert
-      #       table_name: post_tags
+      #       table: post_tags
       #       values:
       #         post_id: "{{ new_post.id }}"
       #         tag_id: "{{ item }}"
@@ -378,7 +383,7 @@ transactions:
 
       # # 添加SEO信息
       # - action: insert
-      #   table_name: seo_metadata
+      #   table: seo_metadata
       #   values:
       #     post_id: "{{ new_post.id }}"
       #     meta_title: "{{ meta_title }}"
@@ -390,12 +395,25 @@ transactions:
   # 
   - name: update_post
     steps:
+      # 上传特色图片
+      - action: upload_file
+        folder_path: "uploads/images"
+        file_name: "{{ file_name }}"
+        file: "{{ featured_image }}"
+        data_to: image_upload
       - action: update
-        table_name: posts
+        data_from: image_upload
+        table: posts
         values:
           title: "{{ title }}"
           content: "{{ content }}"
           status: "{{ status }}"
+          visibility: "{{ visibility }}"
+          category_id: "{{ category_id }}"
+          author_id: "{{author_id}}"
+          featured_image: 
+              data_from: image_upload
+              data_key: destination
           updated_at: "{{ current_timestamp }}"
         filter_values:
           - field: id
@@ -405,7 +423,7 @@ transactions:
   - name: delete_post
     steps:
       - action: delete
-        table_name: posts
+        table: posts
         filter_values:
           - field: id
             operator: eq
@@ -415,7 +433,7 @@ transactions:
   - name: get_posts_list
     steps:
       - action: get
-        table_name: posts
+        table: posts
         fields:
           - field: id
           - field: title
@@ -426,22 +444,22 @@ transactions:
           - field: status
           - field: published_at
           - field: views_count
-          # - field: comments_enabled
-          # - table_name: users
+          - field: comments_enabled
+          # - table: users
           #   field: display_name
           #   label: author_name
-          # - table_name: categories
+          # - table: categories
           #   field: name
           #   label: category_name
         # join:
-        #   - left_table_name: posts
-        #     right_table_name: users
+        #   - left_table: posts
+        #     right_table: users
         #     type: left
         #     on:
         #       - left_column: author_id
         #         right_column: id
-        #   - left_table_name: posts
-        #     right_table_name: categories
+        #   - left_table: posts
+        #     right_table: categories
         #     type: left
         #     on:
         #       - left_column: category_id
@@ -484,9 +502,13 @@ transactions:
   # 5. 获取文章详情
   - name: get_post_detail
     steps:
+      # 更新浏览次数
+      - action: execute
+        sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = 120"
+
       # 获取文章基本信息
       - action: get
-        table_name: posts
+        table: posts
         fields:
           # - field: "*"
           - field: id
@@ -498,31 +520,34 @@ transactions:
           - field: status
           - field: published_at
           - field: views_count
-          # - table_name: users
-          #   field: display_name
-          #   label: author_name
-        #   - table_name: users
+          - field: visibility
+          - field: category_id
+          - field: author_id
+          - table: users
+            field: display_name
+            label: author_name
+        #   - table: users
         #     field: avatar_url
         #     label: author_avatar
-        #   - table_name: categories
-        #     field: name
-        #     label: category_name
-        #   - table_name: categories
+          - table: categories
+            field: name
+            label: category_name
+        #   - table: categories
         #     field: slug
         #     label: category_slug
-        # join:
-        #   - left_table_name: posts
-        #     right_table_name: users
-        #     type: left
-        #     on:
-        #       - left_column: author_id
-        #         right_column: id
-        #   - left_table_name: posts
-        #     right_table_name: categories
-        #     type: left
-        #     on:
-        #       - left_column: category_id
-        #         right_column: id
+        join:
+          - left_table: posts
+            right_table: users
+            type: left
+            'on':
+              - left_column: author_id
+                right_column: id
+          - left_table: posts
+            right_table: categories
+            type: left
+            'on':
+              - left_column: category_id
+                right_column: id
         # filter_values:
         #   - field: slug
         #     operator: eq
@@ -533,58 +558,58 @@ transactions:
             value: "{{ post_id }}"
         data_to: post_info
 
-      # 获取文章标签
-      - action: get
-        table_name: tags
-        fields:
-          - field: name
-          - field: slug
-        join:
-          - left_table_name: tags
-            right_table_name: post_tags
-            type: inner
-            on:
-              - left_column: id
-                right_column: tag_id
-        filter_values:
-          - field: post_id
-            operator: eq
-            value: "{{ post_info[0].id }}"
-        data_to: post_tags
+      # # 获取文章标签
+      # - action: get
+      #   table: tags
+      #   fields:
+      #     - field: name
+      #     - field: slug
+      #   join:
+      #     - left_table: tags
+      #       right_table: post_tags
+      #       type: inner
+      #       on:
+      #         - left_column: id
+      #           right_column: tag_id
+      #   filter_values:
+      #     - field: post_id
+      #       operator: eq
+      #       value: "{{ post_info[0].id }}"
+      #   data_to: post_tags
 
-      # 获取评论
-      - action: get
-        table_name: comments
-        fields:
-          - field: id
-          - field: content
-          - field: created_at
-          - field: parent_id
-          - field: likes_count
-          - table_name: users
-            field: display_name
-            label: user_name
-          - table_name: users
-            field: avatar_url
-            label: user_avatar
-        join:
-          - left_table_name: comments
-            right_table_name: users
-            type: left
-            on:
-              - left_column: user_id
-                right_column: id
-        filter_values:
-          - field: post_id
-            operator: eq
-            value: "{{ post_info[0].id }}"
-          - field: status
-            operator: eq
-            value: "approved"
-        order_by:
-          - field: created_at
-            direction: desc
-        data_to: comments
+      # # 获取评论
+      # - action: get
+      #   table: comments
+      #   fields:
+      #     - field: id
+      #     - field: content
+      #     - field: created_at
+      #     - field: parent_id
+      #     - field: likes_count
+      #     - table: users
+      #       field: display_name
+      #       label: user_name
+      #     - table: users
+      #       field: avatar_url
+      #       label: user_avatar
+      #   join:
+      #     - left_table: comments
+      #       right_table: users
+      #       type: left
+      #       on:
+      #         - left_column: user_id
+      #           right_column: id
+      #   filter_values:
+      #     - field: post_id
+      #       operator: eq
+      #       value: "{{ post_info[0].id }}"
+      #     - field: status
+      #       operator: eq
+      #       value: "approved"
+      #   order_by:
+      #     - field: created_at
+      #       direction: desc
+      #   data_to: comments
 
       # 更新浏览次数
       - action: execute
@@ -594,7 +619,7 @@ transactions:
   - name: add_comment
     steps:
       - action: insert
-        table_name: comments
+        table: comments
         values:
           post_id: "{{ post_id }}"
           user_id: "{{ current_user_id }}"
@@ -608,7 +633,7 @@ transactions:
   - name: get_categories_with_count
     steps:
       - action: get
-        table_name: categories
+        table: categories
         fields:
           - field: id
           - field: name
@@ -619,10 +644,10 @@ transactions:
           - field: id
             function: count
             label: post_count
-            table_name: posts
+            table: posts
         join:
-          - left_table_name: categories
-            right_table_name: posts
+          - left_table: categories
+            right_table: posts
             type: left
             on:
               - left_column: id
@@ -644,7 +669,7 @@ transactions:
   - name: search_posts
     steps:
       - action: get
-        table_name: posts
+        table: posts
         fields:
           - field: id
           - field: title
@@ -652,34 +677,34 @@ transactions:
           - field: excerpt
           - field: featured_image
           - field: published_at
-          # - table_name: users
+          # - table: users
           #   field: display_name
           #   label: author_name
-          # - table_name: categories
+          # - table: categories
           #   field: name
           #   label: category_name
         # join:
-        #   - left_table_name: posts
-        #     right_table_name: users
+        #   - left_table: posts
+        #     right_table: users
         #     type: left
         #     on:
         #       - left_column: author_id
         #         right_column: id
-        #   - left_table_name: posts
-        #     right_table_name: categories
+        #   - left_table: posts
+        #     right_table: categories
         #     type: left
         #     on:
         #       - left_column: category_id
         #         right_column: id
         #   # 添加标签关联，用于标签搜索
-        #   - left_table_name: posts
-        #     right_table_name: post_tags
+        #   - left_table: posts
+        #     right_table: post_tags
         #     type: left
         #     on:
         #       - left_column: id
         #         right_column: post_id
-        #   - left_table_name: post_tags
-        #     right_table_name: tags
+        #   - left_table: post_tags
+        #     right_table: tags
         #     type: left
         #     on:
         #       - left_column: tag_id
@@ -701,7 +726,7 @@ transactions:
                   - field: content
                     operator: ilike
                     value: "{{ search_term }}"
-                  # - table_name: tags
+                  # - table: tags
                   #   field: name
                   #   operator: ilike
                   #   value: "%{{ search_term }}%"
@@ -718,7 +743,7 @@ transactions:
   #   steps:
   #     # 用户表
   #     - action: create_table
-  #       table_name: users
+  #       table: users
   #       columns:
   #         - name: id
   #           type: integer
@@ -767,7 +792,7 @@ transactions:
 
   #     # 分类表
   #     - action: create_table
-  #       table_name: categories
+  #       table: categories
   #       columns:
   #         - name: id
   #           type: integer
@@ -786,7 +811,7 @@ transactions:
   #         - name: parent_id
   #           type: integer
   #           foreign_key:
-  #             table_name: categories
+  #             table: categories
   #             column: id
   #         - name: featured_image
   #           type: string
@@ -803,7 +828,7 @@ transactions:
 
   #     # 标签表
   #     - action: create_table
-  #       table_name: tags
+  #       table: tags
   #       columns:
   #         - name: id
   #           type: integer
@@ -825,7 +850,7 @@ transactions:
 
   #     # 文章表
   #     - action: create_table
-  #       table_name: posts
+  #       table: posts
   #       columns:
   #         - name: id
   #           type: integer
@@ -850,12 +875,12 @@ transactions:
   #         - name: author_id
   #           type: integer
   #           foreign_key:
-  #             table_name: users
+  #             table: users
   #             column: id
   #         - name: category_id
   #           type: integer
   #           foreign_key:
-  #             table_name: categories
+  #             table: categories
   #             column: id
   #         - name: status
   #           type: string
@@ -888,17 +913,17 @@ transactions:
 
   #     # 文章-标签关联表
   #     - action: create_table
-  #       table_name: post_tags
+  #       table: post_tags
   #       columns:
   #         - name: post_id
   #           type: integer
   #           foreign_key:
-  #             table_name: posts
+  #             table: posts
   #             column: id
   #         - name: tag_id
   #           type: integer
   #           foreign_key:
-  #             table_name: tags
+  #             table: tags
   #             column: id
   #         - name: created_at
   #           type: datetime
@@ -906,7 +931,7 @@ transactions:
 
   #     # 评论表
   #     - action: create_table
-  #       table_name: comments
+  #       table: comments
   #       columns:
   #         - name: id
   #           type: integer
@@ -914,17 +939,17 @@ transactions:
   #         - name: post_id
   #           type: integer
   #           foreign_key:
-  #             table_name: posts
+  #             table: posts
   #             column: id
   #         - name: user_id
   #           type: integer
   #           foreign_key:
-  #             table_name: users
+  #             table: users
   #             column: id
   #         - name: parent_id
   #           type: integer
   #           foreign_key:
-  #             table_name: comments
+  #             table: comments
   #             column: id
   #         - name: content
   #           type: text
@@ -945,7 +970,7 @@ transactions:
 
   #     # 媒体库表
   #     - action: create_table
-  #       table_name: media
+  #       table: media
   #       columns:
   #         - name: id
   #           type: integer
@@ -968,7 +993,7 @@ transactions:
   #         - name: uploaded_by
   #           type: integer
   #           foreign_key:
-  #             table_name: users
+  #             table: users
   #             column: id
   #         - name: title
   #           type: string
@@ -987,7 +1012,7 @@ transactions:
 
   #     # SEO元数据表
   #     - action: create_table
-  #       table_name: seo_metadata
+  #       table: seo_metadata
   #       columns:
   #         - name: id
   #           type: integer
@@ -995,7 +1020,7 @@ transactions:
   #         - name: post_id
   #           type: integer
   #           foreign_key:
-  #             table_name: posts
+  #             table: posts
   #             column: id
   #         - name: meta_title
   #           type: string
@@ -1024,7 +1049,7 @@ transactions:
   #   steps:
   #     # 创建管理员用户
   #     - action: insert
-  #       table_name: users
+  #       table: users
   #       values:
   #         username: "admin"
   #         email: "admin@example.com"
@@ -1038,7 +1063,7 @@ transactions:
 
   #     # 创建默认分类
   #     - action: insert
-  #       table_name: categories
+  #       table: categories
   #       values:
   #         name: "未分类"
   #         slug: "uncategorized"
@@ -1058,7 +1083,7 @@ transactions:
 
   #     # 创建文章
   #     - action: insert
-  #       table_name: posts
+  #       table: posts
   #       values:
   #         title: "{{ title }}"
   #         slug: "{{ slug }}"
@@ -1079,7 +1104,7 @@ transactions:
   #       data_from: "{{ tags }}"
   #       steps:
   #         - action: insert
-  #           table_name: post_tags
+  #           table: post_tags
   #           values:
   #             post_id: "{{ new_post.id }}"
   #             tag_id: "{{ item }}"
@@ -1087,7 +1112,7 @@ transactions:
 
   #     # 添加SEO信息
   #     - action: insert
-  #       table_name: seo_metadata
+  #       table: seo_metadata
   #       values:
   #         post_id: "{{ new_post.id }}"
   #         meta_title: "{{ meta_title }}"
@@ -1100,7 +1125,7 @@ transactions:
   # - name: get_posts_list
   #   steps:
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: id
   #         - field: title
@@ -1111,21 +1136,21 @@ transactions:
   #         - field: published_at
   #         - field: views_count
   #         - field: comments_enabled
-  #         - table_name: users
+  #         - table: users
   #           field: display_name
   #           label: author_name
-  #         - table_name: categories
+  #         - table: categories
   #           field: name
   #           label: category_name
   #       join:
-  #         - left_table_name: posts
-  #           right_table_name: users
+  #         - left_table: posts
+  #           right_table: users
   #           type: left
   #           on:
   #             - left_column: author_id
   #               right_column: id
-  #         - left_table_name: posts
-  #           right_table_name: categories
+  #         - left_table: posts
+  #           right_table: categories
   #           type: left
   #           on:
   #             - left_column: category_id
@@ -1149,27 +1174,27 @@ transactions:
   
   #       fields:
   #         - field: "*"
-  #         - table_name: users
+  #         - table: users
   #           field: display_name
   #           label: author_name
-  #         - table_name: users
+  #         - table: users
   #           field: avatar_url
   #           label: author_avatar
-  #         - table_name: categories
+  #         - table: categories
   #           field: name
   #           label: category_name
-  #         - table_name: categories
+  #         - table: categories
   #           field: slug
   #           label: category_slug
   #       join:
-  #         - left_table_name: posts
-  #           right_table_name: users
+  #         - left_table: posts
+  #           right_table: users
   #           type: left
   #           on:
   #             - left_column: author_id
   #               right_column: id
-  #         - left_table_name: posts
-  #           right_table_name: categories
+  #         - left_table: posts
+  #           right_table: categories
   #           type: left
   #           on:
   #             - left_column: category_id
@@ -1182,13 +1207,13 @@ transactions:
 
   #     # 获取文章标签
   #     - action: get
-  #       table_name: tags
+  #       table: tags
   #       fields:
   #         - field: name
   #         - field: slug
   #       join:
-  #         - left_table_name: tags
-  #           right_table_name: post_tags
+  #         - left_table: tags
+  #           right_table: post_tags
   #           type: inner
   #           on:
   #             - left_column: id
@@ -1201,22 +1226,22 @@ transactions:
 
   #     # 获取评论
   #     - action: get
-  #       table_name: comments
+  #       table: comments
   #       fields:
   #         - field: id
   #         - field: content
   #         - field: created_at
   #         - field: parent_id
   #         - field: likes_count
-  #         - table_name: users
+  #         - table: users
   #           field: display_name
   #           label: user_name
-  #         - table_name: users
+  #         - table: users
   #           field: avatar_url
   #           label: user_avatar
   #       join:
-  #         - left_table_name: comments
-  #           right_table_name: users
+  #         - left_table: comments
+  #           right_table: users
   #           type: left
   #           on:
   #             - left_column: user_id
@@ -1241,7 +1266,7 @@ transactions:
   # - name: add_comment
   #   steps:
   #     - action: insert
-  #       table_name: comments
+  #       table: comments
   #       values:
   #         post_id: "{{ post_id }}"
   #         user_id: "{{ current_user_id }}"
@@ -1255,7 +1280,7 @@ transactions:
   # - name: get_categories_with_count
   #   steps:
   #     - action: get
-  #       table_name: categories
+  #       table: categories
   #       fields:
   #         - field: id
   #         - field: name
@@ -1266,10 +1291,10 @@ transactions:
   #         - field: id
   #           function: count
   #           label: post_count
-  #           table_name: posts
+  #           table: posts
   #       join:
-  #         - left_table_name: categories
-  #           right_table_name: posts
+  #         - left_table: categories
+  #           right_table: posts
   #           type: left
   #           on:
   #             - left_column: id
@@ -1291,7 +1316,7 @@ transactions:
   # - name: search_posts
   #   steps:
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: id
   #         - field: title
@@ -1299,34 +1324,34 @@ transactions:
   #         - field: excerpt
   #         - field: featured_image
   #         - field: published_at
-  #         - table_name: users
+  #         - table: users
   #           field: display_name
   #           label: author_name
-  #         - table_name: categories
+  #         - table: categories
   #           field: name
   #           label: category_name
   #       join:
-  #         - left_table_name: posts
-  #           right_table_name: users
+  #         - left_table: posts
+  #           right_table: users
   #           type: left
   #           on:
   #             - left_column: author_id
   #               right_column: id
-  #         - left_table_name: posts
-  #           right_table_name: categories
+  #         - left_table: posts
+  #           right_table: categories
   #           type: left
   #           on:
   #             - left_column: category_id
   #               right_column: id
   #         # 添加标签关联，用于标签搜索
-  #         - left_table_name: posts
-  #           right_table_name: post_tags
+  #         - left_table: posts
+  #           right_table: post_tags
   #           type: left
   #           on:
   #             - left_column: id
   #               right_column: post_id
-  #         - left_table_name: post_tags
-  #           right_table_name: tags
+  #         - left_table: post_tags
+  #           right_table: tags
   #           type: left
   #           on:
   #             - left_column: tag_id
@@ -1345,7 +1370,7 @@ transactions:
   #                 - field: content
   #                   operator: ilike
   #                   value: "%{{ search_term }}%"
-  #                 - table_name: tags
+  #                 - table: tags
   #                   field: name
   #                   operator: ilike
   #                   value: "%{{ search_term }}%"
@@ -1359,7 +1384,7 @@ transactions:
   # - name: get_tag_cloud
   #   steps:
   #     - action: get
-  #       table_name: tags
+  #       table: tags
   #       fields:
   #         - field: id
   #         - field: name
@@ -1367,10 +1392,10 @@ transactions:
   #         - field: id
   #           function: count
   #           label: post_count
-  #           table_name: post_tags
+  #           table: post_tags
   #       join:
-  #         - left_table_name: tags
-  #           right_table_name: post_tags
+  #         - left_table: tags
+  #           right_table: post_tags
   #           type: left
   #           on:
   #             - left_column: id
@@ -1393,7 +1418,7 @@ transactions:
   # - name: get_archives
   #   steps:
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: published_at
   #           function: date_trunc
@@ -1419,7 +1444,7 @@ transactions:
   #   steps:
   #     # 获取用户文章统计
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: status
   #         - field: id
@@ -1435,7 +1460,7 @@ transactions:
 
   #     # 获取用户评论统计
   #     - action: get
-  #       table_name: comments
+  #       table: comments
   #       fields:
   #         - field: status
   #         - field: id
@@ -1451,7 +1476,7 @@ transactions:
 
   #     # 获取最近文章浏览量
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: title
   #         - field: slug
@@ -1474,7 +1499,7 @@ transactions:
   # - name: bulk_update_posts
   #   steps:
   #     - action: update
-  #       table_name: posts
+  #       table: posts
   #       values:
   #         status: "{{ new_status }}"
   #         updated_at: "{{ current_timestamp }}"
@@ -1488,7 +1513,7 @@ transactions:
   #   steps:
   #     # 获取所有已发布的文章
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: slug
   #         - field: updated_at
@@ -1500,7 +1525,7 @@ transactions:
 
   #     # 获取所有分类
   #     - action: get
-  #       table_name: categories
+  #       table: categories
   #       fields:
   #         - field: slug
   #         - field: updated_at
@@ -1508,16 +1533,16 @@ transactions:
 
   #     # 获取所有标签
   #     - action: get
-  #       table_name: tags
+  #       table: tags
   #       fields:
   #         - field: slug
   #         - field: id
   #           function: count
   #           label: post_count
-  #           table_name: post_tags
+  #           table: post_tags
   #       join:
-  #         - left_table_name: tags
-  #           right_table_name: post_tags
+  #         - left_table: tags
+  #           right_table: post_tags
   #           type: left
   #           on:
   #             - left_column: id
@@ -1550,7 +1575,7 @@ transactions:
   #       data_from: "{{ processed_data }}"
   #       steps:
   #         - action: insert
-  #           table_name: posts
+  #           table: posts
   #           values:
   #             title: "{{ item.title }}"
   #             slug: "{{ item.slug }}"
@@ -1565,7 +1590,7 @@ transactions:
   # - name: generate_rss_feed
   #   steps:
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: title
   #         - field: slug
@@ -1573,21 +1598,21 @@ transactions:
   #         - field: content
   #         - field: published_at
   #         - field: updated_at
-  #         - table_name: users
+  #         - table: users
   #           field: display_name
   #           label: author_name
-  #         - table_name: categories
+  #         - table: categories
   #           field: name
   #           label: category_name
   #       join:
-  #         - left_table_name: posts
-  #           right_table_name: users
+  #         - left_table: posts
+  #           right_table: users
   #           type: left
   #           on:
   #             - left_column: author_id
   #               right_column: id
-  #         - left_table_name: posts
-  #           right_table_name: categories
+  #         - left_table: posts
+  #           right_table: categories
   #           type: left
   #           on:
   #             - left_column: category_id
@@ -1613,7 +1638,7 @@ transactions:
   #   steps:
   #     # 按月统计文章发布数量
   #     - action: get
-  #       table_name: posts
+  #       table: posts
   #       fields:
   #         - field: published_at
   #           function: date_trunc
@@ -1638,16 +1663,16 @@ transactions:
 
   #     # 统计热门分类
   #     - action: get
-  #       table_name: categories
+  #       table: categories
   #       fields:
   #         - field: name
   #         - field: id
   #           function: count
   #           label: post_count
-  #           table_name: posts
+  #           table: posts
   #       join:
-  #         - left_table_name: categories
-  #           right_table_name: posts
+  #         - left_table: categories
+  #           right_table: posts
   #           type: left
   #           on:
   #             - left_column: id
@@ -1656,7 +1681,7 @@ transactions:
   #         - field: status
   #           operator: eq
   #           value: "published"
-  #         - table_name: posts
+  #         - table: posts
   #           field: published_at
   #           operator: between
   #           value: ["{{ report_start_date }}", "{{ report_end_date }}"]
@@ -1669,20 +1694,20 @@ transactions:
 
   #     # 统计热门作者
   #     - action: get
-  #       table_name: users
+  #       table: users
   #       fields:
   #         - field: display_name
   #         - field: id
   #           function: count
   #           label: post_count
-  #           table_name: posts
-  #         - table_name: posts
+  #           table: posts
+  #         - table: posts
   #           field: views_count
   #           function: sum
   #           label: total_views
   #       join:
-  #         - left_table_name: users
-  #           right_table_name: posts
+  #         - left_table: users
+  #           right_table: posts
   #           type: left
   #           on:
   #             - left_column: id
@@ -1691,7 +1716,7 @@ transactions:
   #         - field: status
   #           operator: eq
   #           value: "published"
-  #         - table_name: posts
+  #         - table: posts
   #           field: published_at
   #           operator: between
   #           value: ["{{ report_start_date }}", "{{ report_end_date }}"]

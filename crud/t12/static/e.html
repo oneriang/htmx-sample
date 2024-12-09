@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contenteditable with DaisyUI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/daisyui"></script>
+</head>
+<body class="p-8">
+
+  <div class="flex gap-2 mb-4">
+    <button class="btn btn-sm btn-outline" onclick="formatText('bold')">加粗</button>
+    <button class="btn btn-sm btn-outline" onclick="formatText('italic')">斜体</button>
+    <button class="btn btn-sm btn-outline" onclick="formatText('insertParagraph')">段落</button>
+  </div>
+
+  <div class="p-4 border rounded-lg shadow-sm" contenteditable="true" id="editor">
+    输入一些内容...
+  </div>
+  <button class="btn btn-primary mt-4" id="applyStyles">应用样式</button>
+
+  <script>
+    function formatText(command) {
+      document.execCommand(command, false, null);
+    }
+
+    document.getElementById('applyStyles').addEventListener('click', () => {
+      const editor = document.getElementById('editor');
+      const content = editor.innerHTML;
+
+      // 应用 DaisyUI 样式规则
+      const styledContent = content.replace(/<b>(.*?)<\/b>/g, '<span class="font-bold">$1</span>')
+                                   .replace(/<i>(.*?)<\/i>/g, '<span class="italic">$1</span>')
+                                   .replace(/<p>(.*?)<\/p>/g, '<p class="text-base leading-relaxed">$1</p>');
+
+      editor.innerHTML = styledContent;
+    });
+  </script>
+</body>
+</html>

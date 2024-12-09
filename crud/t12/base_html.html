@@ -10,6 +10,9 @@
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
   <!-- <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script> -->
 
+  <!-- Include stylesheet -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+  
   <style>
     .loader {
       width: 48px;
@@ -49,7 +52,7 @@
 
 
   {% for component in components %}
-    {{ component | safe }}
+  {{ component | safe }}
   {% endfor %}
 
   <div id="loading-indicator">
@@ -70,23 +73,23 @@
     });
 
     function show_loading() {
-        document.getElementById('loading-indicator').style.display = 'block';
+      document.getElementById('loading-indicator').style.display = 'block';
     };
-    
+
     function hide_loading() {
-        document.getElementById('loading-indicator').style.display = 'none';
+      document.getElementById('loading-indicator').style.display = 'none';
     };
-    
+
     document.body.addEventListener('htmx:afterRequest', function (event) {
       console.log('afterRequest');
       document.getElementById('loading-indicator').style.display = 'none';
       console.log(event)
-           
+
       if (is_popstate == false) {
-        if(event.detail.requestConfig.verb == 'get') {
-          
+        if (event.detail.requestConfig.verb == 'get') {
+
           console.log(event.detail.pathInfo.responsePath);
-          
+
           let url = event.detail.pathInfo.responsePath;
 
           // 找到最后一个 '&' 或 '?' 的位置
@@ -104,10 +107,12 @@
             }
           }
           
+          url = url.replace('/api/', '/');
+
           console.log(url); // 输出 '/page?name=John'
-          
+
           history.pushState({}, '', url);
-          
+
           /*
           const url = new URL(event.detail.pathInfo.responsePath);
           console.log(url);
@@ -229,6 +234,9 @@
       }
     });
   </script>
+
+  <!-- Include the Quill library -->
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 
 </body>
 

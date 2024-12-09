@@ -33,9 +33,9 @@ component_definitions:
       - type: form_container
         attributes:
           id: form_container
-      - type: file_upload_form
-        attributes:
-          label: File Manager
+      # - type: file_upload_form
+      #   attributes:
+      #     label: File Manager
       #- $ref: file_manager
       - $ref: blogs
 
@@ -48,17 +48,111 @@ component_definitions:
   posts:
     id: posts
     type: posts
-  
+   
   post:
     id: post
     type: post
+    attributes:
+      id: post
+    children:
+      - key: id
+      - key: title
+      - key: content
+      - key: status
+      - key: visibility
+      - key: category_name
+      - key: category_id
+      - key: author_id
+      - key: author_name
 
+  post1:
+    id: post1
+    type: post
+    attributes:
+      id: post1
+    children:
+      #title:
+      - key: title
+      - type: p
+        key: title
+      - type: p
+        value:
+          name: title
+      - type: h1
+        value:
+          name: id
+        attributes:
+          id: id
+          class: text-2xl
+      - type: p
+        value:
+          name: title
+        attributes:
+          id: title
+          class: text-xl
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: content
+        attributes:
+          id: content
+          class: text-sm
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: status
+        attributes:
+          id: status
+          class: text-sm
+      - type: tag
+        config:
+          tag: h2
+        value:
+          name: visibility
+        attributes:
+          id: visibility
+          class: text-lg text-bold
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: category_name
+        attributes:
+          id: category_name
+          class: text-xl text-bold
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: category_id
+        attributes:
+          id: category_id
+          class: text-xl text-bold
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: author_id
+        attributes:
+          id: author_id
+          class: text-xl text-bold
+      - type: tag
+        config:
+          tag: h1
+        value:
+          name: author_name
+        attributes:
+          id: author_name
+          class: text-xl text-bold
+  
   form_search:
     id: form_search
     type: form_search
     attributes:
       title: Search
-      hx-get: "/blog"
+      hx-get: "/blog?api=posts"
       hx-target: "#blogs"
    
   form_create:
@@ -67,6 +161,8 @@ component_definitions:
     cols: 
       title: {}
       content: {}
+      category_id: {}
+      author_id: {}
       featured_image:  
         input_type: file
         label: Imgae
@@ -78,6 +174,15 @@ component_definitions:
           - {value: draft, label: draft}
           - {value: published, label: published}
           - {value: archived, label: archived}
+      visibility: 
+        input_type: select
+        label: Visibility
+        required: true
+        options:
+          - {value: public, label: Public}
+          - {value: private, label: Private}
+          - {value: password_protected, label: Password Protected}
+
     #   country:
     #     input_type: select
     #     label: Country
@@ -107,6 +212,11 @@ component_definitions:
       id: {}
       title: {}
       content: {}
+      category_id: {}
+      author_id: {}
+      featured_image:  
+        input_type: file
+        label: Imgae
       status: 
         input_type: select
         label: Status
@@ -115,6 +225,15 @@ component_definitions:
           - {value: draft, label: draft}
           - {value: published, label: published}
           - {value: archived, label: archived}
+      visibility: 
+        input_type: select
+        label: Visibility
+        required: true
+        options:
+          - {value: public, label: Public}
+          - {value: private, label: Private}
+          - {value: password_protected, label: Password Protected}
+
     config:
       title: Edit
       mode: edit

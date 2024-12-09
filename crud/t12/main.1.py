@@ -141,12 +141,12 @@ def load_data():
     gv.classes = gv.HTML_TEMPLATES.get('classes', {})
 
 def verify_password(plain_password, hashed_password):
-    # # print((plain_password)
-    # # print((hashed_password)
+    # print(plain_password)
+    # print(hashed_password)
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
-    # # print((password)
+    # print(password)
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -162,10 +162,10 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 #async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
 async def get_current_user(request: Request):
 
-    # # print(('get_current_user')
+    # print('get_current_user')
 
     token = request.cookies.get("access_token")
-    # # print((token)
+    # print(token)
     
     if not token:
         return None
@@ -213,7 +213,7 @@ def decode_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def login_required(func):
-    # # print(('login_required')
+    # print('login_required')
     @wraps(func)
     async def wrapper(request: Request, *args, **kwargs):
         token = None
@@ -278,13 +278,9 @@ def get_tables():
 # 修改渲染函数
 def generate_html(component: Dict[str, Any]) -> str:
 
-    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+    # print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
     # print(component)
-    print(component.get('key', []))
-    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-
-    if 'type' not in component:
-        component['type'] = 'div'
+    # print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
 
     for key in ['config', 'data', 'value', 'files']:
         if key in component and isinstance(component[key], str):
@@ -297,9 +293,9 @@ def generate_html(component: Dict[str, Any]) -> str:
                 # component['cols'][key] = gv.posts_config['cols'][key]
                 component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
         
-        ## print(('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        ## print((component['cols'])
-        ## print(('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        #print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        #print(component['cols'])
+        #print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
 
     template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
 
@@ -307,7 +303,7 @@ def generate_html(component: Dict[str, Any]) -> str:
 
     if 'children' in component:
       if isinstance(component['children'], list):
-        # # print(("这是一个数组（列表）")
+        # print("这是一个数组（列表）")
         #rendered_children = [generate_html(resolve_component(child)) for child in component.get('children', [])]
         
         rendered_children = []
@@ -316,7 +312,7 @@ def generate_html(component: Dict[str, Any]) -> str:
             child['data'] = component.get('data', {})
             rendered_children.append(generate_html(child))
       else:
-        # # print(("这不是一个数组（列表）")
+        # print("这不是一个数组（列表）")
         for key, value in component['children'].items():
             if isinstance(key, str):  # Named children
                 rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
@@ -326,7 +322,6 @@ def generate_html(component: Dict[str, Any]) -> str:
         config=component.get('config', {}),
         data=component.get('data', {}),
         value=component.get('value', []),
-        key=component.get('key', []),
         content=component.get('content', ''),
         files=component.get('files', []),
         cols=component.get('cols', {}),
@@ -351,7 +346,7 @@ def format_children(children):
   s = ''
   if children:
     for child in children:
-      # print((child)
+      print(child)
       s += child
   return s
   
@@ -366,7 +361,7 @@ def load_page_config(config_name = None) -> Dict[str, Any]:
     # config = yaml.safe_load(YAML_CONFIG)
     gv.YAML_CONFIG = load_data_from_yaml(config_name)
     config = copy.deepcopy(gv.YAML_CONFIG)
-    # # # print((config)
+    # # print(config)
     gv.component_dict = {
         comp['id']: comp 
         for comp in config.get('component_definitions', {}).values()
@@ -605,9 +600,9 @@ def get_table_data(
         sort_column: str | None = None,
         sort_direction: str = 'asc'
     ):
-    # # print(('get_table_data')
+    # print('get_table_data')
     
-    # # print((table_name)
+    # print(table_name)
 
     if request is None:
         request = gv.request
@@ -618,9 +613,9 @@ def get_table_data(
         # 从请求中获取查询参数
         search_params = dict(request.query_params)
         
-        # # print(('*****************')
-        # # print((search_params)
-        # # print(('*****************')
+        # print('*****************')
+        # print(search_params)
+        # print('*****************')
 
         # Process pagination parameters
         # 处理分页参数
@@ -652,7 +647,7 @@ def get_table_data(
         for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
             search_params.pop(param, None)
 
-    # # print((table_name)
+    # print(table_name)
 
     # Set default table if none specified
     # 如果未指定表，设置默认表
@@ -713,10 +708,10 @@ def get_table_data(
     # 计算总页数
     total_pages = (total_items + page_size - 1) // page_size
     
-    # # # print(('***********************')
-    # # # print(('sort_direction')
-    # # # print((sort_direction)
-    # # # print(('***********************')
+    # # print('***********************')
+    # # print('sort_direction')
+    # # print(sort_direction)
+    # # print('***********************')
     
     # Return the complete result set
     # 返回完整的结果集
@@ -742,96 +737,8 @@ gv.tables = get_tables()
 
 generate_all_configs(engine)
 
-'''
-# 通用处理方法
-@app.api_route("/{any_path:path}")
-async def universal_handler(any_path: str):
-    return {"path": any_path, "message": "Handled by the universal route"}
-    #访问任何路径（例如 /route1, /route2/subpath, /other/123），都会由 universal_handler 处理。
-'''
-
-
-# 定义多个逻辑方法
-def get_method_one(request: Request):
-    return {"method": "method_one"}
-
-def get_method_two(data):
-    return {"method": "method_two", "data": data}
-
-class Logic:
-    @staticmethod
-    def method_three(data):
-        return {"method": "method_three", "data": data}
-
-@app.api_route("/{any_path:path}", response_class=HTMLResponse)
-async def universal_handler(any_path: str, request: Request):
-    print(request.url.path)
-    full_path = request.url.path
-    print(full_path)
-    path_parts = full_path.strip("/").split("/")  # 分解路径为列表
-    print(path_parts)
-    print(len(path_parts))
-    #return 'ok'
-    if request.url.path == '/':
-        return await home(request)
-    
-    if request.url.path == '/component':
-        return await rendered_component(request)
-   
-    if request.url.path == '/edit':
-        return await edit_form(request)
-
-    if len(path_parts) > 1 and path_parts[0] == 'api':
-        if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
-            return await get_posts(request)
-        elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
-            return await get_post(request)
-  
-    if len(path_parts) == 1 and path_parts[0] == 'blog':
-        return await get_blog(request)
-    elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'posts':
-            return await get_blog(request)
-    # return {
-    #     "full_path": full_path,  # 完整路径
-    #     "extracted_path": any_path,  # 动态路径参数
-    #     "path_parts": full_path.strip("/").split("/")  # 分解路径为列表
-    # }
-    return full_path
-    # return {"path": any_path, "message": "Handled by the universal route"}
-
-'''
-@app.api_route("/{api}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
-#@app.api_route("/{section}/{method:path}", methods=["GET", "POST"])
-async def universal_handler(api: str, section: str, method: str, request: Request):
-    # print(('universal_handler')
-    # print((api)
-    # print((section)
-    # print((method)
-    # 动态获取方法
-    try:
-        if request.method == 'GET':
-            method = 'get' + '_' + method
-
-        handler = globals().get(method) or getattr(Logic, method)
-        
-        if not callable(handler):
-            raise AttributeError
-        
-        # # 请求体解析
-        # body = await request.json() if request.method in ["POST"] else None
-        # # 调用方法
-                
-        result = handler(request)
-        
-    except AttributeError:
-        raise HTTPException(status_code=404, detail="Method not found")
-    
-    return result
-'''
-
-
 # 主渲染函数保持不变
-#@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 # async def home(request: Request, current_user: dict = Depends(get_current_user)):
 #     logger.debug(f"Home page requested. Current user: {current_user}")
     
@@ -908,7 +815,7 @@ async def login(request: Request, response: Response):
             config_file = "login_txn.yaml"
         )
 
-        # # # print((result)
+        # # print(result)
             
         user_data = gv.data.get("user_data", [])
 
@@ -994,9 +901,9 @@ async def register(request: Request):
 
 @app.post("/register", response_class=HTMLResponse)
 async def register(request: Request):
-    # # print(('------------------------')
-    # # print(('register')
-    # # print(('------------------------')
+    # print('------------------------')
+    # print('register')
+    # print('------------------------')
     form_data = await request.form()
     params = {key: value for key, value in form_data.items()}
     params['password'] = get_password_hash(params['password'])
@@ -1050,8 +957,8 @@ async def read_root(request: Request):
 
 @app.get("/table/{table_name}")
 async def read_table(request: Request, table_name: str):
-    # # print((str)
-    # # print((gv.models)
+    # print(str)
+    # print(gv.models)
     if table_name not in gv.models:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -1110,10 +1017,10 @@ async def read_table_content(
         
     total_pages = (total_items + page_size - 1) // page_size
     
-    # # # print(('***********************')
-    # # # print(('sort_direction')
-    # # # print((sort_direction)
-    # # # print(('***********************')
+    # # print('***********************')
+    # # print('sort_direction')
+    # # print(sort_direction)
+    # # print('***********************')
 
     return templates.TemplateResponse("table_content.html", {
         "request": request,
@@ -1185,7 +1092,7 @@ async def create_form(request: Request):
 
 @app.post("/create/{table_name}")
 async def create_item(table_name: str, request: Request):
-    # # print(('post create_item')
+    # print('post create_item')
     table = None
     if table_name in metadata.tables:
         table = metadata.tables[table_name]
@@ -1240,7 +1147,7 @@ async def create_item(table_name: str, request: Request):
             "search": "",
         })
     except SQLAlchemyError as e:
-        # # print((str(e))
+        # print(str(e))
         return {"success": False, "message": str(e)}
 
 @app.get("/edit", response_class=HTMLResponse)
@@ -1265,12 +1172,12 @@ async def edit_form(request: Request):
       id = 22
 
     table_config = get_table_config(table_name)
-    # # # print(('table_config')
-    # # # print((table_config)
+    # # print('table_config')
+    # # print(table_config)
     table = metadata.tables[table_name]
     
     primary_key = next((c['name'] for c in table_config['columns'] if c['primary_key'] == 1), None)
-    # # # print((primary_key)
+    # # print(primary_key)
 
     if primary_key is None:
         primary_key = get_primary_key(table)
@@ -1283,9 +1190,9 @@ async def edit_form(request: Request):
       
         data = dict(result)
         
-        # # # print(('###############')
-        # # # print((data)
-        # # # print(('###############')
+        # # print('###############')
+        # # print(data)
+        # # print('###############')
         
         component_id = None
     
@@ -1311,7 +1218,7 @@ async def edit_form(request: Request):
 
 @app.post("/edit/{table_name}/{id}")
 async def edit_item(table_name: str, id: str, request: Request):
-    # # print(('edit_item')
+    # print('edit_item')
     # if table_name not in metadata.tables:
     #     raise HTTPException(status_code=404, detail="Table not found")
     # table = metadata.tables[table_name]
@@ -1352,7 +1259,7 @@ async def edit_item(table_name: str, id: str, request: Request):
             return ''
             
     except SQLAlchemyError as e:
-        # print((e)
+        print(e)
         return {"success": False, "message": str(e)}
 
 @app.get("/delete", response_class=HTMLResponse)
@@ -1554,13 +1461,13 @@ def upload_file(
         
         # 执行事务
         try:
-            # print(('1111')
+            print('1111')
             result = TM.execute_transactions(
                 transaction_name='file_operations',
                 params=transaction_params,
                 config_file='file_operations_txn.yaml'
             )
-            # print(('2222')
+            print('2222')
             
             # # 删除临时文件
             # os.remove(temp_file_path)
@@ -1568,14 +1475,14 @@ def upload_file(
             # 根据结果返回适当的响应
             if isinstance(result, dict) and 'filename' in result:
                 load_page_config()
-                # # # print((gv.component_dict.keys())
+                # # print(gv.component_dict.keys())
                 res = generate_html(gv.component_dict['file_manager'])
                 res = f'''
                 <div hx-swap-oob="innerHTML:#file-manager">
                     {res}
                 </div>
                 '''
-                # # # print((res)
+                # # print(res)
                 return HTMLResponse(res)
                 # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
             else:
@@ -1593,7 +1500,7 @@ def upload_file(
         return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
 
 def get_files():
-    # # print(('get_files')
+    # print('get_files')
     files = os.listdir("uploaded")
     return files
 
@@ -1669,7 +1576,7 @@ async def project_management_system(request: Request):
                 transaction_name = 'create_base_tables',
                 config_file="project_management_system_txn.yaml"
             )
-    # # print((result)
+    # print(result)
     return HTMLResponse('end')
 
 @app.get("/initialize_base_data", response_class=HTMLResponse)
@@ -1679,7 +1586,7 @@ async def initialize_base_data(request: Request):
                 transaction_name = 'initialize_base_data',
                 config_file="project_management_system_txn.yaml"
             )
-    # # print((result)
+    # print(result)
     #return HTMLResponse(str(result[0]['total_artists']))
     return HTMLResponse('end')
 
@@ -1690,7 +1597,7 @@ async def initialize_base_data(request: Request):
         #             transaction_name = 'create_new_project',
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         # result = TM.execute_transactions(
         #             transaction_name = 'add_project_member',
         #             params={
@@ -1699,7 +1606,7 @@ async def initialize_base_data(request: Request):
         #             },
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         # result = TM.execute_transactions(
         #             transaction_name = 'create_new_issue',
         #             params={
@@ -1707,7 +1614,7 @@ async def initialize_base_data(request: Request):
         #             },
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         # result = TM.execute_transactions(
         #             transaction_name = 'update_issue_status',
         #             params={
@@ -1718,7 +1625,7 @@ async def initialize_base_data(request: Request):
         #             },
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         '''
         result = TM.execute_transactions(
                     transaction_name = 'log_time_entry',
@@ -1733,7 +1640,7 @@ async def initialize_base_data(request: Request):
                     },
                     config_file="project_management_system_txn.yaml"
                 )
-        # # print((result)
+        # print(result)
         '''
         # result = TM.execute_transactions(
         #             transaction_name = 'get_project_statistics',
@@ -1742,12 +1649,12 @@ async def initialize_base_data(request: Request):
         #             },
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         # result = TM.execute_transactions(
         #             transaction_name = 'create_new_database',
         #             config_file="database_management_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
 
         # Database connection configuration
         DATABASE_URL1 = "sqlite:///./project_management.db"
@@ -1758,13 +1665,13 @@ async def initialize_base_data(request: Request):
         #             transaction_name = 'create_base_tables',
         #             config_file="project_management_system_txn.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         
         # result = TM1.execute_transactions(
         #         transaction_name = 'create_new_project',
         #         config_file="project_management_system_txn.yaml"
         #     )
-        # # # print((result)
+        # # print(result)
         
         result = TM1.execute_transactions(
                     transaction_name = 'add_project_member',
@@ -1774,7 +1681,7 @@ async def initialize_base_data(request: Request):
                     },
                     config_file="project_management_system_txn.yaml"
                 )
-        # # # print((result)
+        # # print(result)
         
     return HTMLResponse('end')
     
@@ -1786,7 +1693,7 @@ async def initialize_base_data(request: Request):
         #           transaction_name = 'create_new_database',
         #           config_file="cms.yaml"
         #       )
-        # # # print((result)
+        # # print(result)
     
         # # Database connection configuration
         # DATABASE_URL1 = "sqlite:///./cms.db"
@@ -1797,7 +1704,7 @@ async def initialize_base_data(request: Request):
         #             transaction_name = 'create_base_tables',
         #             config_file="cms.yaml"
         #         )
-        # # # print((result)
+        # # print(result)
         
     # result = TM.execute_transactions(
     #             transaction_name = 'initialize_base_data',
@@ -1815,7 +1722,7 @@ async def initialize_base_data(request: Request):
                 },
                 config_file="cms.yaml"
             )
-    # # # print((result)
+    # # print(result)
 
     # result = TM.execute_transactions(
     #             transaction_name = 'get_posts_list',
@@ -1826,12 +1733,12 @@ async def initialize_base_data(request: Request):
     #             # },
     #             config_file="cms.yaml"
     #         )
-    # # # print((result)
+    # # print(result)
     
     return HTMLResponse('end')
 
 # 主渲染函数保持不变
-# @app.get("/blog", response_class=HTMLResponse)
+@app.get("/blog", response_class=HTMLResponse)
 async def get_blog(request: Request):
     
     gv.request = request
@@ -1863,7 +1770,7 @@ async def get_blog(request: Request):
       
     page_config = load_page_config('blog_config.yaml')
     
-    hx_get = '/blog' + '/posts'
+    hx_get = '/blog'
     hx_get_params = []
     
     hx_get_params.append('api=posts')
@@ -1880,7 +1787,7 @@ async def get_blog(request: Request):
     hx_get += '?' + ('&').join(hx_get_params)
     
     blogs_attr = {
-        'hx-get': '/api' + hx_get,
+        'hx-get': hx_get,
         'hx-swap': 'innerHTML',
         'hx-trigger': 'load, newPost from:body, updatePost from:body, deletePost from:body',
         'hx-url': hx_get
@@ -1898,13 +1805,11 @@ async def get_blog(request: Request):
 
     return h
 
-# @app.get("/blog/posts", response_class=HTMLResponse)
-# async def get_posts(request: Request):
+@app.get("/blog/posts", response_class=HTMLResponse)
 async def get_posts(request: Request):
-    print('get_posts')
 
     if "HX-Request" in request.headers:
-        ## print((request.headers)
+        #print(request.headers)
         pass
       
     query_params = dict(request.query_params)
@@ -1947,15 +1852,15 @@ async def get_posts(request: Request):
               'hx-target': '#form_container'
             },
             'go': {
-              'hx-get': f"/api/blog/post?post_id={d['id']}&post",
+              'hx-get': f"/blog/post?post_id={d['id']}&post",
               'hx-target': '#blogs'
             }
           }
           
         gv.component_dict['posts']['data'] = result
 
-        hx_url = f"/blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
-        hx_get = '/api' + hx_url + '&api=posts'
+        hx_url = f"/blog?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
+        hx_get = hx_url + '&api=posts'
 
         prev_attr = {
                     'id': 'prev',
@@ -1967,8 +1872,8 @@ async def get_posts(request: Request):
         if no_prev:
             prev_attr['disabled'] = True
 
-        hx_url = f"/blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
-        hx_get = '/api' + hx_url + '&api=posts'
+        hx_url = f"/blog?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
+        hx_get = hx_url + '&api=posts'
 
         next_attr = {
                     'id': 'prev',
@@ -1988,26 +1893,25 @@ async def get_posts(request: Request):
                 'attributes': next_attr
             },
         }
-        ## print((gv.component_dict['posts'])
+        #print(gv.component_dict['posts'])
         h = generate_html(gv.component_dict['posts'])
     except Exception as e:
-        # print((e)
-        pass
+        print(e)
 
     return HTMLResponse(content=h)
     
 @app.get("/blog/post", response_class=HTMLResponse)
 async def get_post(request: Request):
-    # print(('get_post')
-    # print((request)
+    print('get_post')
+    print(request)
     #return('666')
     if "HX-Request" in request.headers:
-        ## print((request.headers)
-        ## print((request.headers['hx-current-url'])
+        #print(request.headers)
+        #print(request.headers['hx-current-url'])
         pass
       
         parsed_url = urlparse(request.headers['hx-current-url'])
-        # print((parsed_url)
+        print(parsed_url)
 
     query_params = dict(request.query_params)
 
@@ -2015,7 +1919,7 @@ async def get_post(request: Request):
       return 'no data'
       
     post_id = int(query_params['post_id'])
-    # print((post_id)
+    print(post_id)
     #return 'ok'
     result = TM.execute_transactions(
                 transaction_name = 'get_post_detail',
@@ -2025,7 +1929,7 @@ async def get_post(request: Request):
                 config_file="cms.yaml"
             )
     result = [dict(row) for row in result]  # 转换为字典列表
-    ## print((result)
+    #print(result)
     
     h = ''
     try:
@@ -2035,32 +1939,31 @@ async def get_post(request: Request):
         gv.component_dict['post']['config'] = {
             'back': {
                 'attributes': {
-                    'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
+                    'hx-get': f'{parsed_url.path}?{parsed_url.query}&api=posts',
                 }
             }
         }
         h = generate_html(gv.component_dict['post'])
     except Exception as e:
-        # print((e)
-        pass
+        print(e)
 
     return HTMLResponse(content=h)
 
     
 @app.post("/blog/post/form", response_class=HTMLResponse)
 async def get_post_form(request: Request):
-    # print(('get_post form')
+    print('get_post form')
 
     if "HX-Request" in request.headers:
-        ## print((request.headers)
-        ## print((request.headers['hx-current-url'])
+        #print(request.headers)
+        #print(request.headers['hx-current-url'])
         pass
 
     parsed_url = urlparse(request.headers['hx-current-url'])
-    ## print((parsed_url)
+    #print(parsed_url)
 
     query_params = dict(request.query_params)
-    # print((query_params)
+    print(query_params)
     
     result = []
     
@@ -2077,7 +1980,7 @@ async def get_post_form(request: Request):
                   config_file="cms.yaml"
               )
       result = [dict(row) for row in result]  # 转换为字典列表
-      ## print((result)
+      #print(result)
     
       h = ''
       try:
@@ -2087,8 +1990,7 @@ async def get_post_form(request: Request):
               
               h = generate_html(gv.component_dict['form_edit'])
       except Exception as e:
-          # print((e)
-          pass
+          print(e)
   
       return HTMLResponse(content=h)
       
@@ -2102,24 +2004,20 @@ async def get_post_form(request: Request):
               
               h = generate_html(gv.component_dict['form_create'])
       except Exception as e:
-          # print((e)
-          pass
+          print(e)
   
       return HTMLResponse(content=h)
 
       
 @app.post("/blog/post", response_class=HTMLResponse)
 async def post_blog_post(request: Request):
-    # print(('post_blog_post')
+    print('post_blog_post')
     form_data = await request.form()
-    ## print((form_data)
-    ## print((form_data['featured_image'])
+    #print(form_data)
+    #print(form_data['featured_image'])
     file = form_data.get('featured_image')
     
-    print('==========file==========')
-    print(file)
-    print('==========file==========')
-    
+    #print(file)
     result = TM.execute_transactions(
                 transaction_name = 'create_post',
                 params={
@@ -2128,9 +2026,6 @@ async def post_blog_post(request: Request):
                   'content': form_data['content'],
                   'status': form_data['status'],
                   #'file': form_data['featured_image']
-                  'visibility': form_data['visibility'],
-                  'category_id': form_data['category_id'],
-                  'author_id': form_data['author_id'],
                   "file": file,
                   "file_name": file.filename,
                   "folder_path": "./uploaded"
@@ -2143,14 +2038,10 @@ async def post_blog_post(request: Request):
 
 @app.put("/blog/post", response_class=HTMLResponse)
 async def put_blog_post(request: Request):
-    # print(('put_blog_post')
+    print('put_blog_post')
     form_data = await request.form()
-    # print((form_data)
+    print(form_data)
     file = form_data.get('featured_image')
-    
-    print('==========file==========')
-    print(file)
-    print('==========file==========')
     
     result = TM.execute_transactions(
                 transaction_name = 'update_post',
@@ -2159,9 +2050,6 @@ async def put_blog_post(request: Request):
                     'title': form_data['title'],
                     'content': form_data['content'],
                     'status': form_data['status'],
-                    'visibility': form_data['visibility'],
-                    'category_id': form_data['category_id'],
-                    'author_id': form_data['author_id'],
                     "file": file,
                     "file_name": file.filename,
                     "folder_path": "./uploaded"
@@ -2174,7 +2062,7 @@ async def put_blog_post(request: Request):
 
 @app.delete("/blog/post", response_class=HTMLResponse)
 async def delete_blog_post(request: Request):
-    # print(('blog_post_delete')
+    print('blog_post_delete')
     query_params = dict(request.query_params)
 
     result = TM.execute_transactions(
@@ -2194,7 +2082,7 @@ async def blog(request: Request):
     gv.request = request
 
     query_params = dict(request.query_params)
-    ## print((query_params)
+    #print(query_params)
 
     load_data()
 
@@ -2218,10 +2106,10 @@ async def api_data(request: Request):
     gv.request = request
 
     query_params = dict(request.query_params)
-    ## print((query_params)
+    #print(query_params)
 
     return str(query_params);
-
+    
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

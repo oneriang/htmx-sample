@@ -41,7 +41,7 @@ import gv as gv
 # Set up logging
 logging.basicConfig(level=logging.CRITICAL)
 logger = logging.getLogger(__name__)
-#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
 
 def convert_value(column_type: Any, value: Any) -> Any:
@@ -316,7 +316,7 @@ class TransactionModule:
 
     def alter_table(self, step: Dict[str, Any]) -> Dict[str, Any]:
         """修改表结构"""
-        table_name = step["table_name"]
+        table = step["table"]
         operation = step["operation"]
         
         try:
@@ -336,7 +336,7 @@ class TransactionModule:
                     type_str = str(col_type.compile(dialect=self.db.bind.dialect))
                     
                     sql = f"""
-                    ALTER TABLE {table_name} 
+                    ALTER TABLE {table} 
                     ADD COLUMN {col['name']} {type_str} {nullable_str} {default_str}
                     """
                     self.db.execute(text(sql))
@@ -344,31 +344,31 @@ class TransactionModule:
             elif operation == "drop_column":
                 # 获取当前表的所有列
                 inspector = inspect(self.db.get_bind())
-                columns = [col['name'] for col in inspector.get_columns(table_name)]
+                columns = [col['name'] for col in inspector.get_columns(table)]
                 
                 # 移除要删除的列
                 remaining_columns = [col for col in columns if col not in step["columns"]]
                 
                 # 创建新表
                 col_list = ", ".join(remaining_columns)
-                new_table_name = f"{table_name}_new"
+                new_table = f"{table}_new"
                 
                 # 复制数据到新表
                 sql = f"""
-                CREATE TABLE {new_table_name} AS 
+                CREATE TABLE {new_table} AS 
                 SELECT {col_list} 
-                FROM {table_name}
+                FROM {table}
                 """
                 self.db.execute(text(sql))
                 
                 # 删除旧表并重命名新表
-                self.db.execute(text(f"DROP TABLE {table_name}"))
-                self.db.execute(text(f"ALTER TABLE {new_table_name} RENAME TO {table_name}"))
+                self.db.execute(text(f"DROP TABLE {table}"))
+                self.db.execute(text(f"ALTER TABLE {new_table} RENAME TO {table}"))
                 
             elif operation == "modify_column":
                 # 获取当前表的所有列信息
                 inspector = inspect(self.db.get_bind())
-                columns = inspector.get_columns(table_name)
+                columns = inspector.get_columns(table)
                 
                 # 准备新表的列定义
                 new_columns = []
@@ -393,10 +393,10 @@ class TransactionModule:
                 
                 # 创建新表
                 col_def = ", ".join(new_columns)
-                new_table_name = f"{table_name}_new"
+                new_table = f"{table}_new"
                 
                 sql = f"""
-                CREATE TABLE {new_table_name} (
+                CREATE TABLE {new_table} (
                     {col_def}
                 )
                 """
@@ -405,22 +405,22 @@ class TransactionModule:
                 # 复制数据
                 col_list = ", ".join(col['name'] for col in columns)
                 self.db.execute(text(f"""
-                    INSERT INTO {new_table_name}
+                    INSERT INTO {new_table}
                     SELECT {col_list}
-                    FROM {table_name}
+                    FROM {table}
                 """))
                 
                 # 删除旧表并重命名新表
-                self.db.execute(text(f"DROP TABLE {table_name}"))
-                self.db.execute(text(f"ALTER TABLE {new_table_name} RENAME TO {table_name}"))
+                self.db.execute(text(f"DROP TABLE {table}"))
+                self.db.execute(text(f"ALTER TABLE {new_table} RENAME TO {table}"))
             
             self.db.commit()
-            return {"message": f"Table {table_name} altered successfully"}
+            return {"message": f"Table {table} altered successfully"}
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Failed to alter table {table_name}: {str(e)}")
-            raise Exception(f"Failed to alter table {table_name}: {str(e)}")
+            logger.error(f"Failed to alter table {table}: {str(e)}")
+            raise Exception(f"Failed to alter table {table}: {str(e)}")
 
     def drop_database(self, step: Dict[str, Any]) -> Dict[str, Any]:
         """删除数据库"""
@@ -539,8 +539,8 @@ class TransactionModule:
                 tables = []
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 for table_row in cursor.fetchall():
-                    table_name = table_row[0]
-                    cursor.execute(f"PRAGMA table_info({table_name})")
+                    table = table_row[0]
+                    cursor.execute(f"PRAGMA table_info({table})")
                     columns = []
                     for col in cursor.fetchall():
                         columns.append({
@@ -551,11 +551,11 @@ class TransactionModule:
                         })
                     
                     # 获取表的行数
-                    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     row_count = cursor.fetchone()[0]
                     
                     tables.append({
-                        "name": table_name,
+                        "name": table,
                         "columns": columns,
                         "row_count": row_count
                     })
@@ -585,14 +585,14 @@ class TransactionModule:
         try:
             # 记录开始执行的步骤
             #logger.info(f"Executing step: {step.get('action', 'unknown')} "
-            #        f"on table: {step.get('table_name', 'unknown')}")
+            #        f"on table: {step.get('table', 'unknown')}")
             
             action = step["action"]
-            print(action)
-            if action != "create_table" and 'table_name' in step:
-                table = Table(step["table_name"], self.metadata, autoload_with=self.engine)
+            #print(action)
+            if action != "create_table" and 'table' in step:
+                table = Table(step["table"], self.metadata, autoload_with=self.engine)
                 
-            print(action)
+            #print(action)
             
             try:
                 
@@ -602,7 +602,7 @@ class TransactionModule:
         
                 # 添加新的表管理操作
                 if action == "create_table":
-                    table_name = step["table_name"]
+                    table = step["table"]
                     columns = []
                     
                     for col in step["columns"]:
@@ -636,15 +636,15 @@ class TransactionModule:
                         ))
                     
                     # 创建表
-                    new_table = Table(table_name, self.metadata, *columns)
+                    new_table = Table(table, self.metadata, *columns)
                     new_table.create(self.engine, checkfirst=True)
-                    return {"message": f"Table {table_name} created successfully"}
+                    return {"message": f"Table {table} created successfully"}
         
                 elif action == "drop_table":
-                    table_name = step["table_name"]
-                    table = Table(table_name, self.metadata)
+                    table = step["table"]
+                    table = Table(table, self.metadata)
                     table.drop(self.engine, checkfirst=True)
-                    return {"message": f"Table {table_name} dropped successfully"}
+                    return {"message": f"Table {table} dropped successfully"}
         
                 # 添加数据库级别的操作
                 elif action == "create_database":
@@ -662,9 +662,13 @@ class TransactionModule:
                 elif action == "alter_table":
                     return self.alter_table(step)
                 elif action == "insert":
+                    print('insert')
+                    print(gv.data[step.get('data_from')])
                     result = self.db.execute(table.insert().values(**step["values"]))
                     return result.rowcount
                 elif action == "update":
+                    print('update')
+                    print(gv.data[step.get('data_from')])
                     filters = self.build_filter_clauses(step.get("filter_values", []), table)
                     result = self.db.execute(table.update().where(*filters).values(**step["values"]))
                     return result.rowcount
@@ -763,8 +767,8 @@ class TransactionModule:
                     print('upload_file')
                     file: UploadFile = step.get("file")
                     destination: str = step.get("folder_path", "") + '/' + step.get("file_name", "")
-                    print(file)
-                    print(destination)
+                    #print(file)
+                    #print(destination)
                     if not file:
                         raise ValueError("No file provided for upload")
                     if not destination:
@@ -785,8 +789,18 @@ class TransactionModule:
                     os.makedirs(os.path.dirname(destination), exist_ok=True)
                     with open(destination, "wb") as buffer:
                         shutil.copyfileobj(file.file, buffer)
-        
-                    return {"filename": file.filename, "destination": destination}
+                        
+                    #print(file)
+                    
+                    res = {"filename": file.filename, "destination": destination}
+                    print(res)
+                    
+                    if step.get('data_to'):
+                        gv.data[step.get('data_to')] = res
+                        print(step.get('data_to'))
+                        print(gv.data[step.get('data_to')])
+                        
+                    return res
         
                 elif action == "download_file":
                     file_path: str = step.get("file_path", "")
@@ -924,16 +938,18 @@ class TransactionModule:
 
             # 处理 JOIN
             join = step.get("join")
+            print(join)
             if join:
                 logger.info("\nProcessing JOINs:")
                 for j in join:
-                    logger.info(f"  Processing join: {j}")
+                    #logger.info(f"  Processing join: {j}")
+                    print('Processing')
                     left_table = Table(j["left_table"], self.metadata, autoload_with=self.engine)
                     right_table = Table(j["right_table"], self.metadata, autoload_with=self.engine)
                     join_on = [left_table.c[o["left_column"]] == right_table.c[o["right_column"]] for o in j["on"]]
                     query = query.join(right_table, and_(*join_on), isouter=j["type"] == "left")
-                    logger.info("  Query after join:")
-                    logger.info(str(query.compile(dialect=self.engine.dialect, compile_kwargs={"literal_binds": True})))
+                    #logger.info("  Query after join:")
+                    #logger.info(str(query.compile(dialect=self.engine.dialect, compile_kwargs={"literal_binds": True})))
 
             # 处理 WHERE 条件
             filter_values = step.get("filter_values", [])
@@ -1170,31 +1186,44 @@ class TransactionModule:
                 
             print("bbb")
             
-            print(transaction_data)
+            #print(transaction_data)
 
             transaction = Transaction(**transaction_data)
             result = None
             
-            print(transaction)
+            #print(transaction)
             
             try:
                 for step in transaction.steps:
-                    print(step)
+                    #print(step)
                     if params:
                         # 替换参数和处理上传文件
                         if 'values' in step:
                             for key, value in step['values'].items():
-                                matches = re.findall(r'\{\{(.*?)\}\}', value)
-                                # 去除多余的空格
-                                matches = [match.strip() for match in matches]
-                                if matches:
-                                    param_name = matches[0].strip()
-                                    if isinstance(value, str) and param_name:
-                                        if param_name in self.dynamic_values:
-                                            step['values'][key] = params.get(param_name, value)
-                                        else:
-                                            step['values'][key] = params.get(param_name, None)
-                        '''                                    
+                                print(step['values'][key])
+                                step['values'][key] = None
+                                if 'data_from' in value:
+                                    s_data_from = value['data_from']
+                                    if 'data_key' in value:
+                                        s_data_key = value['data_key']
+                                        if s_data_from in gv.data:
+                                            if s_data_key in gv.data[s_data_from]:
+                                                step['values'][key] = gv.data[s_data_from][s_data_key]
+                                else:      
+                                    matches = re.findall(r'\{\{(.*?)\}\}', value)
+                                    # 去除多余的空格
+                                    matches = [match.strip() for match in matches]
+                                    if matches:
+                                        param_name = matches[0].strip()
+                                        if isinstance(value, str) and param_name:
+                                            if param_name in self.dynamic_values:
+                                                step['values'][key] = params.get(param_name, value)
+                                            else:
+                                                step['values'][key] = params.get(param_name, None)
+                                    else:
+                                        pass
+                                print(step['values'][key])
+                        '''     
                         if 'filter_values' in step:
                             print(step['filter_values'])
                             for filter_item in step['filter_values']:
