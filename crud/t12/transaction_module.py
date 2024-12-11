@@ -41,7 +41,7 @@ import gv as gv
 # Set up logging
 logging.basicConfig(level=logging.CRITICAL)
 logger = logging.getLogger(__name__)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
 
 def convert_value(column_type: Any, value: Any) -> Any:
@@ -742,6 +742,9 @@ class TransactionModule:
                     return result
                 elif action == "execute":
                     sql = step.get("sql")
+                    print('~`````````')
+                    print(sql)
+                    print('~`````````')
                     if sql:
                         result = self.db.execute(text(sql))
                         return result.rowcount
@@ -1092,12 +1095,11 @@ class TransactionModule:
         """
         递归地遍历 filter_values，替换 {{ search_term }} 等占位符
         """
+        '''
         print('replace_dynamic_values')
+        '''
         # 如果是一个条件字典
         if isinstance(condition, dict):
-          
-            print(condition)
-            
             # 处理嵌套的 conditions 列表
             if "conditions" in condition:
                 for cond in condition["conditions"]:
@@ -1107,7 +1109,6 @@ class TransactionModule:
             if "value" in condition and isinstance(condition["value"], str):
                 # 替换 {{ search_term }} 为实际参数值
                 #condition["value"] = condition["value"].replace("{{ search_term }}", params.get("search_term", ""))
-                print(condition['value'])
                 if isinstance(condition['value'], str):
                 #and condition['value'].startswith('{{') and condition['value'].endswith('}}'):
                     matches = re.findall(r'\{\{(.*?)\}\}', condition['value'])
@@ -1117,7 +1118,7 @@ class TransactionModule:
                         param_name = matches[0].strip()
                                     
                         # param_name = condition['value'].strip('{} ')
-                        print(param_name)
+                        
                         if param_name in params:
                           condition['value'] = params.get(param_name, condition['value'])
                         '''
@@ -1131,6 +1132,8 @@ class TransactionModule:
         递归地遍历 filter_values，替换 {{ status }} 等占位符。
         如果参数未赋值，则忽略该条件。
         """
+        print('replace_dynamic_values')
+        
         # 如果是一个条件字典
         if isinstance(condition, dict):
             # 处理嵌套的 conditions 列表
@@ -1153,6 +1156,21 @@ class TransactionModule:
                         condition["value"] = condition["value"].replace(f"{{{{ {param_name[0]} }}}}", str(param_value))
                     else:
                         return None  # 忽略该条件
+        elif isinstance(condition, str):
+            print('77777777777')
+            print(condition)
+            param_name = re.findall(r"\{\{\s*(\w+)\s*\}\}", condition)
+            if param_name:
+                # 获取参数值
+                param_value = params.get(param_name[0], None)
+                
+                # 如果参数存在，则替换占位符；否则返回 None 表示忽略该条件
+                if param_value:
+                    condition = condition.replace(f"{{{{ {param_name[0]} }}}}", str(param_value))
+                else:
+                    return None  # 忽略该条件
+
+            pass
         
         return condition  # 返回更新后的条件
         
@@ -1257,7 +1275,11 @@ class TransactionModule:
                             step['file'] = params.get('file')
                             step['file_name'] = params.get('file_name')
                             step['folder_path'] = params.get('folder_path')
-                    
+                        
+                        if step['action'] == 'execute':
+                            step['sql'] = self.replace_dynamic_values(step['sql'], params)
+                            print(step['sql'])
+                            
                     result = self.execute_step(step)
                     # logger.info(f"Step execution result: {result}")
             

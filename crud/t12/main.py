@@ -278,66 +278,78 @@ def get_tables():
 # 修改渲染函数
 def generate_html(component: Dict[str, Any]) -> str:
 
-    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-    # print(component)
-    print(component.get('key', []))
-    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-
-    if 'type' not in component:
-        component['type'] = 'div'
-
-    for key in ['config', 'data', 'value', 'files']:
-        if key in component and isinstance(component[key], str):
-            if component[key] in globals():
-                component[key] = globals()[component[key]]()
-    
-    if 'cols' in component:
-        for key in component['cols']:
-            if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
-                # component['cols'][key] = gv.posts_config['cols'][key]
-                component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+    try:
+        '''
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(component)
+        print(component.get('key', []))
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        '''
         
-        ## print(('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        ## print((component['cols'])
-        ## print(('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        if 'type' not in component:
+            component['type'] = 'div'
 
-    template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
-
-    rendered_children = {}
-
-    if 'children' in component:
-      if isinstance(component['children'], list):
-        # # print(("这是一个数组（列表）")
-        #rendered_children = [generate_html(resolve_component(child)) for child in component.get('children', [])]
+        for key in ['config', 'data', 'value', 'files']:
+            if key in component and isinstance(component[key], str):
+                if component[key] in globals():
+                    component[key] = globals()[component[key]]()
         
-        rendered_children = []
-        for child in component.get('children', []):
-            child = resolve_component(child)
-            child['data'] = component.get('data', {})
-            rendered_children.append(generate_html(child))
-      else:
-        # # print(("这不是一个数组（列表）")
-        for key, value in component['children'].items():
-            if isinstance(key, str):  # Named children
-                rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
+        if 'cols' in component:
+            for key in component['cols']:
+                if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
+                    # component['cols'][key] = gv.posts_config['cols'][key]
+                    component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+            
+        template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
+        '''
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(template)
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        '''
+        
+        rendered_children = {}
 
-    return template.render(
-        attributes=component.get('attributes', {}),
-        config=component.get('config', {}),
-        data=component.get('data', {}),
-        value=component.get('value', []),
-        key=component.get('key', []),
-        content=component.get('content', ''),
-        files=component.get('files', []),
-        cols=component.get('cols', {}),
-        children=rendered_children,
-        icons=gv.icons,
-        classes=gv.classes,
-        min=min,
-        site_name='7777',
-        format_attr=format_attr,
-        format_children=format_children
-    )
+        if 'children' in component:
+            if isinstance(component['children'], list):
+                rendered_children = []
+                for child in component.get('children', []):
+                    child = resolve_component(child)
+                    child['data'] = component.get('data', {})
+                    rendered_children.append(generate_html(child))
+            else:
+                for key, value in component['children'].items():
+                    if isinstance(key, str): 
+                        rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
+
+        h = template.render(
+            attributes=component.get('attributes', {}),
+            config=component.get('config', {}),
+            data=component.get('data', {}),
+            value=component.get('value', []),
+            key=component.get('key', []),
+            content=component.get('content', ''),
+            files=component.get('files', []),
+            items=component.get('items', []),
+            cols=component.get('cols', {}),
+            children=rendered_children,
+            icons=gv.icons,
+            classes=gv.classes,
+            min=min,
+            site_name='7777',
+            format_attr=format_attr,
+            format_children=format_children
+        )
+
+        '''
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        print(h)
+        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+        '''
+
+        return h
+    except Exception as e:
+        print(e)
+        return None
 
 def format_attr(attributes):
   s = ''
@@ -1998,25 +2010,18 @@ async def get_posts(request: Request):
     
 @app.get("/blog/post", response_class=HTMLResponse)
 async def get_post(request: Request):
-    # print(('get_post')
-    # print((request)
-    #return('666')
+    
     if "HX-Request" in request.headers:
-        ## print((request.headers)
-        ## print((request.headers['hx-current-url'])
         pass
-      
         parsed_url = urlparse(request.headers['hx-current-url'])
-        # print((parsed_url)
 
     query_params = dict(request.query_params)
 
     if 'post_id' not in query_params:
       return 'no data'
-      
+
     post_id = int(query_params['post_id'])
-    # print((post_id)
-    #return 'ok'
+
     result = TM.execute_transactions(
                 transaction_name = 'get_post_detail',
                 params={
@@ -2025,27 +2030,24 @@ async def get_post(request: Request):
                 config_file="cms.yaml"
             )
     result = [dict(row) for row in result]  # 转换为字典列表
-    ## print((result)
-    
+
+    for d in result:
+        d['attributes'] = {
+            'back': {
+                'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
+            }
+        }
+
     h = ''
     try:
         load_page_config('blog_config.yaml')
         gv.component_dict['post']['data'] = result
 
-        gv.component_dict['post']['config'] = {
-            'back': {
-                'attributes': {
-                    'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
-                }
-            }
-        }
         h = generate_html(gv.component_dict['post'])
     except Exception as e:
-        # print((e)
         pass
 
     return HTMLResponse(content=h)
-
     
 @app.post("/blog/post/form", response_class=HTMLResponse)
 async def get_post_form(request: Request):

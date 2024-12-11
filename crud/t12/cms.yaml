@@ -504,7 +504,7 @@ transactions:
     steps:
       # 更新浏览次数
       - action: execute
-        sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = 120"
+        sql: "UPDATE posts SET views_count = COALESCE(views_count, 0) + 1 WHERE id = {{ post_id }}"
 
       # 获取文章基本信息
       - action: get
@@ -612,8 +612,8 @@ transactions:
       #   data_to: comments
 
       # 更新浏览次数
-      - action: execute
-        sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = {{ post_info[0].id }}"
+      # - action: execute
+      #   sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = {{ post_info[0].id }}"
 
   # 6. 添加评论
   - name: add_comment

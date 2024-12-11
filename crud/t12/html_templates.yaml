@@ -1522,6 +1522,55 @@
         {{ attributes.text }}
     </a>
 
+'tag': |
+    {% for d in data %}
+      <{{ config.tag }} {{ format_attr(attributes) }}>
+          {% if value and 'name' in value %}
+            {{ d[value.name] }}
+          {% endif %}
+          {% if content and 'name' in content %}
+            {{ d[content.name] }}
+          {% endif %}
+          {% if content %}
+            {{ content }}
+          {% endif %}
+      </{{ config.tag }}>
+    {% endfor %}
+    
+'h1': |
+    {% for d in data %}
+        <h1 {{ format_attr(attributes) }}>
+            {% if value and 'name' in value and value['name'] in d %}
+                {{ d[value['name']] }}
+            {% elif key and key in d %}
+                {{ d[key] }}
+            {% endif %}
+        </h1>
+    {% endfor %}
+    
+'p': |
+    {% for d in data %}
+      <p {{ format_attr(attributes) }}>
+            {% if value and 'name' in value and value['name'] in d %}
+                {{ d[value['name']] }}
+            {% elif key and key in d %}
+                {{ d[key] }}
+            {% endif %}
+      </p>
+    {% endfor %}
+
+'div': |
+    {{ data }}
+    {% for d in data %}
+        <div {{ format_attr(attributes) }}>
+            {% if value and 'name' in value and value['name'] in d %}
+                {{ d[value['name']] }}
+            {% elif key and key in d %}
+                {{ d[key] }}
+            {% endif %}
+        </div>
+    {% endfor %}
+
 'file_upload_form': |
     <form id="uploadForm"
           hx-encoding="multipart/form-data"
@@ -1626,119 +1675,6 @@
     <div {{ format_attr(attributes) }} >
         Blogs
     </div>
-
-'posts': |
-    <div class="mt-5">
-        <div class="flex justify-end gap-2">
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.prev.attributes) }}
-            >
-            Prev
-            </button>
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.next.attributes) }}
-            >
-            Next
-            </button>
-        </div>  
-      {% for d in data %}
-          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
-              {{ format_attr(attributes) }}
-          >
-              <div class="card-body">
-                <div class="card-actions justify-end">
-                    <div class="hidden">
-                        <button class="btn btn-square btn-sm text-red-500"
-                            {{ format_attr(d.attributes.del) }}
-                        >
-                            {{ icons.trash }}
-                        </button>
-                        <button class="btn btn-square btn-sm"
-                            onclick="this.parentNode.classList.add('hidden');this.parentNode.nextElementSibling.classList.remove('hidden');">
-                            {{ icons.cancel }}
-                        </button>
-                        </div>
-                    <div>
-                        <button class="btn btn-square btn-sm" 
-                            onclick="this.parentNode.classList.add('hidden');this.parentNode.previousElementSibling.classList.remove('hidden');">
-                            {{ icons.trash }}
-                        </button>
-                    </div>
-                </div>
-                <h1 class="card-title">{{ d['id'] if d and 'id' in d else '+++'}}</h1>
-                <h2 class="card-title">{{ d['title'] if d and 'title' in d else 'title'}}</h2>
-                <p class="content">{{ d['content'] if d and 'status' in d else 'status'}}</p>
-                <p class="content">{{ d['status'] if d and 'status' in d else 'status'}}</p>
-                <p class="content">{{ d['featured_image'] if d and 'featured_image' in d else 'featured_image'}}</p>
-                {{ format_children(children) }}
-                <div class="card-actions justify-end">
-                  <button class="btn btn-square btn-sm"
-                    {{ format_attr(d.attributes.edit) }}
-                    >
-                        {{ icons.edit }}
-                  </button>
-                  <button class="btn btn-square btn-sm"
-                    {{ format_attr(d.attributes.go) }}
-                    >
-                        {{ icons.arrow_right }}
-                  </button>
-                </div>
-              </div>
-          </div>
-      {% endfor %}
-    </div>
-
-'tag': |
-    {% for d in data %}
-      <{{ config.tag }} {{ format_attr(attributes) }}>
-          {% if value and 'name' in value %}
-            {{ d[value.name] }}
-          {% endif %}
-          {% if content and 'name' in content %}
-            {{ d[content.name] }}
-          {% endif %}
-          {% if content %}
-            {{ content }}
-          {% endif %}
-      </{{ config.tag }}>
-    {% endfor %}
-    
-'h1': |
-    {% for d in data %}
-        <h1 {{ format_attr(attributes) }}>
-            {% if value and 'name' in value and value['name'] in d %}
-                {{ d[value['name']] }}
-            {% elif key and key in d %}
-                {{ d[key] }}
-            {% endif %}
-        </h1>
-    {% endfor %}
-    
-'p': |
-    {% for d in data %}
-      <p {{ format_attr(attributes) }}>
-            {% if value and 'name' in value and value['name'] in d %}
-                {{ d[value['name']] }}
-            {% elif key and key in d %}
-                {{ d[key] }}
-            {% endif %}
-      </p>
-    {% endfor %}
-
-'div': |
-    {% for d in data %}
-      <div {{ format_attr(attributes) }}>
-            {% if value and 'name' in value and value['name'] in d %}
-                {{ d[value['name']] }}
-            {% elif key and key in d %}
-                {{ d[key] }}
-            {% endif %}
-      </div>
-    {% endfor %}
     
 'post1': |
     <div>
@@ -1873,15 +1809,6 @@
               {{ format_attr(attributes) }}
           >
               <div class="card-body">
-                  
-                  <!--
-                  <h1 class="card-title">{{ d.id if 'id' in d else 'no id'}}</h1>
-                  
-                  <h2 class="card-title">{{ d['status'] if d and 'status' in d else 'no status'}}</h2>
-                  <h2 class="card-title">{{ d['title'] if d and 'title' in d else 'no title'}}</h2>
-                  <p class="content">{{ d['content'] if d and 'content' in d else 'no content'}}</p>
-                  <textarea class="content" value="{{ d['content'] if d and 'content' in d else 'no content'}}"></textarea>
-                  -->
                   {{ format_children(children) }}
                   <div class="card-actions justify-end">
                       <button class="btn btn-square btn-sm"
@@ -1896,23 +1823,162 @@
       {% endfor %}
     </div>
 
+'posts1': |
+    <div class="mt-5">
+        <div class="flex justify-end gap-2">
+            <button 
+                type="submit"
+                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                {{ format_attr(config.prev.attributes) }}
+            >
+            Prev
+            </button>
+            <button 
+                type="submit"
+                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                {{ format_attr(config.next.attributes) }}
+            >
+            Next
+            </button>
+        </div>  
+        {% for d in data %}
+            <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
+                {{ attributes.class if attributes and attributes.class else '' }}"
+                {{ format_attr(attributes) }}
+            >
+                <div class="card-body">
+                    <div class="card-actions justify-end">
+                        <div class="hidden">
+                            <button class="btn btn-square btn-sm text-red-500"
+                                {{ format_attr(d.attributes.del) }}
+                            >
+                                {{ icons.trash }}
+                            </button>
+                            <button class="btn btn-square btn-sm"
+                                onclick="this.parentNode.classList.add('hidden');this.parentNode.nextElementSibling.classList.remove('hidden');">
+                                {{ icons.cancel }}
+                            </button>
+                            </div>
+                        <div>
+                            <button class="btn btn-square btn-sm" 
+                                onclick="this.parentNode.classList.add('hidden');this.parentNode.previousElementSibling.classList.remove('hidden');">
+                                {{ icons.trash }}
+                            </button>
+                        </div>
+                    </div>
+                    {{ d }}
+                    {{ format_children(children) }}
+                    <div class="card-actions justify-end">
+                    <button class="btn btn-square btn-sm"
+                        {{ format_attr(d.attributes.edit) }}
+                        >
+                            {{ icons.edit }}
+                    </button>
+                    <button class="btn btn-square btn-sm"
+                        {{ format_attr(d.attributes.go) }}
+                        >
+                            {{ icons.arrow_right }}
+                    </button>
+                    </div>
+                </div>
+            </div>
+      {% endfor %}
+    </div>
+
+'posts': |
+    <div class="mt-5">
+        <div class="flex justify-end gap-2">
+            <button 
+                type="submit"
+                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                {{ format_attr(config.prev.attributes) }}
+            >
+            Prev
+            </button>
+            <button 
+                type="submit"
+                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                {{ format_attr(config.next.attributes) }}
+            >
+            Next
+            </button>
+        </div>  
+        {{ format_children(children) }}
+    </div>
 
 'post': |
+    {% for d in data %}
+        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
+            {{ attributes.class if attributes and attributes.class else '' }}"
+            {{ format_attr(attributes) if attributes }}
+        >
+            <div class="card-body">
+                <div class="card-actions justify-end">
+                    {% if d and d.attributes and d.attributes.del %}
+                        <div class="hidden">
+                            <button class="btn btn-square btn-sm text-red-500"
+                                {{ format_attr(d.attributes.del) }}
+                            >
+                                {{ icons.trash }}
+                            </button>
+                            <button class="btn btn-square btn-sm"
+                                onclick="this.parentNode.classList.add('hidden');this.parentNode.nextElementSibling.classList.remove('hidden');">
+                                {{ icons.cancel }}
+                            </button>
+                        </div>
+                        <div>
+                            <button class="btn btn-square btn-sm" 
+                                onclick="this.parentNode.classList.add('hidden');this.parentNode.previousElementSibling.classList.remove('hidden');">
+                                {{ icons.trash }}
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if items %}
+                    {% for item in items %}
+                        {{ item.key }} :
+                        {% if item.key in d %}
+                            {{ d[item.key] }} 
+                        {% endif %}
+                        </br>
+                    {% endfor %}
+                {% endif%}
+                <div class="card-actions justify-end">
+                    {% if d and d.attributes and d.attributes.edit %}
+                        <button class="btn btn-square btn-sm"
+                            {{ format_attr(d.attributes.edit) }}
+                        >
+                            {{ icons.edit }}
+                        </button>
+                    {% endif %}
+                    {% if d and d.attributes and d.attributes.go %}
+                        <button class="btn btn-square btn-sm"
+                            {{ format_attr(d.attributes.go) }}
+                        >
+                            {{ icons.arrow_right }}
+                        </button>
+                    {% endif %}
+                    {% if d and d.attributes and d.attributes.back %}
+                        <button class="btn btn-square btn-sm"
+                            hx-target="#blogs"
+                            {{ format_attr(d.attributes.back) }}
+                        >
+                            {{ icons.arrow_left }}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    
+'asdf': |
     <div>
       {% for d in data %}
-          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
-              {{ format_attr(attributes) }}
+          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
+            {{ attributes.class if attributes and attributes.class else '' }}"
+            {{ format_attr(attributes) }}
           >
               <div class="card-body">
-                  
-                  <!--
-                  <h1 class="card-title">{{ d.id if 'id' in d else 'no id'}}</h1>
-                  
-                  <h2 class="card-title">{{ d['status'] if d and 'status' in d else 'no status'}}</h2>
-                  <h2 class="card-title">{{ d['title'] if d and 'title' in d else 'no title'}}</h2>
-                  <p class="content">{{ d['content'] if d and 'content' in d else 'no content'}}</p>
-                  <textarea class="content" value="{{ d['content'] if d and 'content' in d else 'no content'}}"></textarea>
-                  -->
                   {{ format_children(children) }}
                   <div class="card-actions justify-end">
                       <button class="btn btn-square btn-sm"
