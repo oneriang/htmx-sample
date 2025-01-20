@@ -1,0 +1,14 @@
+title: About
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    attributes:
+      title: About
+      url: '/blog/about'
+    children:
+      content_main:
+        - type: alert
+
+components:
+  - $ref: main_layout

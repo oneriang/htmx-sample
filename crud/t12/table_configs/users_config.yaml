@@ -24,7 +24,6 @@ columns:
   nullable: false
   primary_key: 0
   type: VARCHAR(255)
-  is_hidden: true
 - input_type: text
   label: display_name
   name: display_name
@@ -85,5 +84,104 @@ columns:
   primary_key: 0
   type: DATETIME
   disabled: true
+cols:
+  id:
+    autoincrement: true
+    input_type: number
+    label: id
+    name: id
+    nullable: true
+    primary_key: 1
+    type: INTEGER
+  username:
+    input_type: text
+    label: username
+    name: username
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(50)
+  email:
+    input_type: text
+    label: email
+    name: email
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(100)
+  password_hash:
+    input_type: text
+    label: password_hash
+    name: password_hash
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(255)
+  display_name:
+    input_type: text
+    label: display_name
+    name: display_name
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(100)
+  avatar_url:
+    input_type: text
+    label: avatar_url
+    name: avatar_url
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  bio:
+    input_type: text
+    label: bio
+    name: bio
+    nullable: true
+    primary_key: 0
+    type: TEXT
+  role:
+    input_type: text
+    label: role
+    name: role
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  status:
+    input_type: text
+    label: status
+    name: status
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(20)
+  email_verified:
+    input_type: checkbox
+    label: email_verified
+    name: email_verified
+    nullable: true
+    primary_key: 0
+    type: BOOLEAN
+  created_at:
+    input_type: date
+    label: created_at
+    name: created_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: false
+    readonly: true
+    disabled: true
+  updated_at:
+    input_type: date
+    label: updated_at
+    name: updated_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+    auto_update: true
+    readonly: true
+  last_login_at:
+    input_type: date
+    label: last_login_at
+    name: last_login_at
+    nullable: true
+    primary_key: 0
+    type: DATETIME
+    disabled: true
 name: users
 type: table

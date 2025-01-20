@@ -7,8 +7,8 @@ columns:
   primary_key: 1
   type: INTEGER
 - input_type: number
-  label: post_id
-  name: post_id
+  label: issue_id
+  name: issue_id
   nullable: true
   primary_key: 0
   type: INTEGER
@@ -18,24 +18,12 @@ columns:
   nullable: true
   primary_key: 0
   type: INTEGER
-- input_type: number
-  label: parent_id
-  name: parent_id
-  nullable: true
-  primary_key: 0
-  type: INTEGER
 - input_type: text
   label: content
   name: content
   nullable: false
   primary_key: 0
   type: TEXT
-- input_type: text
-  label: status
-  name: status
-  nullable: true
-  primary_key: 0
-  type: VARCHAR(20)
 - input_type: date
   label: created_at
   name: created_at
@@ -48,12 +36,6 @@ columns:
   nullable: false
   primary_key: 0
   type: DATETIME
-- input_type: number
-  label: likes_count
-  name: likes_count
-  nullable: true
-  primary_key: 0
-  type: INTEGER
 cols:
   id:
     autoincrement: true
@@ -63,10 +45,10 @@ cols:
     nullable: true
     primary_key: 1
     type: INTEGER
-  post_id:
+  issue_id:
     input_type: number
-    label: post_id
-    name: post_id
+    label: issue_id
+    name: issue_id
     nullable: true
     primary_key: 0
     type: INTEGER
@@ -77,13 +59,6 @@ cols:
     nullable: true
     primary_key: 0
     type: INTEGER
-  parent_id:
-    input_type: number
-    label: parent_id
-    name: parent_id
-    nullable: true
-    primary_key: 0
-    type: INTEGER
   content:
     input_type: text
     label: content
@@ -91,13 +66,6 @@ cols:
     nullable: false
     primary_key: 0
     type: TEXT
-  status:
-    input_type: text
-    label: status
-    name: status
-    nullable: true
-    primary_key: 0
-    type: VARCHAR(20)
   created_at:
     input_type: date
     label: created_at
@@ -112,12 +80,5 @@ cols:
     nullable: false
     primary_key: 0
     type: DATETIME
-  likes_count:
-    input_type: number
-    label: likes_count
-    name: likes_count
-    nullable: true
-    primary_key: 0
-    type: INTEGER
 name: comments
 type: table

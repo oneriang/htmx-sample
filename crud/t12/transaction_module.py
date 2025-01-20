@@ -60,7 +60,7 @@ def convert_value(column_type: Any, value: Any) -> Any:
     elif isinstance(column_type, Date):
         
         if isinstance(value, str):
-            print(value)
+            #print(value)
             # 尝试多种日期格式
             for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%Y/%m/%d', '%d/%m/%Y'):
                 try:
@@ -663,12 +663,12 @@ class TransactionModule:
                     return self.alter_table(step)
                 elif action == "insert":
                     print('insert')
-                    print(gv.data[step.get('data_from')])
+                    #(gv.data[step.get('data_from')])
                     result = self.db.execute(table.insert().values(**step["values"]))
                     return result.rowcount
                 elif action == "update":
                     print('update')
-                    print(gv.data[step.get('data_from')])
+                    #print(gv.data[step.get('data_from')])
                     filters = self.build_filter_clauses(step.get("filter_values", []), table)
                     result = self.db.execute(table.update().where(*filters).values(**step["values"]))
                     return result.rowcount
@@ -729,8 +729,10 @@ class TransactionModule:
                         query = query.where(*filters)
         
                     result = self.db.execute(query).fetchall()
+                    '''
                     if step.get('data_to'):
                         gv.data[step.get('data_to')] = result
+                    '''
                     return result
                 elif action == "file_create":
                     try:
@@ -742,14 +744,17 @@ class TransactionModule:
                     return result
                 elif action == "execute":
                     sql = step.get("sql")
+                    '''
                     print('~`````````')
                     print(sql)
                     print('~`````````')
+                    '''
                     if sql:
                         result = self.db.execute(text(sql))
                         return result.rowcount
                     else:
-                        raise ValueError("SQL statement is missing for execute action")
+                        return None
+                        #raise ValueError("SQL statement is missing for execute action")
                 # elif action == "upload_file":
                 #     file: UploadFile = step.get("file")
                 #     destination: str = step.get("destination", "")
@@ -796,12 +801,16 @@ class TransactionModule:
                     #print(file)
                     
                     res = {"filename": file.filename, "destination": destination}
+                    '''
                     print(res)
+                    '''
                     
                     if step.get('data_to'):
                         gv.data[step.get('data_to')] = res
+                        '''
                         print(step.get('data_to'))
                         print(gv.data[step.get('data_to')])
+                        '''
                         
                     return res
         
@@ -877,7 +886,8 @@ class TransactionModule:
             else:
                 column = table.c[f["field"]]
                 value = convert_value(column.type, f["value"])
-                filters.append(self.handle_operator(column, f["operator"], value))
+                if value:
+                    filters.append(self.handle_operator(column, f["operator"], value))
         return filters
 
     def build_query(self, step: Dict[str, Any], table: Table) -> Any:
@@ -941,7 +951,7 @@ class TransactionModule:
 
             # 处理 JOIN
             join = step.get("join")
-            print(join)
+            #print(join)
             if join:
                 logger.info("\nProcessing JOINs:")
                 for j in join:
@@ -1132,8 +1142,9 @@ class TransactionModule:
         递归地遍历 filter_values，替换 {{ status }} 等占位符。
         如果参数未赋值，则忽略该条件。
         """
+        '''
         print('replace_dynamic_values')
-        
+        '''
         # 如果是一个条件字典
         if isinstance(condition, dict):
             # 处理嵌套的 conditions 列表
@@ -1157,8 +1168,7 @@ class TransactionModule:
                     else:
                         return None  # 忽略该条件
         elif isinstance(condition, str):
-            print('77777777777')
-            print(condition)
+            #print(condition)
             param_name = re.findall(r"\{\{\s*(\w+)\s*\}\}", condition)
             if param_name:
                 # 获取参数值
@@ -1202,8 +1212,6 @@ class TransactionModule:
                     step=None
                 )
                 
-            print("bbb")
-            
             #print(transaction_data)
 
             transaction = Transaction(**transaction_data)
@@ -1218,7 +1226,7 @@ class TransactionModule:
                         # 替换参数和处理上传文件
                         if 'values' in step:
                             for key, value in step['values'].items():
-                                print(step['values'][key])
+                                #print(step['values'][key])
                                 step['values'][key] = None
                                 if 'data_from' in value:
                                     s_data_from = value['data_from']
@@ -1240,7 +1248,7 @@ class TransactionModule:
                                                 step['values'][key] = params.get(param_name, None)
                                     else:
                                         pass
-                                print(step['values'][key])
+                                #print(step['values'][key])
                         '''     
                         if 'filter_values' in step:
                             print(step['filter_values'])
@@ -1278,9 +1286,19 @@ class TransactionModule:
                         
                         if step['action'] == 'execute':
                             step['sql'] = self.replace_dynamic_values(step['sql'], params)
-                            print(step['sql'])
+                            #print(step['sql'])
                             
                     result = self.execute_step(step)
+                    
+                    if step["action"] == 'get':
+                        result = [dict(row) for row in result]
+                        
+                        #print('==========data_to==========')
+                        if step.get('data_to'):
+                            gv.data[step.get('data_to')] = result
+                            #print(gv.data[step.get('data_to')])
+                        #print('==========data_to==========')
+ 
                     # logger.info(f"Step execution result: {result}")
             
                 if self.db:
@@ -1302,6 +1320,7 @@ class TransactionModule:
                 f"Step details: {te.step}\n"
                 f"Error location:\n{self.format_error_location(te.traceback)}"
             )
+            print(error_msg)
             logger.error(error_msg)
             raise
             

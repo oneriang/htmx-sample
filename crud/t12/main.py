@@ -1,4 +1,5 @@
 import os
+import re
 import uvicorn
 import json
 
@@ -296,10 +297,104 @@ def generate_html(component: Dict[str, Any]) -> str:
         
         if 'cols' in component:
             for key in component['cols']:
-                if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
-                    # component['cols'][key] = gv.posts_config['cols'][key]
-                    component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
-            
+                if component['id'] == 'form_comment':
+                    
+                    '''
+                    value = component['cols'][key]
+                    k = value.split('.')
+                    
+                    
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                    print(k)
+                    #print(gv.data[k[0]])
+                    print(gv.data[k[0]][k[1]])
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                    '''
+                    
+                    if 'value' in component['cols'][key]:
+                        value = component['cols'][key]['value']
+                        component['cols'][key]['value'] = None
+                        print(value)
+                        k = value.split('.')
+                        if len(k) == 2:
+                            if k[0] in gv.data:
+                                if len(gv.data[k[0]]) > 0:
+                                    if k[1] in gv.data[k[0]][0]:
+                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                    
+                    
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                    print(component['cols'])
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                   
+                    if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                            # component['cols'][key] = gv.posts_config['cols'][key]
+                            component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                    print(component['cols'])
+                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                
+                elif component['id'] == 'form_categorie':
+                    
+                    if 'value' in component['cols'][key]:
+                        value = component['cols'][key]['value']
+                        component['cols'][key]['value'] = None
+                        k = value.split('.')
+                        if len(k) == 2:
+                            if k[0] in gv.data:
+                                if len(gv.data[k[0]]) > 0:
+                                    if k[1] in gv.data[k[0]][0]:
+                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                   
+                    if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
+                            component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
+
+                elif component['id'] == 'form_tag':
+                    
+                    if 'value' in component['cols'][key]:
+                        value = component['cols'][key]['value']
+                        component['cols'][key]['value'] = None
+                        k = value.split('.')
+                        if len(k) == 2:
+                            if k[0] in gv.data:
+                                if len(gv.data[k[0]]) > 0:
+                                    if k[1] in gv.data[k[0]][0]:
+                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                   
+                    if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
+                            component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
+
+                elif component['id'] == 'form_user':
+                    
+                    if 'value' in component['cols'][key]:
+                        value = component['cols'][key]['value']
+                        component['cols'][key]['value'] = None
+                        k = value.split('.')
+                        if len(k) == 2:
+                            if k[0] in gv.data:
+                                if len(gv.data[k[0]]) > 0:
+                                    if k[1] in gv.data[k[0]][0]:
+                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                   
+                    if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
+                            component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
+                   
+                else:
+                    if 'data_from' in component:
+                        if component['data_from'] == 'comments':
+                            
+                            print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                            print(gv.comments_config)
+                            print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                            
+                            if  gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                                # component['cols'][key] = gv.comments_config['cols'][key]
+                                component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+                    else:
+                        if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
+                            # component['cols'][key] = gv.posts_config['cols'][key]
+                            component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+                
         template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
         '''
         print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
@@ -314,7 +409,22 @@ def generate_html(component: Dict[str, Any]) -> str:
                 rendered_children = []
                 for child in component.get('children', []):
                     child = resolve_component(child)
-                    child['data'] = component.get('data', {})
+                    #if 'data_from' in child and child['data_from'] in component.get('data', {}):
+                    if False:
+                        child['data'] = component.get('data', {})[child['data_from']]
+                    
+                    child['data'] = []
+                    if 'data_from' in child:
+                        if child['data_from'] in gv.data:
+                            child['data'] = gv.data.get(child['data_from'], [])
+                        
+                        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                        print(child['data'])
+                        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                        
+                    else:
+                        child['data'] = component.get('data', {})
+                        
                     rendered_children.append(generate_html(child))
             else:
                 for key, value in component['children'].items():
@@ -337,7 +447,8 @@ def generate_html(component: Dict[str, Any]) -> str:
             min=min,
             site_name='7777',
             format_attr=format_attr,
-            format_children=format_children
+            format_children=format_children,
+            breadcrumb_filter=breadcrumb_filter
         )
 
         '''
@@ -356,6 +467,42 @@ def format_attr(attributes):
   if attributes:
     for attr, value in attributes.items():
         #if attr not in ['class']:
+        
+        if isinstance(value, str):
+            #matches = re.findall(r'\{\{(.*?)\}\}', value)
+            matches = re.findall(r'\{\{.*?\}\}', value)
+
+            # 去除多余的空格
+            matches = [match.strip() for match in matches]
+            
+            
+            
+            if matches:
+                param_name = matches[0]
+                
+                '''
+                print('$$$$$$$$$$$$')
+                print(param_name)
+                print('$$$$$$$$$$$$')
+                '''
+                
+                k = param_name.replace('{{','').replace('}}','').strip().split('.')
+                if len(k) == 2:
+                    if k[0] in gv.data:
+                        if len(gv.data[k[0]]) > 0:
+                            if k[1] in gv.data[k[0]][0]:
+                                '''
+                                print('$$$$$$$$$$$$')
+                                print(gv.data[k[0]][0][k[1]])
+                                '''
+                                value = value.replace(param_name, str(gv.data[k[0]][0][k[1]]))
+                                '''
+                                print(value)
+                                print('$$$$$$$$$$$$')
+                                '''
+                                #gv.data[k[0]][0][k[1]]
+
+    
         s+=f' {attr}="{value}" '
   return s
   
@@ -366,7 +513,16 @@ def format_children(children):
       # print((child)
       s += child
   return s
-  
+
+
+def breadcrumb_filter(path: str) -> str:
+    """
+    Converts a path like '/Home/Documents/Add' into breadcrumb HTML.
+    """
+    parts = path.strip('/').split('/')
+    return ''.join(f'<li><a href="/{part}">{part}</a></li>' for part in parts)
+
+
 # 辅助函数：解析组件引用
 def resolve_component(comp):
     if isinstance(comp, dict) and '$ref' in comp:
@@ -754,15 +910,6 @@ gv.tables = get_tables()
 
 generate_all_configs(engine)
 
-'''
-# 通用处理方法
-@app.api_route("/{any_path:path}")
-async def universal_handler(any_path: str):
-    return {"path": any_path, "message": "Handled by the universal route"}
-    #访问任何路径（例如 /route1, /route2/subpath, /other/123），都会由 universal_handler 处理。
-'''
-
-
 # 定义多个逻辑方法
 def get_method_one(request: Request):
     return {"method": "method_one"}
@@ -775,23 +922,62 @@ class Logic:
     def method_three(data):
         return {"method": "method_three", "data": data}
 
+'''
+@app.api_route("/{any_path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"], response_class=HTMLResponse)
+async def universal_handler(any_path: str, request: Request):
+'''
+
 @app.api_route("/{any_path:path}", response_class=HTMLResponse)
 async def universal_handler(any_path: str, request: Request):
+
+    # # 获取 HTTP 方法
+    # http_method = request.method
+
+    # # 判断请求方法
+    # if http_method == "GET":
+    #     pass
+    #     #return f"Received a GET request at path: {any_path}"
+    # #elif http_method == "POST":
+    # #    pass
+    # #    #eturn f"Received a POST request at path: {any_path}"
+    # elif http_method == "PUT":
+    #     return f"Received a PUT request at path: {any_path}"
+    # elif http_method == "DELETE":
+    #     return await delete_blog_post(request)
+    #     #return f"Received a DELETE request at path: {any_path}"
+    # elif http_method == "PATCH":
+    #     return f"Received a PATCH request at path: {any_path}"
+    # else:
+    #     return f"Received an unknown method ({http_method}) at path: {any_path}"
+    
     print(request.url.path)
     full_path = request.url.path
     print(full_path)
     path_parts = full_path.strip("/").split("/")  # 分解路径为列表
-    print(path_parts)
-    print(len(path_parts))
-    #return 'ok'
+    
     if request.url.path == '/':
         return await home(request)
     
+    if request.url.path == '/api/blog/post/comments':
+        return await get_blog_post_comments(request)
+    
+    if request.url.path == '/api/blog/categories':
+        return await get_blog_categories(request)
+    
+    if request.url.path == '/api/blog/tags':
+        return await get_blog_tags(request)
+
+    if request.url.path == '/api/blog/users':
+        return await get_blog_users(request)
+
     if request.url.path == '/component':
         return await rendered_component(request)
    
     if request.url.path == '/edit':
         return await edit_form(request)
+
+  #if request.url.path == '/blog/post/comment':
+  #      return await post_blog_post_comment(request)
 
     if len(path_parts) > 1 and path_parts[0] == 'api':
         if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
@@ -799,10 +985,17 @@ async def universal_handler(any_path: str, request: Request):
         elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
             return await get_post(request)
   
-    if len(path_parts) == 1 and path_parts[0] == 'blog':
-        return await get_blog(request)
+    if len(path_parts) == 1:
+        if path_parts[0] == 'blog':
+            return await get_blog(request)
+        elif path_parts[0] == 'settings':
+            return await get_settings(request)
     elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'posts':
             return await get_blog(request)
+    elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'settings':
+            return await get_settings(request)
+    elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'about':
+            return await get_about(request)
     # return {
     #     "full_path": full_path,  # 完整路径
     #     "extracted_path": any_path,  # 动态路径参数
@@ -843,7 +1036,7 @@ async def universal_handler(api: str, section: str, method: str, request: Reques
 
 
 # 主渲染函数保持不变
-#@app.get("/", response_class=HTMLResponse)
+# @app.get("/", response_class=HTMLResponse)
 # async def home(request: Request, current_user: dict = Depends(get_current_user)):
 #     logger.debug(f"Home page requested. Current user: {current_user}")
     
@@ -1875,6 +2068,18 @@ async def get_blog(request: Request):
       
     page_config = load_page_config('blog_config.yaml')
     
+    comments_config = get_table_config('comments')
+    gv.comments_config = comments_config
+    
+    categories_config = get_table_config('categories')
+    gv.categories_config = categories_config
+    
+    tags_config = get_table_config('tags')
+    gv.tags_config = tags_config
+
+    users_config = get_table_config('users')
+    gv.users_config = users_config
+   
     hx_get = '/blog' + '/posts'
     hx_get_params = []
     
@@ -1910,11 +2115,48 @@ async def get_blog(request: Request):
 
     return h
 
+async def get_settings(request: Request):
+    
+    gv.request = request
+    
+    page_config = load_page_config('settins_config.yaml')
+
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    h = template.render(
+        page_title=page_config['title'],
+        components=rendered_components,
+        min=min
+    )
+
+    return h
+
+async def get_about(request: Request):
+    
+    gv.request = request
+    
+    page_config = load_page_config('about_config.yaml')
+
+    rendered_components = [generate_html(component) for component in page_config['components']]
+
+    template = Template(gv.BASE_HTML)
+    h = template.render(
+        page_title=page_config['title'],
+        components=rendered_components,
+        min=min
+    )
+
+    return h
+
 # @app.get("/blog/posts", response_class=HTMLResponse)
 # async def get_posts(request: Request):
 async def get_posts(request: Request):
     print('get_posts')
-
+    print(request.url)
+    path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
+    print(path_parts)
+ 
     if "HX-Request" in request.headers:
         ## print((request.headers)
         pass
@@ -1924,19 +2166,21 @@ async def get_posts(request: Request):
     search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
     page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
     page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+    post_id = int(query_params['post_id']) if 'post_id' in query_params else None
 
     result = TM.execute_transactions(
                 transaction_name = 'get_posts_list',
                 params={
                     'search_term': '%' + search_term + '%',
                     'limit': page_size,
-                    'offset': (page_number - 1) * page_size
+                    'offset': (page_number - 1) * page_size,
+                    'post_id': post_id
                 },
                 config_file="cms.yaml"
             )
-            
-    result = [dict(row) for row in result]  # 转换为字典列表
-
+ 
+    result = gv.data['posts']
+    
     no_next = False
     if len(result) < page_size:
         no_next = True
@@ -1952,21 +2196,25 @@ async def get_posts(request: Request):
         for d in result:
           d['attributes'] = {
             'del': {
-              'hx-delete': f"/blog/post?post_id={d['id']}&post" 
+              'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post" 
             },
             'edit': {
-              'hx-post': f"/blog/post/form?post_id={d['id']}&post",
+              'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
               'hx-target': '#form_container'
             },
             'go': {
-              'hx-get': f"/api/blog/post?post_id={d['id']}&post",
+              'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
               'hx-target': '#blogs'
-            }
+            },
+            'back': {
+                'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
+            },
+            'is_single': True if post_id is not None else False
           }
           
-        gv.component_dict['posts']['data'] = result
+        gv.component_dict['posts']['data'] = gv.data #result
 
-        hx_url = f"/blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
+        hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
         hx_get = '/api' + hx_url + '&api=posts'
 
         prev_attr = {
@@ -1979,7 +2227,7 @@ async def get_posts(request: Request):
         if no_prev:
             prev_attr['disabled'] = True
 
-        hx_url = f"/blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
+        hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
         hx_get = '/api' + hx_url + '&api=posts'
 
         next_attr = {
@@ -1999,6 +2247,7 @@ async def get_posts(request: Request):
             'next': {
                 'attributes': next_attr
             },
+            'is_single': True if post_id is not None else False
         }
         ## print((gv.component_dict['posts'])
         h = generate_html(gv.component_dict['posts'])
@@ -2109,19 +2358,12 @@ async def get_post_form(request: Request):
   
       return HTMLResponse(content=h)
 
-      
+
 @app.post("/blog/post", response_class=HTMLResponse)
 async def post_blog_post(request: Request):
-    # print(('post_blog_post')
     form_data = await request.form()
-    ## print((form_data)
-    ## print((form_data['featured_image'])
     file = form_data.get('featured_image')
-    
-    print('==========file==========')
-    print(file)
-    print('==========file==========')
-    
+
     result = TM.execute_transactions(
                 transaction_name = 'create_post',
                 params={
@@ -2150,10 +2392,6 @@ async def put_blog_post(request: Request):
     # print((form_data)
     file = form_data.get('featured_image')
     
-    print('==========file==========')
-    print(file)
-    print('==========file==========')
-    
     result = TM.execute_transactions(
                 transaction_name = 'update_post',
                 params={
@@ -2174,9 +2412,9 @@ async def put_blog_post(request: Request):
     headers = {"HX-Trigger": "updatePost"}
     return HTMLResponse(content='ok', headers=headers)
 
-@app.delete("/blog/post", response_class=HTMLResponse)
+#@app.delete("/blog/posts", response_class=HTMLResponse)
 async def delete_blog_post(request: Request):
-    # print(('blog_post_delete')
+    print('blog_post_delete')
     query_params = dict(request.query_params)
 
     result = TM.execute_transactions(
@@ -2190,14 +2428,215 @@ async def delete_blog_post(request: Request):
     headers = {"HX-Trigger": "deletePost"}
     return HTMLResponse(content='ok', headers=headers)
 
+
+@app.post("/blog/post/comment", response_class=HTMLResponse)
+async def post_blog_post_comment(request: Request):
+    
+    form_data = await request.form()
+    
+    result = TM.execute_transactions(
+                transaction_name = 'add_comment',
+                params={
+                  'post_id': form_data['post_id'],
+                  # 'parent_id': form_data['parent_id'],
+                  # 'user_id': form_data['user_id'],
+                  'content': form_data['content']
+                },
+                config_file="cms.yaml"
+            )
+            
+    headers = {"HX-Trigger": "newPostComment"}
+    return HTMLResponse(content='ok', headers=headers)
+
+@app.get("/blog/post/comments", response_class=HTMLResponse)
+async def get_blog_post_comments(request: Request):
+    
+    gv.request = request
+ 
+    if "HX-Request" in request.headers:
+        pass
+      
+    query_params = dict(request.query_params)
+
+    search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+    post_id = int(query_params['post_id']) if 'post_id' in query_params else None
+
+    result = TM.execute_transactions(
+                transaction_name = 'get_post_comments',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size,
+                    'post_id': post_id
+                },
+                config_file="cms.yaml"
+            )
+    
+    page_config = load_page_config('blog_config.yaml')
+
+    gv.component_dict['comment']['data'] = gv.data
+    
+    h = generate_html(gv.component_dict['comment'])
+    
+    return HTMLResponse(content=h)
+    
+@app.get("/blog/categories", response_class=HTMLResponse)
+async def get_blog_categories(request: Request):
+    
+    gv.request = request
+ 
+    if "HX-Request" in request.headers:
+        pass
+      
+    query_params = dict(request.query_params)
+
+    search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+
+    result = TM.execute_transactions(
+                transaction_name = 'get_categories',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size
+                },
+                config_file="cms.yaml"
+            )
+    
+    page_config = load_page_config('settins_config.yaml')
+
+    gv.component_dict['categorie']['data'] = gv.data
+
+    h = generate_html(gv.component_dict['categorie'])
+    
+    return HTMLResponse(content=h)
+    
+@app.post("/blog/categorie", response_class=HTMLResponse)
+async def post_blog_categorie(request: Request):
+    form_data = await request.form()
+    
+    result = TM.execute_transactions(
+                transaction_name = 'add_categorie',
+                params={
+                  'name': form_data['name'],
+                  'slug': form_data['slug'],
+                  'description': form_data['description']
+                },
+                config_file="cms.yaml"
+            )
+            
+    headers = {"HX-Trigger": "newBlogCategorie"}
+    return HTMLResponse(content='ok', headers=headers)
+
+@app.get("/blog/tags", response_class=HTMLResponse)
+async def get_blog_tags(request: Request):
+    
+    gv.request = request
+ 
+    if "HX-Request" in request.headers:
+        pass
+      
+    query_params = dict(request.query_params)
+
+    search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+
+    result = TM.execute_transactions(
+                transaction_name = 'get_tags',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size
+                },
+                config_file="cms.yaml"
+            )
+    
+    page_config = load_page_config('settins_config.yaml')
+
+    gv.component_dict['tag']['data'] = gv.data
+    
+    h = generate_html(gv.component_dict['tag'])
+    
+    return HTMLResponse(content=h)
+    
+@app.post("/blog/tag", response_class=HTMLResponse)
+async def post_blog_tag(request: Request):
+    form_data = await request.form()
+    
+    result = TM.execute_transactions(
+                transaction_name = 'add_tag',
+                params={
+                  'name': form_data['name'],
+                  'slug': form_data['slug'],
+                  'description': form_data['description']
+                },
+                config_file="cms.yaml"
+            )
+            
+    headers = {"HX-Trigger": "newBlogTag"}
+    return HTMLResponse(content='ok', headers=headers)
+
+@app.get("/blog/users", response_class=HTMLResponse)
+async def get_blog_users(request: Request):
+    
+    gv.request = request
+ 
+    if "HX-Request" in request.headers:
+        pass
+      
+    query_params = dict(request.query_params)
+
+    search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+
+    result = TM.execute_transactions(
+                transaction_name = 'get_users',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size
+                },
+                config_file="cms.yaml"
+            )
+    
+    page_config = load_page_config('settins_config.yaml')
+
+    gv.component_dict['user']['data'] = gv.data
+    
+    h = generate_html(gv.component_dict['user'])
+    
+    return HTMLResponse(content=h)
+    
+@app.post("/blog/user", response_class=HTMLResponse)
+async def post_blog_user(request: Request):
+    form_data = await request.form()
+    result = TM.execute_transactions(
+                transaction_name = 'add_user',
+                params={
+                  'username': form_data['username'],
+                  'display_name': form_data['display_name'],
+                  'email': form_data['email'],
+                  'password_hash': form_data['password_hash']
+                },
+                config_file="cms.yaml"
+            )
+            
+    headers = {"HX-Trigger": "newBlogUser"}
+    return HTMLResponse(content='ok', headers=headers)
+
+
 @app.get("/test", response_class=HTMLResponse)
 async def blog(request: Request):
     
     gv.request = request
 
     query_params = dict(request.query_params)
-    ## print((query_params)
-
+    
     load_data()
 
     page_config = load_page_config('test_config.yaml')
@@ -2213,7 +2652,7 @@ async def blog(request: Request):
     
     return h;
     
-    
+
 @app.get("/api/data", response_class=HTMLResponse)
 async def api_data(request: Request):
     

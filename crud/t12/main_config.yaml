@@ -11,8 +11,8 @@ component_definitions:
         - $ref: button_pms
         - $ref: button_cms
         - $ref: table_list
-      main_content:
-        - $ref: main_content
+      content_main:
+        - $ref: content_main
       right_sidebar:
         - $ref: button_logout
         - type: alert
@@ -81,18 +81,20 @@ component_definitions:
       # - $ref: main_data_table
       - $ref: main_data_list
 
-  main_content:
-    id: main_content
-    type: main_content
+  content_main:
+    id: content_main
+    type: content_main
     children:
       - type: link
         attributes: 
           href: /blog
-          text: Blog
+        config:
+          label: Blog
       - type: link
         attributes: 
           href: /test
-          text: Test
+        config:
+          label: Test
       - $ref: main_data_table
     #   - type: table
     #   - type: hero

@@ -1,0 +1,39 @@
+title: Blog
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    attributes:
+      title: Blog
+      url: '/blog'
+    children:
+      content_main:
+        - $ref: content_about
+      left_sidebar:
+        - $ref: button
+        - type: link
+          attributes:
+            href: /blog
+          config:
+            label: Blog
+        - type: link
+          attributes:
+            href: /settings
+          config:
+            label: Settings
+      right_sidebar:
+        - type: alert
+          attributes:
+            class: alert alert-info
+            message: This is an informational message.
+
+  content_about:
+    id: content_about
+    type: container
+    attributes:
+      id: content_about
+    children:
+      - type: alert
+
+components:
+  - $ref: main_layout

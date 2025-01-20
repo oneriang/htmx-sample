@@ -7,19 +7,54 @@ component_definitions:
       title: Blog
       url: '/blog'
     children:
-      main_content:
-        - $ref: main_content
+      content_main:
+        # - type: tabs
+        #   children:
+        #     - type: tab
+        #       attributes:
+        #         aria-label: "Home"
+        #         checked: "checked"
+        #       children: 
+        #         - $ref: content_main
+        #     - type: tab
+        #       attributes:
+        #         aria-label: "Settings"
+        #       children: 
+        #         - $ref: content_settings
+        #     - type: tab
+        #       attributes:
+        #         aria-label: "About"
+        #       children:
+        #         - $ref: content_about
+        - $ref: content_main
+      left_sidebar:
+        - $ref: button
+        - type: link
+          attributes:
+            href: /blog
+          config:
+            label: Blog
+        - type: link
+          attributes:
+            href: /blog/settings
+          config:
+            label: Settings
+        - type: link
+          attributes:
+            href: /blog/about
+          config:
+            label: About
       right_sidebar:
         - type: alert
           attributes:
             class: alert alert-info
             message: This is an informational message.
       
-  main_content:
-    id: main_content
-    type: main_content
+  content_main:
+    id: content_main
+    type: content_main
     attributes:
-      id: main_content
+      id: content_main
     children:
       - $ref: form_search
       - type: buttons
@@ -38,7 +73,36 @@ component_definitions:
       #     label: File Manager
       #- $ref: file_manager
       - $ref: blogs
+      
+  content_settings:
+    id: content_settings
+    type: container
+    attributes:
+      id: content_settings
+    children:
+      - type: checkbox
+      - type: checkbox
+      - type: checkbox
+      - type: checkbox
+      - type: checkbox
 
+  content_about:
+    id: content_about
+    type: container
+    attributes:
+      id: content_about
+    children:
+      - type: alert
+
+  button:
+    id: button
+    type: button
+    attributes: 
+      id: button
+      text: ok
+      hx_get: /protected
+      onclick: modal_message.showModal()
+ 
   blogs:
     id: blogs
     type: blogs
@@ -57,6 +121,9 @@ component_definitions:
     type: post
     attributes:
       id: post
+    children:
+      - $ref: form_comment
+      - $ref: comments
     items:
       - key: id
       - key: title
@@ -69,12 +136,32 @@ component_definitions:
       - key: author_name
       - key: views_count
 
+  comments:
+    id: comments
+    type: comments
+    attributes:
+      id: comments
+      hx-get: '/api/blog/post/comments?post_id={{posts.id}}'
+      hx-swap: innerHTML
+      hx-trigger: newPostComment from:body
+    children:
+      - $ref: comment
+      
+  comment:
+    id: comment
+    type: comment
+    attributes:
+      id: comment
+    items:
+      - key: id
+      - key: content
+
   form_search:
     id: form_search
     type: form_search
     attributes:
       title: Search
-      hx-get: "/blog?api=posts"
+      hx-get: "/api/blog/posts?api=posts"
       hx-target: "#blogs"
    
   form_create:
@@ -169,6 +256,30 @@ component_definitions:
       mode: edit
       hx-put: "/blog/post"
       hx-target: "#target"
+
+  form_comment:
+    id: form_comment
+    type: form_base_type_1
+    cols:
+      post_id: 
+        value: posts.id
+        is_hidden: true
+      content: 
+        value: comments.content
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      id: form_comment
+      title: Edit
+      mode: edit
+      hx-post: "/blog/post/comment"
+      hx-target: "#target"
+
 
   file_manager:
     id: file_manager

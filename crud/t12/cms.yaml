@@ -432,6 +432,10 @@ transactions:
   # 4. 获取文章列表
   - name: get_posts_list
     steps:
+    # 更新浏览次数
+      - action: execute
+        sql: "UPDATE posts SET views_count = COALESCE(views_count, 0) + 1 WHERE id = {{ post_id }}"
+        
       - action: get
         table: posts
         fields:
@@ -445,25 +449,25 @@ transactions:
           - field: published_at
           - field: views_count
           - field: comments_enabled
-          # - table: users
-          #   field: display_name
-          #   label: author_name
-          # - table: categories
-          #   field: name
-          #   label: category_name
-        # join:
-        #   - left_table: posts
-        #     right_table: users
-        #     type: left
-        #     on:
-        #       - left_column: author_id
-        #         right_column: id
-        #   - left_table: posts
-        #     right_table: categories
-        #     type: left
-        #     on:
-        #       - left_column: category_id
-        #         right_column: id
+          - table: users
+            field: display_name
+            label: author_name
+          - table: categories
+            field: name
+            label: category_name
+        join:
+          - left_table: posts
+            right_table: users
+            type: left
+            'on':
+              - left_column: author_id
+                right_column: id
+          - left_table: posts
+            right_table: categories
+            type: left
+            'on':
+              - left_column: category_id
+                right_column: id
         # filter_values:
         #   - field: status
         #     operator: eq
@@ -475,8 +479,8 @@ transactions:
                 operator: ne
                 value: "{{ status }}"
               - field: id
-                operator: gt
-                value: 0
+                operator: eq
+                value: "{{ post_id }}"
               - type: or
                 conditions:
                   - field: id
@@ -498,6 +502,26 @@ transactions:
         offset: "{{ offset }}"
         # limit: 5
         # offset: 5
+        data_to: posts
+      - action: get
+        table: comments
+        fields:
+          - field: id
+          - field: post_id
+          - field: user_id
+          - field: parent_id
+          - field: content
+          - field: status
+          - field: created_at
+          - field: updated_at
+        filter_values:
+          - field: post_id
+            operator: eq
+            value: "{{ post_id }}"
+        order_by:
+          - field: id
+            direction: desc
+        data_to: comments
         
   # 5. 获取文章详情
   - name: get_post_detail
@@ -622,13 +646,114 @@ transactions:
         table: comments
         values:
           post_id: "{{ post_id }}"
-          user_id: "{{ current_user_id }}"
+          user_id: "{{ user_id }}"
           parent_id: "{{ parent_id }}"
           content: "{{ content }}"
           status: "{{ status }}"
           created_at: "{{ current_timestamp }}"
           updated_at: "{{ current_timestamp }}"
 
+
+  # 4. 获取评论列表
+  - name: get_post_comments
+    steps:
+      - action: get
+        table: comments
+        fields:
+          - field: id
+          - field: post_id
+          - field: user_id
+          - field: parent_id
+          - field: content
+          - field: status
+          - field: created_at
+          - field: updated_at
+        filter_values:
+          - field: post_id
+            operator: eq
+            value: "{{ post_id }}"
+        order_by:
+          - field: id
+            direction: desc
+        data_to: comments
+  
+  - name: add_categorie
+    steps:
+      - action: insert
+        table: categories
+        values:
+          name: "{{ name }}"
+          slug: "{{ slug }}"
+          description: "{{ description }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+
+  - name: get_categories
+    steps:
+      - action: get
+        table: categories
+        fields:
+          - field: id
+          - field: name
+          - field: slug
+          - field: description
+          - field: created_at
+        data_to: categories
+        
+  - name: add_tag
+    steps:
+      - action: insert
+        table: tags
+        values:
+          name: "{{ name }}"
+          slug: "{{ slug }}"
+          description: "{{ description }}"
+          created_at: "{{ current_timestamp }}"
+
+  - name: get_tags
+    steps:
+      - action: get
+        table: tags
+        fields:
+          - field: id
+          - field: name
+          - field: slug
+          - field: description
+          - field: created_at
+        data_to: tags
+
+  - name: add_user
+    steps:
+      - action: insert
+        table: users
+        values:
+          username: "{{ username }}"
+          display_name: "{{ display_name }}"
+          email: "{{ email }}"
+          password_hash: "{{ password_hash }}"
+          created_at: "{{ current_timestamp }}"
+          updated_at: "{{ current_timestamp }}"
+
+  - name: get_users
+    steps:
+      - action: get
+        table: users
+        fields:
+          - field: id
+          - field: username
+          - field: email
+          - field: password_hash
+          - field: display_name
+          - field: avatar_url
+          - field: bio
+          - field: role
+          - field: status
+          - field: email_verified
+          - field: created_at
+          - field: updated_at
+          - field: last_login_at
+        data_to: users
+            
   # 7. 获取分类列表（带文章计数）
   - name: get_categories_with_count
     steps:

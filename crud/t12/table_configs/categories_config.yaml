@@ -54,5 +54,70 @@ columns:
   nullable: false
   primary_key: 0
   type: DATETIME
+cols:
+  id:
+    autoincrement: true
+    input_type: number
+    label: id
+    name: id
+    nullable: true
+    primary_key: 1
+    type: INTEGER
+  name:
+    input_type: text
+    label: name
+    name: name
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(50)
+  slug:
+    input_type: text
+    label: slug
+    name: slug
+    nullable: false
+    primary_key: 0
+    type: VARCHAR(50)
+  description:
+    input_type: text
+    label: description
+    name: description
+    nullable: true
+    primary_key: 0
+    type: TEXT
+  parent_id:
+    input_type: number
+    label: parent_id
+    name: parent_id
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  featured_image:
+    input_type: text
+    label: featured_image
+    name: featured_image
+    nullable: true
+    primary_key: 0
+    type: VARCHAR(255)
+  sort_order:
+    input_type: number
+    label: sort_order
+    name: sort_order
+    nullable: true
+    primary_key: 0
+    type: INTEGER
+  created_at:
+    input_type: date
+    label: created_at
+    name: created_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
+  updated_at:
+    input_type: date
+    label: updated_at
+    name: updated_at
+    nullable: false
+    primary_key: 0
+    type: DATETIME
 name: categories
 type: table

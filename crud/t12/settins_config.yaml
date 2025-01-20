@@ -1,0 +1,192 @@
+title: Settings
+component_definitions:
+  main_layout:
+    id: main_layout
+    type: layout
+    attributes:
+      title: Settings
+      url: '/blog/settings'
+    children:
+      content_main:
+        # - type: alert
+        # - type: checkbox
+        - $ref: form_categorie
+        - $ref: categories
+        - type: checkbox
+        - $ref: form_user
+        - $ref: users
+        - type: checkbox
+        - $ref: form_tag
+        - $ref: tags
+        # - $ref: content_main
+      left_sidebar:
+        - type: link
+          attributes:
+            href: /blog
+          config:
+            label: Blog
+        - type: link
+          attributes:
+            href: /blog/settings
+          config:
+            label: Settings
+        - type: link
+          attributes:
+            href: /blog/about
+          config:
+            label: About
+      right_sidebar:
+        - type: alert
+          attributes:
+            class: alert alert-info
+            message: This is an informational message.
+      
+#   content_main:
+#     id: content_main
+#     type: content_main
+#     attributes:
+#       id: content_main
+#     children:
+#       - type: alert
+
+  form_tag:
+    id: form_tag
+    type: form_base_type_1
+    cols:
+      name: 
+        value: tags.name
+      slug: 
+        value: tags.slug
+      description: 
+        value: tags.description
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      id: form_tag
+      title: Edit
+      mode: edit
+      hx-post: "/blog/tag"
+      hx-target: "#target"
+
+  tags:
+    id: tags
+    type: tags
+    attributes:
+      id: tags
+      hx-get: /api/blog/tags
+      hx-swap: innerHTML
+      hx-trigger: load, newBlogTag from:body
+    children:
+      - $ref: tag
+      
+  tag:
+    id: tag
+    type: tag
+    attributes:
+      id: tag
+    items:
+      - key: id
+      - key: name
+      - key: slug
+      - key: description
+
+  form_user:
+    id: form_user
+    type: form_base_type_1
+    cols:
+      username: 
+        value: users.username
+      display_name: 
+        value: users.display_name
+      password_hash:
+        value: users.password_hash
+      email:
+        value: users.email
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      id: form_user
+      title: Edit
+      mode: edit
+      hx-post: "/blog/user"
+      hx-target: "#target"
+
+  users:
+    id: users
+    type: users
+    attributes:
+      id: users
+      hx-get: /api/blog/users
+      hx-swap: innerHTML
+      hx-trigger: load delay:1ms, newBlogUser from:body
+    children:
+      - $ref: user
+      
+  user:
+    id: user
+    type: user
+    attributes:
+      id: user
+    items:
+      - key: id
+      - key: username
+      - key: password_hash
+
+  form_categorie:
+    id: form_categorie
+    type: form_base_type_1
+    cols:
+      name: 
+        value: categories.name
+      slug: 
+        value: categories.slug
+      description: 
+        value: categories.description
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      id: form_categorie
+      title: Edit
+      mode: edit
+      hx-post: "/blog/categorie"
+      hx-target: "#target"
+      
+  categories:
+    id: categories
+    type: categories
+    attributes:
+      id: categories
+      hx-get: /api/blog/categories
+      hx-swap: innerHTML
+      hx-trigger: load delay:1ms, newBlogCategorie from:body
+    children:
+      - $ref: categorie
+      
+  categorie:
+    id: categorie
+    type: categorie
+    attributes:
+      id: categorie
+    items:
+      - key: id
+      - key: name
+      - key: slug
+      - key: description
+         
+components:
+  - $ref: main_layout
