@@ -92,24 +92,9 @@ db = SessionLocal()
 
 TM = TransactionModule(engine = engine, db = db, metadata = metadata)
 
-# JWT 相关设置
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
 gv.BASE_HTML = None
 gv.HTML_TEMPLATES = None
 gv.YAML_CONFIG = None
-
-# 设置密码哈希
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 def load_data_from_html(filename: str) -> Optional[str]:
     try:
@@ -140,107 +125,6 @@ def load_data():
     gv.icons = gv.HTML_TEMPLATES.get('icons', {})
     
     gv.classes = gv.HTML_TEMPLATES.get('classes', {})
-
-def verify_password(plain_password, hashed_password):
-    # # print((plain_password)
-    # # print((hashed_password)
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    # # print((password)
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-#async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
-async def get_current_user(request: Request):
-
-    # # print(('get_current_user')
-
-    token = request.cookies.get("access_token")
-    # # print((token)
-    
-    if not token:
-        return None
-        
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    #except JWTError:
-    #    raise credentials_exception
-    except JWTError:
-        # 检查请求头，判断是否是 HTMX 请求
-        if "HX-Request" in request.headers:
-            # 如果是 HTMX 请求，返回 401 错误
-            raise credentials_exception
-        else:
-            # 如果不是 HTMX 请求，重定向到登录页面
-            return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
-
-    # db = SessionLocal()
-    try:
-        user = db.execute(select(metadata.tables['Users']).where(
-            metadata.tables['Users'].c.Username == username
-        )).first()
-        if user is None:
-            raise credentials_exception
-        return user
-    finally:
-        db.close()
-
-def decode_token(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return {"username": username, "role": payload.get("role")}
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-def login_required(func):
-    # # print(('login_required')
-    @wraps(func)
-    async def wrapper(request: Request, *args, **kwargs):
-        token = None
-        
-        # 首先检查 Authorization header
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            token = auth_header.split()[1]
-        
-        # 如果 header 中没有 token，则检查 cookie
-        if not token:
-            token = request.cookies.get('access_token')
-        
-        if not token:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-        
-        try:
-            user = decode_token(token)
-            # 将用户信息添加到请求中，以便在路由函数中使用
-            request.state.user = user
-        except HTTPException:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        return await func(request, *args, **kwargs)
-    return wrapper
-
 
 def get_configs():
     return get_table_config()
@@ -275,252 +159,6 @@ def get_tables():
             'is_view': True
         }
     return values
-
-# 修改渲染函数
-def generate_html(component: Dict[str, Any]) -> str:
-
-    try:
-        '''
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        print(component)
-        print(component.get('key', []))
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        '''
-        
-        if 'type' not in component:
-            component['type'] = 'div'
-
-        for key in ['config', 'data', 'value', 'files']:
-            if key in component and isinstance(component[key], str):
-                if component[key] in globals():
-                    component[key] = globals()[component[key]]()
-        
-        if 'cols' in component:
-            for key in component['cols']:
-                if component['id'] == 'form_comment':
-                    
-                    '''
-                    value = component['cols'][key]
-                    k = value.split('.')
-                    
-                    
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                    print(k)
-                    #print(gv.data[k[0]])
-                    print(gv.data[k[0]][k[1]])
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                    '''
-                    
-                    if 'value' in component['cols'][key]:
-                        value = component['cols'][key]['value']
-                        component['cols'][key]['value'] = None
-                        print(value)
-                        k = value.split('.')
-                        if len(k) == 2:
-                            if k[0] in gv.data:
-                                if len(gv.data[k[0]]) > 0:
-                                    if k[1] in gv.data[k[0]][0]:
-                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                    
-                    
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                    print(component['cols'])
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                   
-                    if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
-                            # component['cols'][key] = gv.posts_config['cols'][key]
-                            component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                    print(component['cols'])
-                    print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                
-                elif component['id'] == 'form_categorie':
-                    
-                    if 'value' in component['cols'][key]:
-                        value = component['cols'][key]['value']
-                        component['cols'][key]['value'] = None
-                        k = value.split('.')
-                        if len(k) == 2:
-                            if k[0] in gv.data:
-                                if len(gv.data[k[0]]) > 0:
-                                    if k[1] in gv.data[k[0]][0]:
-                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                   
-                    if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
-                            component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
-
-                elif component['id'] == 'form_tag':
-                    
-                    if 'value' in component['cols'][key]:
-                        value = component['cols'][key]['value']
-                        component['cols'][key]['value'] = None
-                        k = value.split('.')
-                        if len(k) == 2:
-                            if k[0] in gv.data:
-                                if len(gv.data[k[0]]) > 0:
-                                    if k[1] in gv.data[k[0]][0]:
-                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                   
-                    if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
-                            component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
-
-                elif component['id'] == 'form_user':
-                    
-                    if 'value' in component['cols'][key]:
-                        value = component['cols'][key]['value']
-                        component['cols'][key]['value'] = None
-                        k = value.split('.')
-                        if len(k) == 2:
-                            if k[0] in gv.data:
-                                if len(gv.data[k[0]]) > 0:
-                                    if k[1] in gv.data[k[0]][0]:
-                                        component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                   
-                    if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
-                            component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
-                   
-                else:
-                    if 'data_from' in component:
-                        if component['data_from'] == 'comments':
-                            
-                            print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                            print(gv.comments_config)
-                            print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                            
-                            if  gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
-                                # component['cols'][key] = gv.comments_config['cols'][key]
-                                component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
-                    else:
-                        if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
-                            # component['cols'][key] = gv.posts_config['cols'][key]
-                            component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
-                
-        template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
-        '''
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        print(template)
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        '''
-        
-        rendered_children = {}
-
-        if 'children' in component:
-            if isinstance(component['children'], list):
-                rendered_children = []
-                for child in component.get('children', []):
-                    child = resolve_component(child)
-                    #if 'data_from' in child and child['data_from'] in component.get('data', {}):
-                    if False:
-                        child['data'] = component.get('data', {})[child['data_from']]
-                    
-                    child['data'] = []
-                    if 'data_from' in child:
-                        if child['data_from'] in gv.data:
-                            child['data'] = gv.data.get(child['data_from'], [])
-                        
-                        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                        print(child['data'])
-                        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                        
-                    else:
-                        child['data'] = component.get('data', {})
-                        
-                    rendered_children.append(generate_html(child))
-            else:
-                for key, value in component['children'].items():
-                    if isinstance(key, str): 
-                        rendered_children[key] = [generate_html(resolve_component(child)) for child in value]
-
-        h = template.render(
-            attributes=component.get('attributes', {}),
-            config=component.get('config', {}),
-            data=component.get('data', {}),
-            value=component.get('value', []),
-            key=component.get('key', []),
-            content=component.get('content', ''),
-            files=component.get('files', []),
-            items=component.get('items', []),
-            cols=component.get('cols', {}),
-            children=rendered_children,
-            icons=gv.icons,
-            classes=gv.classes,
-            min=min,
-            site_name='7777',
-            format_attr=format_attr,
-            format_children=format_children,
-            breadcrumb_filter=breadcrumb_filter
-        )
-
-        '''
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        print(h)
-        print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-        '''
-
-        return h
-    except Exception as e:
-        print(e)
-        return None
-
-def format_attr(attributes):
-  s = ''
-  if attributes:
-    for attr, value in attributes.items():
-        #if attr not in ['class']:
-        
-        if isinstance(value, str):
-            #matches = re.findall(r'\{\{(.*?)\}\}', value)
-            matches = re.findall(r'\{\{.*?\}\}', value)
-
-            # 去除多余的空格
-            matches = [match.strip() for match in matches]
-            
-            
-            
-            if matches:
-                param_name = matches[0]
-                
-                '''
-                print('$$$$$$$$$$$$')
-                print(param_name)
-                print('$$$$$$$$$$$$')
-                '''
-                
-                k = param_name.replace('{{','').replace('}}','').strip().split('.')
-                if len(k) == 2:
-                    if k[0] in gv.data:
-                        if len(gv.data[k[0]]) > 0:
-                            if k[1] in gv.data[k[0]][0]:
-                                '''
-                                print('$$$$$$$$$$$$')
-                                print(gv.data[k[0]][0][k[1]])
-                                '''
-                                value = value.replace(param_name, str(gv.data[k[0]][0][k[1]]))
-                                '''
-                                print(value)
-                                print('$$$$$$$$$$$$')
-                                '''
-                                #gv.data[k[0]][0][k[1]]
-
-    
-        s+=f' {attr}="{value}" '
-  return s
-  
-def format_children(children):
-  s = ''
-  if children:
-    for child in children:
-      # print((child)
-      s += child
-  return s
-
-
-def breadcrumb_filter(path: str) -> str:
-    """
-    Converts a path like '/Home/Documents/Add' into breadcrumb HTML.
-    """
-    parts = path.strip('/').split('/')
-    return ''.join(f'<li><a href="/{part}">{part}</a></li>' for part in parts)
 
 
 # 辅助函数：解析组件引用
@@ -773,9 +411,6 @@ def get_table_data(
         sort_column: str | None = None,
         sort_direction: str = 'asc'
     ):
-    # # print(('get_table_data')
-    
-    # # print((table_name)
 
     if request is None:
         request = gv.request
@@ -786,10 +421,6 @@ def get_table_data(
         # 从请求中获取查询参数
         search_params = dict(request.query_params)
         
-        # # print(('*****************')
-        # # print((search_params)
-        # # print(('*****************')
-
         # Process pagination parameters
         # 处理分页参数
         if 'page' in search_params:
@@ -819,8 +450,6 @@ def get_table_data(
         # 从搜索参数中移除已知参数
         for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
             search_params.pop(param, None)
-
-    # # print((table_name)
 
     # Set default table if none specified
     # 如果未指定表，设置默认表
@@ -881,11 +510,6 @@ def get_table_data(
     # 计算总页数
     total_pages = (total_items + page_size - 1) // page_size
     
-    # # # print(('***********************')
-    # # # print(('sort_direction')
-    # # # print((sort_direction)
-    # # # print(('***********************')
-    
     # Return the complete result set
     # 返回完整的结果集
     return {
@@ -910,22 +534,6 @@ gv.tables = get_tables()
 
 generate_all_configs(engine)
 
-# 定义多个逻辑方法
-def get_method_one(request: Request):
-    return {"method": "method_one"}
-
-def get_method_two(data):
-    return {"method": "method_two", "data": data}
-
-class Logic:
-    @staticmethod
-    def method_three(data):
-        return {"method": "method_three", "data": data}
-
-'''
-@app.api_route("/{any_path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"], response_class=HTMLResponse)
-async def universal_handler(any_path: str, request: Request):
-'''
 
 @app.api_route("/{any_path:path}", response_class=HTMLResponse)
 async def universal_handler(any_path: str, request: Request):
@@ -950,13 +558,12 @@ async def universal_handler(any_path: str, request: Request):
     # else:
     #     return f"Received an unknown method ({http_method}) at path: {any_path}"
     
-    print(request.url.path)
     full_path = request.url.path
-    print(full_path)
+
     path_parts = full_path.strip("/").split("/")  # 分解路径为列表
     
     if request.url.path == '/':
-        return await home(request)
+        return await CustomRenderer.home(request)
     
     if request.url.path == '/api/blog/post/comments':
         return await get_blog_post_comments(request)
@@ -981,246 +588,23 @@ async def universal_handler(any_path: str, request: Request):
 
     if len(path_parts) > 1 and path_parts[0] == 'api':
         if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
-            return await get_posts(request)
+            return await CustomRenderer.get_posts(request)
         elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
-            return await get_post(request)
+            return await CustomRenderer.get_post(request)
   
     if len(path_parts) == 1:
         if path_parts[0] == 'blog':
-            return await get_blog(request)
+            return await CustomRenderer.get_blog(request)
         elif path_parts[0] == 'settings':
             return await get_settings(request)
     elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'posts':
-            return await get_blog(request)
+            return await CustomRenderer.get_blog(request)
     elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'settings':
             return await get_settings(request)
     elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'about':
             return await get_about(request)
-    # return {
-    #     "full_path": full_path,  # 完整路径
-    #     "extracted_path": any_path,  # 动态路径参数
-    #     "path_parts": full_path.strip("/").split("/")  # 分解路径为列表
-    # }
+
     return full_path
-    # return {"path": any_path, "message": "Handled by the universal route"}
-
-'''
-@app.api_route("/{api}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
-#@app.api_route("/{section}/{method:path}", methods=["GET", "POST"])
-async def universal_handler(api: str, section: str, method: str, request: Request):
-    # print(('universal_handler')
-    # print((api)
-    # print((section)
-    # print((method)
-    # 动态获取方法
-    try:
-        if request.method == 'GET':
-            method = 'get' + '_' + method
-
-        handler = globals().get(method) or getattr(Logic, method)
-        
-        if not callable(handler):
-            raise AttributeError
-        
-        # # 请求体解析
-        # body = await request.json() if request.method in ["POST"] else None
-        # # 调用方法
-                
-        result = handler(request)
-        
-    except AttributeError:
-        raise HTTPException(status_code=404, detail="Method not found")
-    
-    return result
-'''
-
-
-# 主渲染函数保持不变
-# @app.get("/", response_class=HTMLResponse)
-# async def home(request: Request, current_user: dict = Depends(get_current_user)):
-#     logger.debug(f"Home page requested. Current user: {current_user}")
-    
-#     if not current_user:
-#         logger.info("Unauthenticated user redirected to login")
-#         return RedirectResponse(url="/login", status_code=302)
-async def home(request: Request):
-    
-    gv.request = request
-    
-    load_data()
-
-    page_config = load_page_config()
-    rendered_components = [generate_html(component) for component in page_config['components']]
-
-    template = Template(gv.BASE_HTML)
-    return template.render(
-        page_title=page_config['title'],
-        components=rendered_components,
-        min=min
-    )
-
-@app.get("/login", response_class=HTMLResponse)
-# async def login(request: Request, current_user: dict = Depends(get_current_user)):
-#     """
-#     Handle GET requests to the login page
-#     处理登录页面的GET请求
-    
-#     Args:
-#         request: FastAPI request object
-#         current_user: Current user from JWT token dependency
-#     """
-#     # If user is already logged in, redirect to home page
-#     # 如果用户已经登录，重定向到主页
-#     if current_user:
-#         return RedirectResponse(url="/", status_code=302)
-async def login(request: Request):
-
-    gv.request = request
-    
-    # Load latest configuration
-    # 加载最新配置
-    load_data()
-
-    # Load login page configuration
-    # 加载登录页面配置
-    page_config = load_page_config('login_config.yaml')
-    
-    # Render login page components
-    # 渲染登录页面组件
-    rendered_components = [generate_html(component) for component in page_config['components']]
-    
-    template = Template(gv.BASE_HTML)
-    return template.render(
-        page_title="User Management",
-        components=rendered_components,
-        min=min
-    )
-    
-@app.post("/login")
-async def login(request: Request, response: Response):
-    """
-    Handle POST requests for login
-    处理登录的POST请求
-    """
-    form_data = await request.form()
-    params = {key: value for key, value in form_data.items()}
-    
-    try:
-        # with SessionLocal() as db:
-        result = TM.execute_transactions(
-            transaction_name = "UserLogin", 
-            params = params,
-            config_file = "login_txn.yaml"
-        )
-
-        # # # print((result)
-            
-        user_data = gv.data.get("user_data", [])
-
-        if not user_data or not verify_password(params['password'], user_data[0]["Password"]):
-            return "<div class='alert alert-error'>Incorrect username or password</div>"
-        
-        user = user_data[0]
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user["Username"], "role": user["Role"]},
-            expires_delta=access_token_expires
-        )
-        
-        html_response = f"<div class='alert alert-success'>Login successful! Welcome</div>"
-        response = HTMLResponse(content=html_response)
-        
-        # Set secure cookie with token
-        # 设置带有令牌的安全cookie
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            httponly=True,
-            secure=True,  # Only transmit over HTTPS
-            samesite='lax',  # Prevent CSRF
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
-        )
-        
-        # Set cache control headers to prevent caching of login page
-        # 设置缓存控制头以防止登录页面被缓存
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        response.headers['HX-Redirect'] = '/'
-        
-        return response
-        
-    except Exception as e:
-        return HTMLResponse(content=f"<div class='alert alert-error'>Login failed: {str(e)}</div>")
-
-@app.middleware("http")
-async def cache_control_middleware(request: Request, call_next):
-    """
-    Middleware to handle cache control headers
-    处理缓存控制头的中间件
-    """
-    response = await call_next(request)
-    
-    # Add cache control headers for login-related pages
-    # 为登录相关页面添加缓存控制头
-    if request.url.path in ["/login", "/register"]:
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-    
-    return response
-    
-@app.get("/logout")
-async def logout(request: Request):
-    logger.info("Logout requested")
-    #response = RedirectResponse(url="/login", status_code=302)
-    response = HTMLResponse(content='')
-    response.headers['HX-Redirect'] = '/login'
-    response.delete_cookie(key="access_token")
-    logger.info("access_token cookie deleted")
-    return response
-    
-@app.get("/register", response_class=HTMLResponse)
-async def register(request: Request):
-    gv.request = request
-    
-    load_data()  # 重新加载配置，确保使用最新的配置
-
-    page_config = load_page_config('register_config.yaml')
-    
-    rendered_components = [generate_html(component) for component in page_config['components']]
-
-    template = Template(gv.BASE_HTML)
-    return template.render(
-        page_title="User Management",
-        components=rendered_components,
-        min=min
-    )
-
-@app.post("/register", response_class=HTMLResponse)
-async def register(request: Request):
-    # # print(('------------------------')
-    # # print(('register')
-    # # print(('------------------------')
-    form_data = await request.form()
-    params = {key: value for key, value in form_data.items()}
-    params['password'] = get_password_hash(params['password'])
-    try:
-        with SessionLocal() as db:
-            result = TM.execute_transactions(
-                transaction_name = "RegisterUser", 
-                params = params,
-                config_file="register_txn.yaml"
-            )
-        #return f"<div class='alert alert-success'>User registered successfully!</div>"
-        response = HTMLResponse(content='')
-        response.headers['HX-Redirect'] = '/login'
-        response.delete_cookie(key="access_token")
-        logger.info("access_token cookie deleted")
-        return response
-    except Exception as e:
-        return f"<div class='alert alert-error'>Registration failed: {str(e)}</div>"
-
 
 @app.get("/component", response_class=HTMLResponse)
 # async def rendered_component(request: Request, current_user: dict = Depends(get_current_user)):
@@ -1255,8 +639,7 @@ async def read_root(request: Request):
 
 @app.get("/table/{table_name}")
 async def read_table(request: Request, table_name: str):
-    # # print((str)
-    # # print((gv.models)
+
     if table_name not in gv.models:
         raise HTTPException(status_code=404, detail="Table not found")
     
@@ -1315,11 +698,6 @@ async def read_table_content(
         
     total_pages = (total_items + page_size - 1) // page_size
     
-    # # # print(('***********************')
-    # # # print(('sort_direction')
-    # # # print((sort_direction)
-    # # # print(('***********************')
-
     return templates.TemplateResponse("table_content.html", {
         "request": request,
         "table_name": table_name,
@@ -1354,9 +732,6 @@ async def create_form(request: Request):
     if table_name is None:
       table_name = 'users'
     
-    # if id is None:
-    #   id = 22
-
     table_config = get_table_config(table_name)
     
     primary_key = None
@@ -1364,8 +739,6 @@ async def create_form(request: Request):
     
     if True:
       
-        #data = dict(result)
-        
         component_id = None
     
         if 'component_id' in query_params:
@@ -1390,7 +763,6 @@ async def create_form(request: Request):
 
 @app.post("/create/{table_name}")
 async def create_item(table_name: str, request: Request):
-    # # print(('post create_item')
     table = None
     if table_name in metadata.tables:
         table = metadata.tables[table_name]
@@ -1423,10 +795,6 @@ async def create_item(table_name: str, request: Request):
         else:
             data[key] = convert_value(table.c[key].type, data[key])
             
-    
-    # for key in data:
-    #     data[key] = convert_value(table.c[key].type, data[key])
-
     try:
         with SessionLocal() as session:
             stmt = insert(table).values(**data)
@@ -1445,7 +813,6 @@ async def create_item(table_name: str, request: Request):
             "search": "",
         })
     except SQLAlchemyError as e:
-        # # print((str(e))
         return {"success": False, "message": str(e)}
 
 @app.get("/edit", response_class=HTMLResponse)
@@ -1470,12 +837,9 @@ async def edit_form(request: Request):
       id = 22
 
     table_config = get_table_config(table_name)
-    # # # print(('table_config')
-    # # # print((table_config)
     table = metadata.tables[table_name]
     
     primary_key = next((c['name'] for c in table_config['columns'] if c['primary_key'] == 1), None)
-    # # # print((primary_key)
 
     if primary_key is None:
         primary_key = get_primary_key(table)
@@ -1487,10 +851,6 @@ async def edit_form(request: Request):
     if result:
       
         data = dict(result)
-        
-        # # # print(('###############')
-        # # # print((data)
-        # # # print(('###############')
         
         component_id = None
     
@@ -1516,10 +876,6 @@ async def edit_form(request: Request):
 
 @app.post("/edit/{table_name}/{id}")
 async def edit_item(table_name: str, id: str, request: Request):
-    # # print(('edit_item')
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    # table = metadata.tables[table_name]
 
     table = None
     if table_name in metadata.tables:
@@ -1557,7 +913,6 @@ async def edit_item(table_name: str, id: str, request: Request):
             return ''
             
     except SQLAlchemyError as e:
-        # print((e)
         return {"success": False, "message": str(e)}
 
 @app.get("/delete", response_class=HTMLResponse)
@@ -1577,9 +932,6 @@ async def delete_form(request: Request):
 
     if table_name is None:
       table_name = 'users'
-    
-    if id is None:
-      id = 22
 
     table_config = get_table_config(table_name)
     
@@ -1619,9 +971,6 @@ async def delete_form(request: Request):
 
 @app.post("/delete/{table_name}/{id}")
 async def delete_item(table_name: str, id: str):
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    # table = metadata.tables[table_name]
 
     table = None
     if table_name in metadata.tables:
@@ -1709,411 +1058,6 @@ def execute_transactions():
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-# 定义允许的文件类型和最大文件大小
-ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-def allowed_file(filename: str) -> bool:
-    return os.path.splitext(filename)[1].lower() in ALLOWED_EXTENSIONS
-
-def validate_file_type(file: UploadFile) -> bool:
-    mime = magic.Magic(mime=True)
-    file_type = mime.from_buffer(file.file.read(1024))
-    file.file.seek(0)  # Reset file pointer
-    return file_type.split('/')[1] in [ext.lstrip('.') for ext in ALLOWED_EXTENSIONS]
-
-def validate_file_size(file: UploadFile) -> bool:
-    file.file.seek(0, 2)  # Move to the end of the file
-    file_size = file.file.tell()  # Get the position (size)
-    file.file.seek(0)  # Reset file pointer
-    return file_size <= MAX_FILE_SIZE
-    
-    
-@app.post("/upload", response_class=HTMLResponse)
-def upload_file(
-        file: UploadFile = File(...)
-    ):
-    try:
-        # 文件验证
-        if not allowed_file(file.filename):
-            return HTMLResponse(f"<div class='error'>File type not allowed. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}</div>")
-        
-        # if not validate_file_type(file):
-        #     return HTMLResponse("<div class='error'>File content does not match the allowed types</div>")
-        
-        if not validate_file_size(file):
-            return HTMLResponse(f"<div class='error'>File size exceeds the maximum limit of {MAX_FILE_SIZE / (1024 * 1024)} MB</div>")
-        
-        # # 临时保存文件
-        # temp_file_path = f"./temp_uploads/{file.filename}"
-        # os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
-        # with open(temp_file_path, "wb") as buffer:
-        #     shutil.copyfileobj(file.file, buffer)
-        
-        # 准备事务参数
-        transaction_params = {
-            "file": file,
-            "file_name": file.filename,
-            "folder_path": "./uploaded"
-        }
-        
-        # 执行事务
-        try:
-            # print(('1111')
-            result = TM.execute_transactions(
-                transaction_name='file_operations',
-                params=transaction_params,
-                config_file='file_operations_txn.yaml'
-            )
-            # print(('2222')
-            
-            # # 删除临时文件
-            # os.remove(temp_file_path)
-            
-            # 根据结果返回适当的响应
-            if isinstance(result, dict) and 'filename' in result:
-                load_page_config()
-                # # # print((gv.component_dict.keys())
-                res = generate_html(gv.component_dict['file_manager'])
-                res = f'''
-                <div hx-swap-oob="innerHTML:#file-manager">
-                    {res}
-                </div>
-                '''
-                # # # print((res)
-                return HTMLResponse(res)
-                # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
-            else:
-                return HTMLResponse(f"<div class='success'>Transaction completed successfully</div>")
-        
-        except HTTPException as he:
-            return HTMLResponse(f"<div class='error'>{he.detail}</div>")
-        
-        except Exception as e:
-            logger.error(f"Error during transaction execution: {str(e)}")
-            return HTMLResponse(f"<div class='error'>An error occurred during transaction execution: {str(e)}</div>")
-    
-    except Exception as e:
-        logger.error(f"Error during file upload: {str(e)}")
-        return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
-
-def get_files():
-    # # print(('get_files')
-    files = os.listdir("uploaded")
-    return files
-
-@app.get("/preview/{filename}", response_class=HTMLResponse)
-async def preview_file(request: Request, filename: str):
-    file_path = Path(f"uploaded/{filename}")
-    if file_path.is_file():
-        if file_path.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif']:
-            res = f'''
-                <div>
-                    <h2>Preview: { filename }</h2>
-                    <img src="./uploaded/{ filename }" alt="{ filename }" style="max-width:100%;max-height:600px;">
-                </div>
-            '''
-            return res
-    res = f'''
-        <div>
-            File not found or not supported
-        </div>
-    '''
-    return res
-
-@app.get("/api/stats", response_class=HTMLResponse)
-async def get_stats(request: Request):
-    '''
-    import plotly.express as px
-    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-    # fig.show()
-    return fig.to_html(full_html=False, include_plotlyjs=False)
-    '''
-    return HTMLResponse(f"<div class='error'>{datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')}</div>")
-
-@app.get("/api/total_albums", response_class=HTMLResponse)
-async def get_total_albums(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'get_total_albums',
-                config_file="main_txn.yaml"
-            )
-    return HTMLResponse(str(result[0]['total_albums']))
-
-@app.get("/api/total_artists", response_class=HTMLResponse)
-async def get_total_albums(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'get_total_artists',
-                config_file="main_txn.yaml"
-            )
-    return HTMLResponse(str(result[0]['total_artists']))
-   
-@app.get("/setup_customer_database", response_class=HTMLResponse)
-async def setup_customer_database(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'setup_customer_database',
-                config_file="table_management_txn.yaml"
-            )
-    return HTMLResponse(str(result[0]['total_artists']))
-
-@app.get("/database_management", response_class=HTMLResponse)
-async def database_management(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'create_new_database',
-                config_file="database_management_txn.yaml"
-            )
-    return HTMLResponse(str(result[0]['total_artists']))
- 
-@app.get("/project_management_system", response_class=HTMLResponse)
-async def project_management_system(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'create_base_tables',
-                config_file="project_management_system_txn.yaml"
-            )
-    # # print((result)
-    return HTMLResponse('end')
-
-@app.get("/initialize_base_data", response_class=HTMLResponse)
-async def initialize_base_data(request: Request):
-    with SessionLocal() as db:
-      result = TM.execute_transactions(
-                transaction_name = 'initialize_base_data',
-                config_file="project_management_system_txn.yaml"
-            )
-    # # print((result)
-    #return HTMLResponse(str(result[0]['total_artists']))
-    return HTMLResponse('end')
-
-@app.get("/pms", response_class=HTMLResponse)
-async def initialize_base_data(request: Request):
-    with SessionLocal() as db:
-        # result = TM.execute_transactions(
-        #             transaction_name = 'create_new_project',
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        # result = TM.execute_transactions(
-        #             transaction_name = 'add_project_member',
-        #             params={
-        #                 'project_id': 1,
-        #                 'user_id': 1
-        #             },
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        # result = TM.execute_transactions(
-        #             transaction_name = 'create_new_issue',
-        #             params={
-        #                 'subject': 'prj1'
-        #             },
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        # result = TM.execute_transactions(
-        #             transaction_name = 'update_issue_status',
-        #             params={
-        #                 'new_status_id': 3,
-        #                 'issue_id': 1,
-        #                 'current_user_id': 1,
-        #                 'new_status_name': 'In Progress'
-        #             },
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        '''
-        result = TM.execute_transactions(
-                    transaction_name = 'log_time_entry',
-                    params={
-                        'issue_id': 1,
-                        'user_id': 1,
-                        'hours': 1,
-                        'comments': 'コメント',
-                        'spent_on': "{{ current_timestamp }}", #spent_on
-                        'created_at': "{{ current_timestamp }}",
-                        'updated_at': "{{ current_timestamp }}",
-                    },
-                    config_file="project_management_system_txn.yaml"
-                )
-        # # print((result)
-        '''
-        # result = TM.execute_transactions(
-        #             transaction_name = 'get_project_statistics',
-        #             params={
-        #                 'project_id': 1
-        #             },
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        # result = TM.execute_transactions(
-        #             transaction_name = 'create_new_database',
-        #             config_file="database_management_txn.yaml"
-        #         )
-        # # # print((result)
-
-        # Database connection configuration
-        DATABASE_URL1 = "sqlite:///./project_management.db"
-        # Reflect existing database tables
-        TM1 = TransactionModule(database_url = DATABASE_URL1)
-
-        # result = TM1.execute_transactions(
-        #             transaction_name = 'create_base_tables',
-        #             config_file="project_management_system_txn.yaml"
-        #         )
-        # # # print((result)
-        
-        # result = TM1.execute_transactions(
-        #         transaction_name = 'create_new_project',
-        #         config_file="project_management_system_txn.yaml"
-        #     )
-        # # # print((result)
-        
-        result = TM1.execute_transactions(
-                    transaction_name = 'add_project_member',
-                    params={
-                        'project_id': 1,
-                        'user_id': 1
-                    },
-                    config_file="project_management_system_txn.yaml"
-                )
-        # # # print((result)
-        
-    return HTMLResponse('end')
-    
-@app.get("/cms", response_class=HTMLResponse)
-async def initialize_base_data(request: Request):
-    # 7with SessionLocal() as db:
-
-        # result = TM.execute_transactions(
-        #           transaction_name = 'create_new_database',
-        #           config_file="cms.yaml"
-        #       )
-        # # # print((result)
-    
-        # # Database connection configuration
-        # DATABASE_URL1 = "sqlite:///./cms.db"
-        # # Reflect existing database tables
-        # TM1 = TransactionModule(database_url = DATABASE_URL1)
-        
-        # result = TM1.execute_transactions(
-        #             transaction_name = 'create_base_tables',
-        #             config_file="cms.yaml"
-        #         )
-        # # # print((result)
-        
-    # result = TM.execute_transactions(
-    #             transaction_name = 'initialize_base_data',
-    #             params={
-    #                 'hashed_password': '$2b$12$owwC890GCP59/Jsks0tz1eG4C9Z6hDpI1O/hHvsEhiINxvO/rQ.Qe'
-    #             },
-    #             config_file="cms.yaml"
-    #         )
-    result = TM.execute_transactions(
-                transaction_name = 'create_post',
-                params={
-                  'title': "3rd post",
-                  'slug': "3rd-post",
-                  'content': "This is my 3rd post!"
-                },
-                config_file="cms.yaml"
-            )
-    # # # print((result)
-
-    # result = TM.execute_transactions(
-    #             transaction_name = 'get_posts_list',
-    #             # params={
-    #             #   'title': "2nd post",
-    #             #   'slug': "2nd-post",
-    #             #   'content': "This is my 2nd post!"
-    #             # },
-    #             config_file="cms.yaml"
-    #         )
-    # # # print((result)
-    
-    return HTMLResponse('end')
-
-# 主渲染函数保持不变
-# @app.get("/blog", response_class=HTMLResponse)
-async def get_blog(request: Request):
-    
-    gv.request = request
-
-    query_params = dict(request.query_params)
-    if query_params is None:
-      query_params = []
-
-    if 'api' in query_params:
-        if 'posts' == query_params['api']:
-          return await get_posts(request)
-        elif 'post' == query_params['api']:
-          return await get_post(request)
-        elif 'edit' == query_params['api']:
-          return await get_post_form(request)
-    '''
-    if 'posts' in query_params:
-      return await get_posts(request)
-    elif 'post' in query_params:
-      return await get_post(request)
-    elif 'edit' in query_params:
-      return await get_post_form(request)
-    '''
-    
-    load_data()
-
-    posts_config = get_table_config('posts')
-    gv.posts_config = posts_config
-      
-    page_config = load_page_config('blog_config.yaml')
-    
-    comments_config = get_table_config('comments')
-    gv.comments_config = comments_config
-    
-    categories_config = get_table_config('categories')
-    gv.categories_config = categories_config
-    
-    tags_config = get_table_config('tags')
-    gv.tags_config = tags_config
-
-    users_config = get_table_config('users')
-    gv.users_config = users_config
-   
-    hx_get = '/blog' + '/posts'
-    hx_get_params = []
-    
-    hx_get_params.append('api=posts')
-    
-    if 'search_term' in query_params:
-        hx_get_params.append('search_term' + '=' + str(query_params['search_term']))
-    if 'page_size' in query_params:
-        hx_get_params.append('page_size' + '=' + str(query_params['page_size']))
-    if 'page_number' in query_params:
-        hx_get_params.append('page_number' + '=' + str(query_params['page_number']))
-
-    hx_get_params.append('posts')
-    
-    hx_get += '?' + ('&').join(hx_get_params)
-    
-    blogs_attr = {
-        'hx-get': '/api' + hx_get,
-        'hx-swap': 'innerHTML',
-        'hx-trigger': 'load, newPost from:body, updatePost from:body, deletePost from:body',
-        'hx-url': hx_get
-    }
-    gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
-
-    rendered_components = [generate_html(component) for component in page_config['components']]
-
-    template = Template(gv.BASE_HTML)
-    h = template.render(
-        page_title=page_config['title'],
-        components=rendered_components,
-        min=min
-    )
-
-    return h
 
 async def get_settings(request: Request):
     
@@ -2149,216 +1093,6 @@ async def get_about(request: Request):
 
     return h
 
-# @app.get("/blog/posts", response_class=HTMLResponse)
-# async def get_posts(request: Request):
-async def get_posts(request: Request):
-    print('get_posts')
-    print(request.url)
-    path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
-    print(path_parts)
- 
-    if "HX-Request" in request.headers:
-        ## print((request.headers)
-        pass
-      
-    query_params = dict(request.query_params)
-
-    search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-    page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-    page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-    post_id = int(query_params['post_id']) if 'post_id' in query_params else None
-
-    result = TM.execute_transactions(
-                transaction_name = 'get_posts_list',
-                params={
-                    'search_term': '%' + search_term + '%',
-                    'limit': page_size,
-                    'offset': (page_number - 1) * page_size,
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
- 
-    result = gv.data['posts']
-    
-    no_next = False
-    if len(result) < page_size:
-        no_next = True
-    
-    no_prev = False
-    if page_number <= 1:
-        no_prev = True
-
-    h = ''
-    try:
-        load_page_config('blog_config.yaml')
-
-        for d in result:
-          d['attributes'] = {
-            'del': {
-              'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post" 
-            },
-            'edit': {
-              'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
-              'hx-target': '#form_container'
-            },
-            'go': {
-              'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
-              'hx-target': '#blogs'
-            },
-            'back': {
-                'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
-            },
-            'is_single': True if post_id is not None else False
-          }
-          
-        gv.component_dict['posts']['data'] = gv.data #result
-
-        hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
-        hx_get = '/api' + hx_url + '&api=posts'
-
-        prev_attr = {
-                    'id': 'prev',
-                    'hx-get': hx_get, 
-                    'hx-swap': 'innerHTML',
-                    'hx-target': '#blogs',
-                    'hx-url': hx_url,
-                }
-        if no_prev:
-            prev_attr['disabled'] = True
-
-        hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
-        hx_get = '/api' + hx_url + '&api=posts'
-
-        next_attr = {
-                    'id': 'prev',
-                    'hx-get': hx_get, 
-                    'hx-swap': 'innerHTML',
-                    'hx-target': '#blogs',
-                    'hx-url': hx_url,
-                }
-        if no_next:
-            next_attr['disabled'] = True
-
-        gv.component_dict['posts']['config'] = {
-            'prev': {
-                'attributes': prev_attr
-            },
-            'next': {
-                'attributes': next_attr
-            },
-            'is_single': True if post_id is not None else False
-        }
-        ## print((gv.component_dict['posts'])
-        h = generate_html(gv.component_dict['posts'])
-    except Exception as e:
-        # print((e)
-        pass
-
-    return HTMLResponse(content=h)
-    
-@app.get("/blog/post", response_class=HTMLResponse)
-async def get_post(request: Request):
-    
-    if "HX-Request" in request.headers:
-        pass
-        parsed_url = urlparse(request.headers['hx-current-url'])
-
-    query_params = dict(request.query_params)
-
-    if 'post_id' not in query_params:
-      return 'no data'
-
-    post_id = int(query_params['post_id'])
-
-    result = TM.execute_transactions(
-                transaction_name = 'get_post_detail',
-                params={
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
-    result = [dict(row) for row in result]  # 转换为字典列表
-
-    for d in result:
-        d['attributes'] = {
-            'back': {
-                'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
-            }
-        }
-
-    h = ''
-    try:
-        load_page_config('blog_config.yaml')
-        gv.component_dict['post']['data'] = result
-
-        h = generate_html(gv.component_dict['post'])
-    except Exception as e:
-        pass
-
-    return HTMLResponse(content=h)
-    
-@app.post("/blog/post/form", response_class=HTMLResponse)
-async def get_post_form(request: Request):
-    # print(('get_post form')
-
-    if "HX-Request" in request.headers:
-        ## print((request.headers)
-        ## print((request.headers['hx-current-url'])
-        pass
-
-    parsed_url = urlparse(request.headers['hx-current-url'])
-    ## print((parsed_url)
-
-    query_params = dict(request.query_params)
-    # print((query_params)
-    
-    result = []
-    
-    if 'post_id' in query_params:
-      #return 'no data'
-      
-      post_id = int(query_params['post_id'])
-   
-      result = TM.execute_transactions(
-                  transaction_name = 'get_post_detail',
-                  params={
-                      'post_id': post_id
-                  },
-                  config_file="cms.yaml"
-              )
-      result = [dict(row) for row in result]  # 转换为字典列表
-      ## print((result)
-    
-      h = ''
-      try:
-          if len(result) > 0:
-              load_page_config('blog_config.yaml')
-              gv.component_dict['form_edit']['data'] = result[0]
-              
-              h = generate_html(gv.component_dict['form_edit'])
-      except Exception as e:
-          # print((e)
-          pass
-  
-      return HTMLResponse(content=h)
-      
-    else:
-      
-      h = ''
-      try:
-          if True:
-              load_page_config('blog_config.yaml')
-              gv.component_dict['form_edit']['data'] = result
-              
-              h = generate_html(gv.component_dict['form_create'])
-      except Exception as e:
-          # print((e)
-          pass
-  
-      return HTMLResponse(content=h)
-
-
 @app.post("/blog/post", response_class=HTMLResponse)
 async def post_blog_post(request: Request):
     form_data = await request.form()
@@ -2387,9 +1121,7 @@ async def post_blog_post(request: Request):
 
 @app.put("/blog/post", response_class=HTMLResponse)
 async def put_blog_post(request: Request):
-    # print(('put_blog_post')
     form_data = await request.form()
-    # print((form_data)
     file = form_data.get('featured_image')
     
     result = TM.execute_transactions(
@@ -2663,6 +1395,954 @@ async def api_data(request: Request):
 
     return str(query_params);
 
+class AppConfig:
+    """FastAPI 配置类，存储全局变量"""
+    app = FastAPI()
+
+    # 允许 CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # 模板引擎
+    templates = Jinja2Templates(directory="templates")
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    # 全局变量
+    
+    # JWT 相关设置
+    SECRET_KEY = "your-secret-key"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
+    
+    # 设置密码哈希
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class AuthManager:
+    """用户认证管理类"""
+    
+    @staticmethod
+    def verify_password(plain_password, hashed_password):
+        return AppConfig.pwd_context.verify(plain_password, hashed_password)
+
+    @staticmethod
+    def get_password_hash(password):
+        return AppConfig.pwd_context.hash(password)
+
+    @staticmethod
+    def create_access_token(data: dict, expires_delta: timedelta = None):
+        to_encode = data.copy()
+        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, AppConfig.SECRET_KEY, algorithm=AppConfig.ALGORITHM)
+
+    @staticmethod
+    async def get_current_user(request: Request):
+        token = request.cookies.get("access_token")
+        if not token:
+            return None
+        try:
+            payload = jwt.decode(token, AppConfig.SECRET_KEY, algorithms=[AppConfig.ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise HTTPException(status_code=401, detail="Invalid token")
+            return {"username": username}
+        except JWTError:
+            return none
+    
+    def verify_password(plain_password, hashed_password):
+        return pwd_context.verify(plain_password, hashed_password)
+    
+    def get_password_hash(password):
+        return pwd_context.hash(password)
+    
+    def create_access_token(data: dict, expires_delta: timedelta = None):
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=15)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        return encoded_jwt
+    
+    #async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
+    async def get_current_user(request: Request):
+    
+        token = request.cookies.get("access_token")
+        
+        if not token:
+            return None
+            
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        #except JWTError:
+        #    raise credentials_exception
+        except JWTError:
+            # 检查请求头，判断是否是 HTMX 请求
+            if "HX-Request" in request.headers:
+                # 如果是 HTMX 请求，返回 401 错误
+                raise credentials_exception
+            else:
+                # 如果不是 HTMX 请求，重定向到登录页面
+                return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
+    
+        # db = SessionLocal()
+        try:
+            user = db.execute(select(metadata.tables['Users']).where(
+                metadata.tables['Users'].c.Username == username
+            )).first()
+            if user is None:
+                raise credentials_exception
+            return user
+        finally:
+            db.close()
+    
+    def decode_token(token: str):
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise HTTPException(status_code=401, detail="Invalid token")
+            return {"username": username, "role": payload.get("role")}
+        except JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    
+    def login_required(func):
+        @wraps(func)
+        async def wrapper(request: Request, *args, **kwargs):
+            token = None
+            
+            # 首先检查 Authorization header
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split()[1]
+            
+            # 如果 header 中没有 token，则检查 cookie
+            if not token:
+                token = request.cookies.get('access_token')
+            
+            if not token:
+                raise HTTPException(status_code=401, detail="Not authenticated")
+            
+            try:
+                user = decode_token(token)
+                # 将用户信息添加到请求中，以便在路由函数中使用
+                request.state.user = user
+            except HTTPException:
+                raise HTTPException(status_code=401, detail="Invalid token")
+            
+            return await func(request, *args, **kwargs)
+        return wrapper
+    
+    
+    @app.get("/login", response_class=HTMLResponse)
+    # async def login(request: Request, current_user: dict = Depends(get_current_user)):
+    #     """
+    #     Handle GET requests to the login page
+    #     处理登录页面的GET请求
+        
+    #     Args:
+    #         request: FastAPI request object
+    #         current_user: Current user from JWT token dependency
+    #     """
+    #     # If user is already logged in, redirect to home page
+    #     # 如果用户已经登录，重定向到主页
+    #     if current_user:
+    #         return RedirectResponse(url="/", status_code=302)
+    async def login(request: Request):
+    
+        gv.request = request
+        
+        # Load latest configuration
+        # 加载最新配置
+        load_data()
+    
+        # Load login page configuration
+        # 加载登录页面配置
+        page_config = load_page_config('login_config.yaml')
+        
+        # Render login page components
+        # 渲染登录页面组件
+        rendered_components = [generate_html(component) for component in page_config['components']]
+        
+        template = Template(gv.BASE_HTML)
+        return template.render(
+            page_title="User Management",
+            components=rendered_components,
+            min=min
+        )
+        
+    @app.post("/login")
+    async def login(request: Request, response: Response):
+        """
+        Handle POST requests for login
+        处理登录的POST请求
+        """
+        form_data = await request.form()
+        params = {key: value for key, value in form_data.items()}
+        
+        try:
+            # with SessionLocal() as db:
+            result = TM.execute_transactions(
+                transaction_name = "UserLogin", 
+                params = params,
+                config_file = "login_txn.yaml"
+            )
+                
+            user_data = gv.data.get("user_data", [])
+    
+            if not user_data or not verify_password(params['password'], user_data[0]["Password"]):
+                return "<div class='alert alert-error'>Incorrect username or password</div>"
+            
+            user = user_data[0]
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": user["Username"], "role": user["Role"]},
+                expires_delta=access_token_expires
+            )
+            
+            html_response = f"<div class='alert alert-success'>Login successful! Welcome</div>"
+            response = HTMLResponse(content=html_response)
+            
+            # Set secure cookie with token
+            # 设置带有令牌的安全cookie
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=True,  # Only transmit over HTTPS
+                samesite='lax',  # Prevent CSRF
+                max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            )
+            
+            # Set cache control headers to prevent caching of login page
+            # 设置缓存控制头以防止登录页面被缓存
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            response.headers['HX-Redirect'] = '/'
+            
+            return response
+            
+        except Exception as e:
+            return HTMLResponse(content=f"<div class='alert alert-error'>Login failed: {str(e)}</div>")
+    
+    @app.middleware("http")
+    async def cache_control_middleware(request: Request, call_next):
+        """
+        Middleware to handle cache control headers
+        处理缓存控制头的中间件
+        """
+        response = await call_next(request)
+        
+        # Add cache control headers for login-related pages
+        # 为登录相关页面添加缓存控制头
+        if request.url.path in ["/login", "/register"]:
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        
+        return response
+        
+    @app.get("/logout")
+    async def logout(request: Request):
+        logger.info("Logout requested")
+        #response = RedirectResponse(url="/login", status_code=302)
+        response = HTMLResponse(content='')
+        response.headers['HX-Redirect'] = '/login'
+        response.delete_cookie(key="access_token")
+        logger.info("access_token cookie deleted")
+        return response
+        
+    @app.get("/register", response_class=HTMLResponse)
+    async def register(request: Request):
+        gv.request = request
+        
+        load_data()  # 重新加载配置，确保使用最新的配置
+    
+        page_config = load_page_config('register_config.yaml')
+        
+        rendered_components = [generate_html(component) for component in page_config['components']]
+    
+        template = Template(gv.BASE_HTML)
+        return template.render(
+            page_title="User Management",
+            components=rendered_components,
+            min=min
+        )
+    
+    @app.post("/register", response_class=HTMLResponse)
+    async def register(request: Request):
+        form_data = await request.form()
+        params = {key: value for key, value in form_data.items()}
+        params['password'] = get_password_hash(params['password'])
+        try:
+            with SessionLocal() as db:
+                result = TM.execute_transactions(
+                    transaction_name = "RegisterUser", 
+                    params = params,
+                    config_file="register_txn.yaml"
+                )
+            #return f"<div class='alert alert-success'>User registered successfully!</div>"
+            response = HTMLResponse(content='')
+            response.headers['HX-Redirect'] = '/login'
+            response.delete_cookie(key="access_token")
+            logger.info("access_token cookie deleted")
+            return response
+        except Exception as e:
+            return f"<div class='alert alert-error'>Registration failed: {str(e)}</div>"
+
+class PageRenderer:
+    """页面渲染管理类"""
+    templates_env = Environment(loader=FileSystemLoader("templates"))
+    
+    @staticmethod
+    def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
+        try:
+            with open(filename, "r", encoding="utf-8") as file:
+                return yaml.safe_load(file)
+        except Exception as e:
+            logger.error(f"Error loading YAML data: {e}")
+            return None
+
+    @staticmethod
+    def render_template(template_name: str, context: dict):
+        template = PageRenderer.templates_env.get_template(template_name)
+        return template.render(**context)
+    
+    @staticmethod
+    def generate_html(component: Dict[str, Any]) -> str:
+    
+        try:
+            
+            if 'type' not in component:
+                component['type'] = 'div'
+    
+            for key in ['config', 'data', 'value', 'files']:
+                if key in component and isinstance(component[key], str):
+                    if component[key] in globals():
+                        component[key] = globals()[component[key]]()
+            
+            if 'cols' in component:
+                for key in component['cols']:
+                    if component['id'] == 'form_comment':
+    
+                        if 'value' in component['cols'][key]:
+                            value = component['cols'][key]['value']
+                            component['cols'][key]['value'] = None
+                            print(value)
+                            k = value.split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                        if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                                # component['cols'][key] = gv.posts_config['cols'][key]
+                                component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+    
+                    elif component['id'] == 'form_categorie':
+                        
+                        if 'value' in component['cols'][key]:
+                            value = component['cols'][key]['value']
+                            component['cols'][key]['value'] = None
+                            k = value.split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                       
+                        if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
+                                component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
+    
+                    elif component['id'] == 'form_tag':
+                        
+                        if 'value' in component['cols'][key]:
+                            value = component['cols'][key]['value']
+                            component['cols'][key]['value'] = None
+                            k = value.split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                       
+                        if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
+                                component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
+    
+                    elif component['id'] == 'form_user':
+                        
+                        if 'value' in component['cols'][key]:
+                            value = component['cols'][key]['value']
+                            component['cols'][key]['value'] = None
+                            k = value.split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                       
+                        if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
+                                component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
+                       
+                    else:
+                        if 'data_from' in component:
+                            if component['data_from'] == 'comments':
+                                
+                                print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                                print(gv.comments_config)
+                                print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
+                                
+                                if  gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                                    # component['cols'][key] = gv.comments_config['cols'][key]
+                                    component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+                        else:
+                            if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
+                                # component['cols'][key] = gv.posts_config['cols'][key]
+                                component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+                    
+            template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
+            
+            rendered_children = {}
+    
+            if 'children' in component:
+                if isinstance(component['children'], list):
+                    rendered_children = []
+                    for child in component.get('children', []):
+                        child = resolve_component(child)
+                        #if 'data_from' in child and child['data_from'] in component.get('data', {}):
+                        if False:
+                            child['data'] = component.get('data', {})[child['data_from']]
+                        
+                        child['data'] = []
+                        if 'data_from' in child:
+                            if child['data_from'] in gv.data:
+                                child['data'] = gv.data.get(child['data_from'], [])
+    
+                        else:
+                            child['data'] = component.get('data', {})
+                            
+                        rendered_children.append(PageRenderer.generate_html(child))
+                else:
+                    for key, value in component['children'].items():
+                        if isinstance(key, str): 
+                            rendered_children[key] = [PageRenderer.generate_html(resolve_component(child)) for child in value]
+    
+            h = template.render(
+                attributes=component.get('attributes', {}),
+                config=component.get('config', {}),
+                data=component.get('data', {}),
+                value=component.get('value', []),
+                key=component.get('key', []),
+                content=component.get('content', ''),
+                files=component.get('files', []),
+                items=component.get('items', []),
+                cols=component.get('cols', {}),
+                children=rendered_children,
+                icons=gv.icons,
+                classes=gv.classes,
+                min=min,
+                site_name='7777',
+                format_attr=PageRenderer.format_attr,
+                format_children=PageRenderer.format_children,
+                breadcrumb_filter=PageRenderer.breadcrumb_filter
+            )
+    
+            return h
+        except Exception as e:
+            print(e)
+            return None
+            
+    @staticmethod
+    def format_attr(attributes):
+      s = ''
+      if attributes:
+        for attr, value in attributes.items():
+            #if attr not in ['class']:
+            
+            if isinstance(value, str):
+                #matches = re.findall(r'\{\{(.*?)\}\}', value)
+                matches = re.findall(r'\{\{.*?\}\}', value)
+    
+                # 去除多余的空格
+                matches = [match.strip() for match in matches]
+    
+                if matches:
+                    param_name = matches[0]
+                    
+                    k = param_name.replace('{{','').replace('}}','').strip().split('.')
+                    if len(k) == 2:
+                        if k[0] in gv.data:
+                            if len(gv.data[k[0]]) > 0:
+                                if k[1] in gv.data[k[0]][0]:
+    
+                                    value = value.replace(param_name, str(gv.data[k[0]][0][k[1]]))
+    
+            s+=f' {attr}="{value}" '
+      return s
+    
+    @staticmethod
+    def format_children(children):
+      s = ''
+      if children:
+        for child in children:
+          # print((child)
+          s += child
+      return s
+    
+    @staticmethod
+    def breadcrumb_filter(path: str) -> str:
+        """
+        Converts a path like '/Home/Documents/Add' into breadcrumb HTML.
+        """
+        parts = path.strip('/').split('/')
+        return ''.join(f'<li><a href="/{part}">{part}</a></li>' for part in parts)
+
+class CustomRenderer(PageRenderer):
+    """继承 PageRenderer 并扩展功能"""
+
+    def __init__(self, template_directory="templates"):
+        super().__init__()
+        self.templates_env = Environment(loader=FileSystemLoader(template_directory))
+        self.templates_env.globals['min'] = min  # 可以添加自定义全局函数
+        self.templates_env.globals['site_name'] = 'My Custom Site'
+
+    # 主渲染函数保持不变
+    # @app.get("/", response_class=HTMLResponse)
+    # async def home(request: Request, current_user: dict = Depends(get_current_user)):
+    #     logger.debug(f"Home page requested. Current user: {current_user}")
+        
+    #     if not current_user:
+    #         logger.info("Unauthenticated user redirected to login")
+    #         return RedirectResponse(url="/login", status_code=302)
+    @staticmethod
+    async def home(request: Request):
+        
+        gv.request = request
+        
+        load_data()
+    
+        page_config = load_page_config()
+        rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
+    
+        template = Template(gv.BASE_HTML)
+        return template.render(
+            page_title=page_config['title'],
+            components=rendered_components,
+            min=min
+        )
+
+    
+    # 主渲染函数保持不变
+    # @app.get("/blog", response_class=HTMLResponse)
+    @staticmethod
+    async def get_blog(request: Request):
+        
+        gv.request = request
+    
+        query_params = dict(request.query_params)
+        if query_params is None:
+          query_params = []
+    
+        if 'api' in query_params:
+            if 'posts' == query_params['api']:
+              return await CustomRenderer.get_posts(request)
+            elif 'post' == query_params['api']:
+              return await CustomRenderer.get_post(request)
+            elif 'edit' == query_params['api']:
+              return await CustomRenderer.get_post_form(request)
+        
+        load_data()
+    
+        posts_config = get_table_config('posts')
+        gv.posts_config = posts_config
+          
+        page_config = load_page_config('blog_config.yaml')
+        
+        comments_config = get_table_config('comments')
+        gv.comments_config = comments_config
+        
+        categories_config = get_table_config('categories')
+        gv.categories_config = categories_config
+        
+        tags_config = get_table_config('tags')
+        gv.tags_config = tags_config
+    
+        users_config = get_table_config('users')
+        gv.users_config = users_config
+       
+        hx_get = '/blog' + '/posts'
+        hx_get_params = []
+        
+        hx_get_params.append('api=posts')
+        
+        if 'search_term' in query_params:
+            hx_get_params.append('search_term' + '=' + str(query_params['search_term']))
+        if 'page_size' in query_params:
+            hx_get_params.append('page_size' + '=' + str(query_params['page_size']))
+        if 'page_number' in query_params:
+            hx_get_params.append('page_number' + '=' + str(query_params['page_number']))
+    
+        hx_get_params.append('posts')
+        
+        hx_get += '?' + ('&').join(hx_get_params)
+        
+        blogs_attr = {
+            'hx-get': '/api' + hx_get,
+            'hx-swap': 'innerHTML',
+            'hx-trigger': 'load, newPost from:body, updatePost from:body, deletePost from:body',
+            'hx-url': hx_get
+        }
+        gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
+    
+        rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
+    
+        template = Template(gv.BASE_HTML)
+        h = template.render(
+            page_title=page_config['title'],
+            components=rendered_components,
+            min=min
+        )
+    
+        return h
+
+    
+    # @app.get("/blog/posts", response_class=HTMLResponse)
+    # async def get_posts(request: Request):
+    @staticmethod
+    async def get_posts(request: Request):
+        print('get_posts')
+        print(request.url)
+        path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
+        print(path_parts)
+     
+        if "HX-Request" in request.headers:
+            ## print((request.headers)
+            pass
+          
+        query_params = dict(request.query_params)
+    
+        search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+        page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+        page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+        post_id = int(query_params['post_id']) if 'post_id' in query_params else None
+    
+        result = TM.execute_transactions(
+                    transaction_name = 'get_posts_list',
+                    params={
+                        'search_term': '%' + search_term + '%',
+                        'limit': page_size,
+                        'offset': (page_number - 1) * page_size,
+                        'post_id': post_id
+                    },
+                    config_file="cms.yaml"
+                )
+     
+        result = gv.data['posts']
+        
+        no_next = False
+        if len(result) < page_size:
+            no_next = True
+        
+        no_prev = False
+        if page_number <= 1:
+            no_prev = True
+    
+        h = ''
+        try:
+            load_page_config('blog_config.yaml')
+    
+            for d in result:
+              d['attributes'] = {
+                'del': {
+                  'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post" 
+                },
+                'edit': {
+                  'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
+                  'hx-target': '#form_container'
+                },
+                'go': {
+                  'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
+                  'hx-target': '#blogs'
+                },
+                'back': {
+                    'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
+                },
+                'is_single': True if post_id is not None else False
+              }
+              
+            gv.component_dict['posts']['data'] = gv.data #result
+    
+            hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
+            hx_get = '/api' + hx_url + '&api=posts'
+    
+            prev_attr = {
+                        'id': 'prev',
+                        'hx-get': hx_get, 
+                        'hx-swap': 'innerHTML',
+                        'hx-target': '#blogs',
+                        'hx-url': hx_url,
+                    }
+            if no_prev:
+                prev_attr['disabled'] = True
+    
+            hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
+            hx_get = '/api' + hx_url + '&api=posts'
+    
+            next_attr = {
+                        'id': 'prev',
+                        'hx-get': hx_get, 
+                        'hx-swap': 'innerHTML',
+                        'hx-target': '#blogs',
+                        'hx-url': hx_url,
+                    }
+            if no_next:
+                next_attr['disabled'] = True
+    
+            gv.component_dict['posts']['config'] = {
+                'prev': {
+                    'attributes': prev_attr
+                },
+                'next': {
+                    'attributes': next_attr
+                },
+                'is_single': True if post_id is not None else False
+            }
+            h = PageRenderer.generate_html(gv.component_dict['posts'])
+        except Exception as e:
+            pass
+    
+        return HTMLResponse(content=h)
+        
+    @staticmethod
+    @app.get("/blog/post", response_class=HTMLResponse)
+    async def get_post(request: Request):
+        
+        if "HX-Request" in request.headers:
+            pass
+            parsed_url = urlparse(request.headers['hx-current-url'])
+    
+        query_params = dict(request.query_params)
+    
+        if 'post_id' not in query_params:
+          return 'no data'
+    
+        post_id = int(query_params['post_id'])
+    
+        result = TM.execute_transactions(
+                    transaction_name = 'get_post_detail',
+                    params={
+                        'post_id': post_id
+                    },
+                    config_file="cms.yaml"
+                )
+        result = [dict(row) for row in result]  # 转换为字典列表
+    
+        for d in result:
+            d['attributes'] = {
+                'back': {
+                    'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
+                }
+            }
+    
+        h = ''
+        try:
+            load_page_config('blog_config.yaml')
+            gv.component_dict['post']['data'] = result
+    
+            h = PageRenderer.generate_html(gv.component_dict['post'])
+        except Exception as e:
+            pass
+    
+        return HTMLResponse(content=h)
+        
+
+    @staticmethod
+    @app.post("/blog/post/form", response_class=HTMLResponse)
+    async def get_post_form(request: Request):
+        if "HX-Request" in request.headers:
+            pass
+    
+        parsed_url = urlparse(request.headers['hx-current-url'])
+        
+        query_params = dict(request.query_params)
+         
+        result = []
+        
+        if 'post_id' in query_params:
+          
+          post_id = int(query_params['post_id'])
+       
+          result = TM.execute_transactions(
+                      transaction_name = 'get_post_detail',
+                      params={
+                          'post_id': post_id
+                      },
+                      config_file="cms.yaml"
+                  )
+          result = [dict(row) for row in result]  # 转换为字典列表
+          
+          h = ''
+          try:
+              if len(result) > 0:
+                  load_page_config('blog_config.yaml')
+                  gv.component_dict['form_edit']['data'] = result[0]
+                  
+                  h = PageRenderer.generate_html(gv.component_dict['form_edit'])
+          except Exception as e:
+              pass
+      
+          return HTMLResponse(content=h)
+          
+        else:
+          
+          h = ''
+          try:
+              if True:
+                  load_page_config('blog_config.yaml')
+                  gv.component_dict['form_edit']['data'] = result
+                  
+                  h = generate_html(gv.component_dict['form_create'])
+          except Exception as e:
+              pass
+      
+          return HTMLResponse(content=h)
+    
+
+class FileManager:
+    """文件管理类，处理上传、验证"""
+    ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'}
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    @staticmethod
+    def allowed_file(filename: str) -> bool:
+        return os.path.splitext(filename)[1].lower() in FileManager.ALLOWED_EXTENSIONS
+
+    @staticmethod
+    async def upload_file(file: UploadFile = File(...)):
+        if not FileManager.allowed_file(file.filename):
+            return HTMLResponse(f"<div class='error'>Unsupported file type</div>")
+
+        file_path = f"./uploaded/{file.filename}"
+        with open(file_path, "wb") as buffer:
+            buffer.write(file.file.read())
+
+        return HTMLResponse(f"<div class='success'>File uploaded successfully</div>")
+
+    def validate_file_type(file: UploadFile) -> bool:
+        mime = magic.Magic(mime=True)
+        file_type = mime.from_buffer(file.file.read(1024))
+        file.file.seek(0)  # Reset file pointer
+        return file_type.split('/')[1] in [ext.lstrip('.') for ext in ALLOWED_EXTENSIONS]
+    
+    def validate_file_size(file: UploadFile) -> bool:
+        file.file.seek(0, 2)  # Move to the end of the file
+        file_size = file.file.tell()  # Get the position (size)
+        file.file.seek(0)  # Reset file pointer
+        return file_size <= MAX_FILE_SIZE
+        
+    #@app.post("/upload", response_class=HTMLResponse)
+    def upload_file(
+            file: UploadFile = File(...)
+        ):
+        try:
+            # 文件验证
+            if not allowed_file(file.filename):
+                return HTMLResponse(f"<div class='error'>File type not allowed. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}</div>")
+            
+            # if not validate_file_type(file):
+            #     return HTMLResponse("<div class='error'>File content does not match the allowed types</div>")
+            
+            if not validate_file_size(file):
+                return HTMLResponse(f"<div class='error'>File size exceeds the maximum limit of {MAX_FILE_SIZE / (1024 * 1024)} MB</div>")
+            
+            # # 临时保存文件
+            # temp_file_path = f"./temp_uploads/{file.filename}"
+            # os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+            # with open(temp_file_path, "wb") as buffer:
+            #     shutil.copyfileobj(file.file, buffer)
+            
+            # 准备事务参数
+            transaction_params = {
+                "file": file,
+                "file_name": file.filename,
+                "folder_path": "./uploaded"
+            }
+            
+            # 执行事务
+            try:
+                result = TM.execute_transactions(
+                    transaction_name='file_operations',
+                    params=transaction_params,
+                    config_file='file_operations_txn.yaml'
+                )
+    
+                # # 删除临时文件
+                # os.remove(temp_file_path)
+                
+                # 根据结果返回适当的响应
+                if isinstance(result, dict) and 'filename' in result:
+                    load_page_config()
+                    # # # print((gv.component_dict.keys())
+                    res = PageRenderer.generate_html(gv.component_dict['file_manager'])
+                    res = f'''
+                    <div hx-swap-oob="innerHTML:#file-manager">
+                        {res}
+                    </div>
+                    '''
+                    return HTMLResponse(res)
+                    # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
+                else:
+                    return HTMLResponse(f"<div class='success'>Transaction completed successfully</div>")
+            
+            except HTTPException as he:
+                return HTMLResponse(f"<div class='error'>{he.detail}</div>")
+            
+            except Exception as e:
+                logger.error(f"Error during transaction execution: {str(e)}")
+                return HTMLResponse(f"<div class='error'>An error occurred during transaction execution: {str(e)}</div>")
+        
+        except Exception as e:
+            logger.error(f"Error during file upload: {str(e)}")
+            return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
+    
+    def get_files():
+        files = os.listdir("uploaded")
+        return files
+    
+    #@app.get("/preview/{filename}", response_class=HTMLResponse)
+    async def preview_file(request: Request, filename: str):
+        file_path = Path(f"uploaded/{filename}")
+        if file_path.is_file():
+            if file_path.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif']:
+                res = f'''
+                    <div>
+                        <h2>Preview: { filename }</h2>
+                        <img src="./uploaded/{ filename }" alt="{ filename }" style="max-width:100%;max-height:600px;">
+                    </div>
+                '''
+                return res
+        res = f'''
+            <div>
+                File not found or not supported
+            </div>
+        '''
+        return res
+        
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

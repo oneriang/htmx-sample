@@ -77,7 +77,7 @@
                         {{ icons.menu }}
                     </label>
                 </div>
-                <div class="breadcrumbs text-sm">
+                <div class="breadcrumbs text-sm hidden">
                     <ul>
                         breadcrumb_filter(attributes.url) | safe 
                     </ul>
