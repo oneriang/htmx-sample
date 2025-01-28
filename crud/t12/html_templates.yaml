@@ -153,8 +153,10 @@
     {{ format_children(children) }}
 
 'container': |
-    {{ format_children(children) }}
-
+    <div {{ format_attr(attributes) if attributes }}>
+        {{ format_children(children) }}
+    </div>
+    
 'card': |
     <a class="transform  hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 xl:col-span-3 intro-y bg-white"
                                     href="#">
@@ -2123,12 +2125,12 @@
         </div>
     {% endfor %}
 
-'categories': |
+'container_categories1': |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
     
-'categorie': |
+'categories1': |
     {% for d in data['categories'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -2148,12 +2150,12 @@
         </div>
     {% endfor %}
     
-'tags': |
+'container_tags1': |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
     
-'tag': |
+'tags1': |
     {% for d in data['tags'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -2173,12 +2175,37 @@
         </div>
     {% endfor %}
 
-'users': |
+'container_data': |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
     
-'user': |
+'data_card': |
+    {% for d in data[attributes.id] %}
+        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
+            {{ attributes.class if attributes and attributes.class else '' }}"
+            {{ format_attr(attributes) if attributes }}
+        >
+            <div class="card-body break-all" style="word-wrap: break-word;">
+                {% if items %}
+                    {% for item in items %}
+                        {{ item.key }} :
+                        {% if item.key in d %}
+                            {{ d[item.key] }} 
+                        {% endif %}
+                        </br>
+                    {% endfor %}
+                {% endif%}
+            </div>
+        </div>
+    {% endfor %}
+    
+'users1': |
+    <div {{ format_attr(attributes) if attributes }}>
+        {{ format_children(children) }}
+    </div>
+    
+'users2': |
     {% for d in data['users'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"

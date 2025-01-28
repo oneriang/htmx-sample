@@ -132,13 +132,13 @@ async def universal_handler(any_path: str, request: Request):
         return await BlogManager.get_blog_post_comments(request)
     
     if request.url.path == '/api/blog/categories':
-        return await BlogManager.get_blog_categories(request)
+        return await BlogManager.get(request)
     
     if request.url.path == '/api/blog/tags':
-        return await BlogManager.get_blog_tags(request)
+        return await BlogManager.get(request)
 
     if request.url.path == '/api/blog/users':
-        return await BlogManager.get_blog_users(request)
+        return await BlogManager.get(request)
 
     if request.url.path == '/component':
         return await rendered_component(request)
@@ -346,8 +346,48 @@ class BlogManager:
                 
         headers = {"HX-Trigger": "newBlogCategorie"}
         return HTMLResponse(content='ok', headers=headers)
+
+    @staticmethod
+    async def get(request: Request):
+        
+        gv.request = request
+        
+        full_path = request.url.path
+
+        path_parts = full_path.strip("/").split("/")  # 分解路径为列表
+        
+        page_name = path_parts[-1]
+        print(page_name)
+        
+        if "HX-Request" in request.headers:
+            pass
+        
+        query_params = dict(request.query_params)
     
-    @app.get("/blog/tags", response_class=HTMLResponse)
+        search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+        page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+        page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+    
+        result = TM.execute_transactions(
+                    transaction_name = 'get_' + page_name,
+                    params={
+                        'search_term': '%' + search_term + '%',
+                        'limit': page_size,
+                        'offset': (page_number - 1) * page_size
+                    },
+                    config_file="cms.yaml"
+                )
+        
+        page_config = PageRenderer.load_page_config('settings_config.yaml')
+    
+        gv.component_dict[page_name]['data'] = gv.data
+        
+        h = PageRenderer.generate_html(gv.component_dict[page_name])
+        
+        return HTMLResponse(content=h)
+    
+        
+    #@app.get("/blog/tags", response_class=HTMLResponse)
     @staticmethod
     async def get_blog_tags(request: Request):
         

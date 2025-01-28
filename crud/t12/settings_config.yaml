@@ -11,13 +11,13 @@ component_definitions:
         # - type: alert
         # - type: checkbox
         - $ref: form_categorie
-        - $ref: categories
+        - $ref: container_categories
         - type: checkbox
         - $ref: form_user
-        - $ref: users
+        - $ref: container_users
         - type: checkbox
         - $ref: form_tag
-        - $ref: tags
+        - $ref: container_tags
         # - $ref: content_main
       left_sidebar:
         - type: link
@@ -73,22 +73,22 @@ component_definitions:
       hx-post: "/blog/tag"
       hx-target: "#target"
 
-  tags:
-    id: tags
-    type: tags
+  container_tags:
+    id: container_tags
+    type: container_data
     attributes:
-      id: tags
+      id: container_tags
       hx-get: /api/blog/tags
       hx-swap: innerHTML
       hx-trigger: load, newBlogTag from:body
     children:
-      - $ref: tag
-      
-  tag:
-    id: tag
-    type: tag
+      - $ref: tags
+
+  tags:
+    id: tags
+    type: data_card
     attributes:
-      id: tag
+      id: tags
     items:
       - key: id
       - key: name
@@ -121,22 +121,22 @@ component_definitions:
       hx-post: "/blog/user"
       hx-target: "#target"
 
-  users:
-    id: users
-    type: users
+  container_users:
+    id: container_users
+    type: container_data
     attributes:
-      id: users
+      id: container_users
       hx-get: /api/blog/users
       hx-swap: innerHTML
       hx-trigger: load delay:1ms, newBlogUser from:body
     children:
-      - $ref: user
+      - $ref: users
       
-  user:
-    id: user
-    type: user
+  users:
+    id: users
+    type: data_card
     attributes:
-      id: user
+      id: users
     items:
       - key: id
       - key: username
@@ -166,22 +166,22 @@ component_definitions:
       hx-post: "/blog/categorie"
       hx-target: "#target"
       
-  categories:
-    id: categories
-    type: categories
+  container_categories:
+    id: container_categories
+    type: container_data
     attributes:
-      id: categories
+      id: container_categories
       hx-get: /api/blog/categories
       hx-swap: innerHTML
       hx-trigger: load delay:1ms, newBlogCategorie from:body
     children:
-      - $ref: categorie
+      - $ref: categories
       
-  categorie:
-    id: categorie
-    type: categorie
+  categories:
+    id: categories
+    type: data_card
     attributes:
-      id: categorie
+      id: categories
     items:
       - key: id
       - key: name
