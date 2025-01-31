@@ -2125,56 +2125,6 @@
         </div>
     {% endfor %}
 
-'container_categories1': |
-    <div {{ format_attr(attributes) if attributes }}>
-        {{ format_children(children) }}
-    </div>
-    
-'categories1': |
-    {% for d in data['categories'] %}
-        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-            {{ attributes.class if attributes and attributes.class else '' }}"
-            {{ format_attr(attributes) if attributes }}
-        >
-            <div class="card-body break-all" style="word-wrap: break-word;">
-                {% if items %}
-                    {% for item in items %}
-                        {{ item.key }} :
-                        {% if item.key in d %}
-                            {{ d[item.key] }} 
-                        {% endif %}
-                        </br>
-                    {% endfor %}
-                {% endif%}
-            </div>
-        </div>
-    {% endfor %}
-    
-'container_tags1': |
-    <div {{ format_attr(attributes) if attributes }}>
-        {{ format_children(children) }}
-    </div>
-    
-'tags1': |
-    {% for d in data['tags'] %}
-        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-            {{ attributes.class if attributes and attributes.class else '' }}"
-            {{ format_attr(attributes) if attributes }}
-        >
-            <div class="card-body break-all" style="word-wrap: break-word;">
-                {% if items %}
-                    {% for item in items %}
-                        {{ item.key }} :
-                        {% if item.key in d %}
-                            {{ d[item.key] }} 
-                        {% endif %}
-                        </br>
-                    {% endfor %}
-                {% endif%}
-            </div>
-        </div>
-    {% endfor %}
-
 'container_data': |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
@@ -2199,53 +2149,6 @@
             </div>
         </div>
     {% endfor %}
-    
-'users1': |
-    <div {{ format_attr(attributes) if attributes }}>
-        {{ format_children(children) }}
-    </div>
-    
-'users2': |
-    {% for d in data['users'] %}
-        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-            {{ attributes.class if attributes and attributes.class else '' }}"
-            {{ format_attr(attributes) if attributes }}
-        >
-            <div class="card-body break-all" style="word-wrap: break-word;">
-                {% if items %}
-                    {% for item in items %}
-                        {{ item.key }} :
-                        {% if item.key in d %}
-                            {{ d[item.key] }} 
-                        {% endif %}
-                        </br>
-                    {% endfor %}
-                {% endif%}
-            </div>
-        </div>
-    {% endfor %}
-    
-'asdf': |
-    <div>
-      {% for d in data %}
-          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-            {{ attributes.class if attributes and attributes.class else '' }}"
-            {{ format_attr(attributes) }}
-          >
-              <div class="card-body">
-                  {{ format_children(children) }}
-                  <div class="card-actions justify-end">
-                      <button class="btn btn-square btn-sm"
-                      hx-target="#blogs"
-                      {{ format_attr(config.back.attributes) }}
-                      >
-                          {{ icons.arrow_left }}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      {% endfor %}
-    </div>
 
 'editor-quill': |
     <div>

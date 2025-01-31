@@ -123,7 +123,7 @@ component_definitions:
   table_list:
     id: table_list
     type: list
-    value: get_tables
+    value: DatabaseManager.get_tables
 
   # main_data_table:
   #   id: main_data_table
@@ -133,49 +133,49 @@ component_definitions:
   main_data_table:
     id: main_data_table
     type: data-table
-    config: get_configs
-    data: get_table_data
+    config: ConfigManager.get_configs
+    data: DatabaseManager.get_table_data
     children:
       header:
         - type: data_search_form
-          config: get_configs
-          data: get_table_data
+          config: ConfigManager.get_configs
+          data: DatabaseManager.get_table_data
       content:      
         - $ref: main_data_table_content
-      footer:
-        - type: data_pagination
-          config: get_configs
-          data: get_table_data
+      # footer:
+      #   - type: data_pagination
+      #     config: ConfigManager.get_configs
+      #     data: DatabaseManager.get_table_data
         
   main_data_table_content:
     id: main_data_table_content
     type: data_table_content
-    config: get_configs
-    data: get_table_data
+    config: ConfigManager.get_configs
+    data: DatabaseManager.get_table_data
 
   main_data_card:
     id: main_data_card
     type: data-card
-    config: get_configs
-    data: get_table_data
+    config: ConfigManager.get_configs
+    data: DatabaseManager.get_table_data
   
   main_data_list:
     id: main_data_list
     type: data-list
-    config: get_configs
-    data: get_table_data
+    config: ConfigManager.get_configs
+    data: DatabaseManager.get_table_data
     children:
       header:
         - type: data_search_form
-          config: get_configs
+          config: ConfigManager.get_configs
       content:      
         - $ref: main_data_list_content
 
   main_data_list_content:
     id: main_data_list_content
     type: data_list_content
-    config: get_configs
-    data: get_table_data
+    config: ConfigManager.get_configs
+    data: DatabaseManager.get_table_data
 
   button:
     id: button

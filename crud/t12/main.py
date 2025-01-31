@@ -91,7 +91,6 @@ def init():
   
   ConfigManager.load_data()
   
-  
   gv.tables = DatabaseManager.get_tables()
   
   DatabaseManager.generate_all_configs(engine)
@@ -289,46 +288,13 @@ class BlogManager:
                 )
         
         page_config = PageRenderer.load_page_config('blog_config.yaml')
-    
+        
         gv.component_dict['comment']['data'] = gv.data
         
         h = generate_html(gv.component_dict['comment'])
         
         return HTMLResponse(content=h)
-        
-    @app.get("/blog/categories", response_class=HTMLResponse)
-    @staticmethod
-    async def get_blog_categories(request: Request):
-        
-        gv.request = request
-     
-        if "HX-Request" in request.headers:
-            pass
-          
-        query_params = dict(request.query_params)
-    
-        search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-        page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-        page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-    
-        result = TM.execute_transactions(
-                    transaction_name = 'get_categories',
-                    params={
-                        'search_term': '%' + search_term + '%',
-                        'limit': page_size,
-                        'offset': (page_number - 1) * page_size
-                    },
-                    config_file="cms.yaml"
-                )
-        
-        page_config = PageRenderer.load_page_config('settings_config.yaml')
-    
-        gv.component_dict['categorie']['data'] = gv.data
-    
-        h = PageRenderer.generate_html(gv.component_dict['categorie'])
-        
-        return HTMLResponse(content=h)
-        
+
     @app.post("/blog/categorie", response_class=HTMLResponse)
     @staticmethod
     async def post_blog_categorie(request: Request):
@@ -386,40 +352,6 @@ class BlogManager:
         
         return HTMLResponse(content=h)
     
-        
-    #@app.get("/blog/tags", response_class=HTMLResponse)
-    @staticmethod
-    async def get_blog_tags(request: Request):
-        
-        gv.request = request
-     
-        if "HX-Request" in request.headers:
-            pass
-          
-        query_params = dict(request.query_params)
-    
-        search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-        page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-        page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-    
-        result = TM.execute_transactions(
-                    transaction_name = 'get_tags',
-                    params={
-                        'search_term': '%' + search_term + '%',
-                        'limit': page_size,
-                        'offset': (page_number - 1) * page_size
-                    },
-                    config_file="cms.yaml"
-                )
-        
-        page_config = PageRenderer.load_page_config('settings_config.yaml')
-    
-        gv.component_dict['tag']['data'] = gv.data
-        
-        h = PageRenderer.generate_html(gv.component_dict['tag'])
-        
-        return HTMLResponse(content=h)
-        
     @app.post("/blog/tag", response_class=HTMLResponse)
     @staticmethod
     async def post_blog_tag(request: Request):
@@ -437,40 +369,7 @@ class BlogManager:
                 
         headers = {"HX-Trigger": "newBlogTag"}
         return HTMLResponse(content='ok', headers=headers)
-    
-    @app.get("/blog/users", response_class=HTMLResponse)
-    @staticmethod
-    async def get_blog_users(request: Request):
-        
-        gv.request = request
-     
-        if "HX-Request" in request.headers:
-            pass
-          
-        query_params = dict(request.query_params)
-    
-        search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-        page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-        page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-    
-        result = TM.execute_transactions(
-                    transaction_name = 'get_users',
-                    params={
-                        'search_term': '%' + search_term + '%',
-                        'limit': page_size,
-                        'offset': (page_number - 1) * page_size
-                    },
-                    config_file="cms.yaml"
-                )
-        
-        page_config = PageRenderer.load_page_config('settings_config.yaml')
-    
-        gv.component_dict['user']['data'] = gv.data
-        
-        h = PageRenderer.generate_html(gv.component_dict['user'])
-        
-        return HTMLResponse(content=h)
-        
+
     @app.post("/blog/user", response_class=HTMLResponse)
     @staticmethod
     async def post_blog_user(request: Request):
@@ -772,7 +671,61 @@ class CURDManager:
             return "Item deleted successfully"
         except SQLAlchemyError as e:
             return {"success": False, "message": str(e)}
-  
+
+import yaml
+from pathlib import Path
+
+
+def load_yaml(file_path):
+    """加载 YAML 文件并返回字典"""
+    with open(file_path, 'r') as file:
+        return yaml.safe_load(file)
+
+def merge_yaml(base_data, child_data):
+    """
+    递归合并 YAML 数据，支持多层继承。
+    :param base_data: 包含基础定义的字典。
+    :param child_data: 包含子定义的字典。
+    :return: 合并后的字典。
+    """
+    merged_data = {}
+
+    for key, value in child_data.items():
+        if isinstance(value, dict) and 'base' in value:
+            # 如果存在 base 属性，则进行继承
+            base_key = value.pop('base')  # 删除 base 键
+            if base_key in base_data:
+                # 递归合并 base 数据
+                base_value = merge_yaml(base_data, {base_key: base_data[base_key]})
+                merged_data[key] = {**base_value[base_key], **value}
+            else:
+                raise ValueError(f"Base key '{base_key}' not found in base data.")
+        else:
+            # 否则直接复制
+            merged_data[key] = value
+
+    return merged_data
+
+def main1():
+    # 文件路径
+    base_file = Path('blog_config.yaml')
+    #middle_file = Path('middle.yaml')
+    child_file = Path('settings_config.yaml')
+
+    # 加载 YAML 文件
+    base_data = load_yaml(base_file)
+    #middle_data = load_yaml(middle_file)
+    child_data = load_yaml(child_file)
+
+    # 合并所有数据
+    all_data = {**base_data, **child_data}
+
+    # 合并 YAML 数据
+    merged_data = merge_yaml(all_data, child_data)
+
+    # 输出合并后的 YAML
+    print(yaml.dump(merged_data))
+
 class ConfigManager:
     """FastAPI 配置类，存储全局变量"""
     '''
@@ -850,11 +803,14 @@ class ConfigManager:
             pass
         else:
             gv.classes = gv.HTML_TEMPLATES.get('classes', {})
-  
+        
     @staticmethod
     def get_table_config(table_name=None):
-    
-        request = gv.request
+        
+        request = None
+        
+        if hasattr(gv, 'request'):
+            request = gv.request
         
         search_params = {}
         if request:
@@ -877,6 +833,46 @@ class ConfigManager:
           return next(iter(table.primary_key.columns)).name
         except Exception as e:
           return None
+
+    @staticmethod
+    def get_column_type(column_type):
+        if isinstance(column_type, String):
+            return "text"
+        elif isinstance(column_type, Integer):
+            return "number"
+        elif isinstance(column_type, Boolean):
+            return "checkbox"
+        elif isinstance(column_type, (DateTime, Date)):
+            return "date"
+        else:
+            return "text"  # 默认为文本输入
+    
+    @staticmethod
+    def generate_form_config(table_name):
+        table = metadata.tables[table_name]
+        inspector = inspect(engine)
+        pk_constraint = inspector.get_pk_constraint(table_name)
+        primary_keys = pk_constraint['constrained_columns'] if pk_constraint else []
+    
+        fields = []
+        for column in table.columns:
+            field = {
+                "name": column.name,
+                "label": column.name.replace('_', ' ').title(),
+                "type": ConfigManager.get_column_type(column.type),
+                "required": not column.nullable and column.name not in primary_keys,
+                "readonly": column.name in primary_keys
+            }
+            fields.append(field)
+    
+        return {"fields": fields}
+    
+        
+    @staticmethod
+    def get_configs():
+        return ConfigManager.get_table_config()
+    
+    
 
 class PageRenderer:
     """页面渲染管理类"""
@@ -937,86 +933,49 @@ class PageRenderer:
     def generate_html(component: Dict[str, Any]) -> str:
     
         try:
-            
+            #print(component)
+            print('1')
             if 'type' not in component:
                 component['type'] = 'div'
     
             for key in ['config', 'data', 'value', 'files']:
                 if key in component and isinstance(component[key], str):
-                    if component[key] in globals():
-                        component[key] = globals()[component[key]]()
-            
+                    if '.' in component[key]:
+                        k = component[key].split('.')
+                        if len(k) == 2:
+                            print(k)
+                            # 获取类
+                            cls = globals()[k[0]]
+                            # 获取静态方法并调用
+                            component[key] = getattr(cls, k[1])()
+                    pass
+            print('2')
             if 'cols' in component:
                 for key in component['cols']:
-                    if component['id'] == 'form_comment':
-    
+                    if component['type'] == 'form_base_type_1':
                         if 'value' in component['cols'][key]:
                             value = component['cols'][key]['value']
                             component['cols'][key]['value'] = None
-                            print(value)
+                            
                             k = value.split('.')
                             if len(k) == 2:
                                 if k[0] in gv.data:
                                     if len(gv.data[k[0]]) > 0:
                                         if k[1] in gv.data[k[0]][0]:
                                             component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                        if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
-                                # component['cols'][key] = gv.posts_config['cols'][key]
-                                component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
-    
-                    elif component['id'] == 'form_categorie':
                         
-                        if 'value' in component['cols'][key]:
-                            value = component['cols'][key]['value']
-                            component['cols'][key]['value'] = None
-                            k = value.split('.')
-                            if len(k) == 2:
-                                if k[0] in gv.data:
-                                    if len(gv.data[k[0]]) > 0:
-                                        if k[1] in gv.data[k[0]][0]:
-                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                       
-                        if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
-                                component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
-    
-                    elif component['id'] == 'form_tag':
-                        
-                        if 'value' in component['cols'][key]:
-                            value = component['cols'][key]['value']
-                            component['cols'][key]['value'] = None
-                            k = value.split('.')
-                            if len(k) == 2:
-                                if k[0] in gv.data:
-                                    if len(gv.data[k[0]]) > 0:
-                                        if k[1] in gv.data[k[0]][0]:
-                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                       
-                        if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
-                                component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
-    
-                    elif component['id'] == 'form_user':
-                        
-                        if 'value' in component['cols'][key]:
-                            value = component['cols'][key]['value']
-                            component['cols'][key]['value'] = None
-                            k = value.split('.')
-                            if len(k) == 2:
-                                if k[0] in gv.data:
-                                    if len(gv.data[k[0]]) > 0:
-                                        if k[1] in gv.data[k[0]][0]:
-                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                       
-                        if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
-                                component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
-                       
+                        config_id = component['config']['id'] + '_config'
+                        if hasattr(gv, config_id):
+                            pass
+                        else:
+                            setattr(gv, config_id, ConfigManager.get_table_config(component['config']['id']))
+                 
+                        config = getattr(gv, config_id)
+                        if 'cols' in config and key in config['cols']:
+                            component['cols'][key] = config['cols'][key] | component['cols'][key]
                     else:
                         if 'data_from' in component:
                             if component['data_from'] == 'comments':
-                                
-                                print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                                print(gv.comments_config)
-                                print('::::::::::::::::::::::::::::::::::::::::::::::::::::')
-                                
                                 if  gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
                                     # component['cols'][key] = gv.comments_config['cols'][key]
                                     component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
@@ -1024,9 +983,9 @@ class PageRenderer:
                             if  gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
                                 # component['cols'][key] = gv.posts_config['cols'][key]
                                 component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
-                    
+            print('3')
             template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
-            
+            print('4')
             rendered_children = {}
     
             if 'children' in component:
@@ -1051,7 +1010,7 @@ class PageRenderer:
                     for key, value in component['children'].items():
                         if isinstance(key, str): 
                             rendered_children[key] = [PageRenderer.generate_html(PageRenderer.resolve_component(child)) for child in value]
-    
+            print(5)
             h = template.render(
                 attributes=component.get('attributes', {}),
                 config=component.get('config', {}),
@@ -1071,6 +1030,7 @@ class PageRenderer:
                 format_children=PageRenderer.format_children,
                 breadcrumb_filter=PageRenderer.breadcrumb_filter
             )
+            print(6)
     
             return h
         except Exception as e:
@@ -1148,9 +1108,11 @@ class CustomRenderer(PageRenderer):
             page_name = 'main'
         
         page_config = PageRenderer.load_page_config(page_name + '_config.yaml')
-    
+        
         rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
-    
+        #print('rendered_components')
+        #print(rendered_components)
+        
         template = Template(gv.BASE_HTML)
         h = template.render(
             page_title=page_config['title'],
@@ -1159,38 +1121,6 @@ class CustomRenderer(PageRenderer):
         )
     
         return h
-
-    '''   
-    # 主渲染函数保持不变
-    # @app.get("/", response_class=HTMLResponse)
-    # async def home(request: Request, current_user: dict = Depends(get_current_user)):
-    #     logger.debug(f"Home page requested. Current user: {current_user}")
-        
-    #     if not current_user:
-    #         logger.info("Unauthenticated user redirected to login")
-    #         return RedirectResponse(url="/login", status_code=302)
-    @staticmethod
-    async def home(request: Request):
-        
-        gv.request = request
-        
-        full_path = request.url.path
-
-        path_parts = full_path.strip("/").split("/")  # 分解路径为列表
-        print(path_parts)
-        
-        ConfigManager.load_data()
-    
-        page_config = load_page_config()
-        rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
-    
-        template = Template(gv.BASE_HTML)
-        return template.render(
-            page_title=page_config['title'],
-            components=rendered_components,
-            min=min
-        )
-    '''
     
     # 主渲染函数保持不变
     # @app.get("/blog", response_class=HTMLResponse)
@@ -1264,45 +1194,6 @@ class CustomRenderer(PageRenderer):
         )
     
         return h
-
-    '''
-    @staticmethod
-    async def get_settings(request: Request):
-        
-        gv.request = request
-        
-        page_config = load_page_config('settings_config.yaml')
-    
-        rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
-    
-        template = Template(gv.BASE_HTML)
-        h = template.render(
-            page_title=page_config['title'],
-            components=rendered_components,
-            min=min
-        )
-    
-        return h
-    
-    @staticmethod
-    async def get_about(request: Request):
-        
-        gv.request = request
-        
-        page_config = load_page_config('about_config.yaml')
-    
-        rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
-    
-        template = Template(gv.BASE_HTML)
-        h = template.render(
-            page_title=page_config['title'],
-            components=rendered_components,
-            min=min
-        )
-    
-        return h
-        
-    '''
     
     # @app.get("/blog/posts", response_class=HTMLResponse)
     # async def get_posts(request: Request):
@@ -2225,6 +2116,8 @@ if __name__ == "__main__":
   
     init()
     
+    main1()
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
@@ -2470,43 +2363,6 @@ async def api_data(request: Request):
     return str(query_params);
 
 
-def get_column_type(column_type):
-    if isinstance(column_type, String):
-        return "text"
-    elif isinstance(column_type, Integer):
-        return "number"
-    elif isinstance(column_type, Boolean):
-        return "checkbox"
-    elif isinstance(column_type, (DateTime, Date)):
-        return "date"
-    else:
-        return "text"  # 默认为文本输入
-
-def generate_form_config(table_name):
-    table = metadata.tables[table_name]
-    inspector = inspect(engine)
-    pk_constraint = inspector.get_pk_constraint(table_name)
-    primary_keys = pk_constraint['constrained_columns'] if pk_constraint else []
-
-    fields = []
-    for column in table.columns:
-        field = {
-            "name": column.name,
-            "label": column.name.replace('_', ' ').title(),
-            "type": get_column_type(column.type),
-            "required": not column.nullable and column.name not in primary_keys,
-            "readonly": column.name in primary_keys
-        }
-        fields.append(field)
-
-    return {"fields": fields}
-
-    
-    @staticmethod
-    def get_configs():
-        return ConfigManager.get_table_config()
-
-
 '''
 
 '''
@@ -2517,3 +2373,82 @@ env = Environment(loader=FileSystemLoader('.'))
 env.globals['site_name'] = "My Awesome Site"
 # env.globals['get_user'] = lambda user_id: fetch_user_from_db(user_id)  # A function
 '''
+
+'''
+class MyClass:
+    @staticmethod
+    def my_static_method():
+        print("This is a static method.")
+
+# 类名作为字符串
+class_name = "MyClass"
+method_name = "my_static_method"
+
+# 获取类
+cls = globals()[class_name]
+
+# 获取静态方法并调用
+getattr(cls, method_name)()
+'''
+
+'''
+                  if component['id'] == 'form_comment':
+  
+                      if 'value' in component['cols'][key]:
+                          value = component['cols'][key]['value']
+                          component['cols'][key]['value'] = None
+                          
+                          k = value.split('.')
+                          if len(k) == 2:
+                              if k[0] in gv.data:
+                                  if len(gv.data[k[0]]) > 0:
+                                      if k[1] in gv.data[k[0]][0]:
+                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                      if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                              component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+                  
+                  elif component['id'] == 'form_categorie':
+                      
+                      if 'value' in component['cols'][key]:
+                          value = component['cols'][key]['value']
+                          component['cols'][key]['value'] = None
+                          k = value.split('.')
+                          if len(k) == 2:
+                              if k[0] in gv.data:
+                                  if len(gv.data[k[0]]) > 0:
+                                      if k[1] in gv.data[k[0]][0]:
+                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                     
+                      if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
+                              component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
+  
+                  elif component['id'] == 'form_tag':
+                      
+                      if 'value' in component['cols'][key]:
+                          value = component['cols'][key]['value']
+                          component['cols'][key]['value'] = None
+                          k = value.split('.')
+                          if len(k) == 2:
+                              if k[0] in gv.data:
+                                  if len(gv.data[k[0]]) > 0:
+                                      if k[1] in gv.data[k[0]][0]:
+                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                     
+                      if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
+                              component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
+  
+                  elif component['id'] == 'form_user':
+                      
+                      if 'value' in component['cols'][key]:
+                          value = component['cols'][key]['value']
+                          component['cols'][key]['value'] = None
+                          k = value.split('.')
+                          if len(k) == 2:
+                              if k[0] in gv.data:
+                                  if len(gv.data[k[0]]) > 0:
+                                      if k[1] in gv.data[k[0]][0]:
+                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                     
+                      if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
+                              component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
+'''   

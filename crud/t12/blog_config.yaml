@@ -201,6 +201,7 @@ component_definitions:
     #       - {value: uk, label: United Kingdom}
     #       - {value: ca, label: Canada}
     config:
+      
       title: Create
       mode: create
       btns:
@@ -267,6 +268,7 @@ component_definitions:
       content: 
         value: comments.content
     config:
+      id: comments
       title: Edit
       mode: edit
       btns:
