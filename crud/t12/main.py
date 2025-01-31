@@ -2452,3 +2452,78 @@ getattr(cls, method_name)()
                       if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
                               component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
 '''   
+'''
+
+import yaml
+from pathlib import Path
+
+def load_yaml(file_path):
+    """加载 YAML 文件并返回字典"""
+    with open(file_path, 'r') as file:
+        return yaml.safe_load(file)
+
+def deep_merge(base_data, child_data):
+    """
+    递归合并字典，支持深层合并。
+    """
+    if isinstance(child_data, dict) and isinstance(base_data, dict):
+        for key, value in child_data.items():
+            if key in base_data:
+                base_data[key] = deep_merge(base_data[key], value)
+            else:
+                base_data[key] = value
+        return base_data
+    else:
+        return child_data
+
+def resolve_inheritance(data, base_data):
+    """
+    递归解析继承关系，支持任意层级的 base 属性。
+    """
+    if isinstance(data, dict):
+        # 如果存在 base 属性，则进行继承
+        if 'base' in data:
+            base_key = data.pop('base')  # 删除 base 键
+            if base_key in base_data:
+                # 递归解析 base 数据
+                base_value = resolve_inheritance(base_data[base_key], base_data)
+                # 深层合并 base 数据和当前数据
+                data = deep_merge(base_value, data)
+            else:
+                raise ValueError(f"Base key '{base_key}' not found in base data.")
+
+        # 递归处理所有子属性
+        for key, value in data.items():
+            data[key] = resolve_inheritance(value, base_data)
+
+    elif isinstance(data, list):
+        # 如果是列表，递归处理每个元素
+        data = [resolve_inheritance(item, base_data) for item in data]
+
+    return data
+
+def main():
+    # 文件路径
+    base_file = Path('base.yaml')
+    middle_file = Path('middle.yaml')
+    child_file = Path('child.yaml')
+    base_nested_file = Path('base_nested_field.yaml')
+
+    # 加载 YAML 文件
+    base_data = load_yaml(base_file)
+    middle_data = load_yaml(middle_file)
+    child_data = load_yaml(child_file)
+    base_nested_data = load_yaml(base_nested_file)
+
+    # 合并所有基础数据
+    all_base_data = {**base_data, **base_nested_data}
+
+    # 解析继承关系
+    resolved_data = resolve_inheritance({**middle_data, **child_data}, all_base_data)
+
+    # 输出合并后的 YAML
+    print(yaml.dump(resolved_data))
+
+if __name__ == '__main__':
+    main()
+'''
