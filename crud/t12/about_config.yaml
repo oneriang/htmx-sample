@@ -1,8 +1,6 @@
 title: About
 component_definitions:
   main_layout:
-    id: main_layout
-    type: layout
     attributes:
       title: About
       url: '/blog/about'

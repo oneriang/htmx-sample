@@ -1,4 +1,4 @@
-'layout': |
+"layout": |
     <style>
         html:has(.drawer-toggle:checked) {
             overflow-y: hidden;
@@ -63,7 +63,7 @@
           word-break: break-all;
         }
     </style>
-    
+
     <div class="drawer">
         <input id="drawer-left" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex flex-col">
@@ -117,8 +117,7 @@
             </ul>
         </div>
     </div>
-    
-        
+
     <script>
         function closeDrawer() {
             // document.getElementById('drawer-left').checked = false;
@@ -130,34 +129,47 @@
         });
     </script>
 
-'layout_login': |
+    <script type="text/javascript">
+
+        function onMousedownDataCardTrash(me) {
+            me.parentNode.classList.add('hidden');
+            me.parentNode.previousElementSibling.classList.remove('hidden');
+        }
+
+        function onMousedownDataCardCancel(me) {
+            me.parentNode.classList.add('hidden');
+            me.parentNode.nextElementSibling.classList.remove('hidden');
+        }
+    </script>
+#
+"layout_login": |
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
             <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
             {{ format_children(children) }}
         </div>
     </div>
-
-'layout_registration': |
+#
+"layout_registration": |
     <div class="relative flex flex-col justify-center h-screen overflow-hidden">
         <div class="w-full p-6 m-auto bg-white rounded-md shadow-md md:max-w-lg">
             <h1 class="text-3xl font-semibold text-center text-purple-700">{{ attributes.title }}</h1>
             {{ format_children(children) }}
         </div>
     </div>
-
-'drawer_content': |
+#
+"drawer_content": |
     {{ format_children(children) }}
-
-'content_main': |
+#
+"content_main": |
     {{ format_children(children) }}
-
-'container': |
+#
+"container": |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
-    
-'card': |
+#
+"card": |
     <a class="transform  hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 xl:col-span-3 intro-y bg-white"
                                     href="#">
         <div class="p-5">
@@ -182,8 +194,8 @@
             </div>
         </div>
     </a>
-
-'grid': |
+#
+"grid": |
     <div class="grid grid-cols-12 gap-6">
         <div class="grid grid-cols-12 col-span-12 gap-6 xxl:col-span-9">
             <div class="grid col-span-12 gap-6 mt-5">
@@ -191,8 +203,8 @@
             </div>
         </div>
     </div>
-    
-'list': |
+#
+"list": |
     {% for item in value %}
             {% if item.get %}
                 <li>
@@ -210,15 +222,15 @@
                 <li><a class="link" href="{{item.link}}">{{ item.text }}</a></li>
             {% endif %}
         {% endfor %}
-
-'data-table': |
+#
+"data-table": |
     <div id="data-table" class="overflow-x-auto mt-0">
       {{ format_children(children.header) }}
       {{ format_children(children.content) }}
       {{ format_children(children.footer) }}
     </div>
-    
-'data_table_content': |
+#
+"data_table_content": |
     <div class="overflow-x-auto mt-0" id="table-content">
         <div class="flex space-x-2">
             {{ config.name }}
@@ -287,8 +299,8 @@
             </tbody>
         </table>
     </div>
-
-'data-card': |
+#
+"data-card": |
     <div class="overflow-x-auto mt-0" id="table-content">
         {{ config.name }}
         <button hx-get="/create?table_name={{ config.name }}" hx-target="#modal-content"
@@ -409,8 +421,8 @@
           </div>
         </div>
     </div>
-
-'data_search_form': |
+#
+"data_search_form": |
     <form hx-get="/component/?component_id=main_data_table&table_name={{ config.name }}" 
         hx-target="#data-table" hx-swap="outerHTML" hx-push-url="false" 
         class="my-4 flex space-x-2 px-2">
@@ -430,12 +442,12 @@
             {{ icons.search }}
         </button>
     </form>
-
-'data-list': |
+#
+"data-list": |
     {{ format_children(children.header) }}
     {{ format_children(children.content) }}
-
-'data_list_content': |
+#
+"data_list_content": |
     <div class="overflow-x-auto mt-0" id="table-content">
         <style>
             div#table-content li {
@@ -560,8 +572,8 @@
             </div>
         </div>
     </div>
-    
-'table1': |
+#
+"table1": |
     <div class="overflow-x-auto">
         <table class="table {{ attributes.class.value }}">
             <thead>
@@ -582,8 +594,8 @@
             </tbody>
         </table>
     </div>
-
-'table': |
+#
+"table": |
     <div class="overflow-x-auto">
       <table class="table table-xs table-pin-rows table-pin-cols">
         <thead>
@@ -644,8 +656,8 @@
         </tfoot>
       </table>
     </div>
-
-'data_pagination': |
+#
+"data_pagination": |
     <div class="mt-4 flex justify-between items-center">
         <p>
             {{ (data.page - 1) * data.page_size + 1 }} 
@@ -711,8 +723,8 @@
                 </button>
         </div>
     </div>
-
-'form': |
+#
+"form": |
     <form class="{{ attributes.class }}"
       {% if attributes.hx_post %}hx-post="{{ attributes.hx_post }}"{% endif %}
       {% if attributes.hx_target %}hx-target="{{ attributes.hx_target }}"{% endif %}
@@ -727,8 +739,8 @@
             {{ format_children(children) }}
         </div>
     </form>
-    
-'input': |
+#
+"input": |
     <label class="label">
         <span class="label-text">{{ attributes.label }}</span>
     </label>
@@ -764,8 +776,8 @@
             <span class="label-text-alt text-info">{{ attributes.helpText }}</span>
         </label>
     {% endif %}
-
-'navbar': |
+#
+"navbar": |
     <div class="navbar bg-base-100 {{ attributes.class.value }}">
         <div class="flex-1">
             <a class="btn btn-ghost normal-case text-xl">{{ attributes.title.value }}</a>
@@ -783,8 +795,8 @@
             </button>
         </div>
     </div>
-
-'modal_message': |
+#
+"modal_message": |
     <dialog id="{{ attributes.id.value }}" class="modal">
         <div method="dialog" class="modal-box">
             <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
@@ -796,26 +808,26 @@
             </div>
         </div>
     </dialog>
-
-'modal_form': |
-  <dialog id="{{ attributes.id.value }}" class="modal">
-      <div method="dialog" class="modal-box">
-          <h3 class="font-bold text-lg hidden">{{ attributes.title.value }}</h3>
-          <div id="modal-content" class="modal-content">
-          </div>
-          <div class="modal-action hidden">
-            <form method="dialog">
-              <button class="btn">Close</button>
-            </form>
-          </div>
-      </div>
-  </dialog>
-
-'form_base': |
+#
+"modal_form": |
+    <dialog id="{{ attributes.id.value }}" class="modal">
+        <div method="dialog" class="modal-box">
+            <h3 class="font-bold text-lg hidden">{{ attributes.title.value }}</h3>
+            <div id="modal-content" class="modal-content">
+            </div>
+            <div class="modal-action hidden">
+              <form method="dialog">
+                <button class="btn">Close</button>
+              </form>
+            </div>
+        </div>
+    </dialog>
+#
+"form_base": |
     <h2 class="text-xl font-bold mb-4">
     {{ attributes.title }} {{ config.table_name }}
     </h2>
-    <form id="myForm" hx-post="/{{ attributes.mode }}/{{ config.table_name }}/{{ config.id if config.id else '' }}" hx-target="#target">
+    <form id="myForm" hx-post="/{{ attributes.mode }}/{{ config.table_name }}" hx-target="#target">
         {% for column in config.table_config['columns'] %}
             {% if column['is_hidden'] %}
             {% else %}
@@ -918,8 +930,8 @@
             hideModal();
         });
     </script>
-
-'form_base_type_1': |
+#
+"form_base_type_1": |
     <script>
         function removeForm() {
             show_loading();
@@ -1110,8 +1122,8 @@
             console.log('Request completed');
         });
     </script>
-
-'form_search': |
+#
+"form_search": |
     <form 
         {{ format_attr(attributes) }}
         class="gap-2">
@@ -1124,7 +1136,7 @@
         <input 
           name="posts"
           class="hidden">
-  
+
         <div class="flex justify-end">
             <button 
               class="btn bg-red-500 text-white" 
@@ -1141,8 +1153,8 @@
                 class="btn bg-green-500 hover:bg-green-700 text-white">Search</button>
         </div>
     </form>
-    
-'alert': |
+#
+"alert": |
     <div role="alert"
         {{ format_attr(attributes)}}>
         {{ icons.info }}
@@ -1151,22 +1163,22 @@
           {{ content }}
         </span>
     </div>
-
-'progress': |
+#
+"progress": |
     <progress class="progress {{ attributes.color.value }} w-56" value="{{ attributes.value.value }}" max="{{ attributes.max.value }}"></progress>
-
-'badge': |
+#
+"badge": |
     <span class="badge {{ attributes.color.value }}">{{ attributes.text.value }}</span>
-
-'checkbox': |
+#
+"checkbox": |
     <div class="form-control">
       <label class="label cursor-pointer">
         <span class="label-text">Remember me</span>
         <input type="checkbox" checked="checked" class="checkbox" />
       </label>
     </div>
-
-'tab': |
+#
+"tab": |
     <input
         type="radio"
         name="my_tabs"
@@ -1178,27 +1190,27 @@
       {{ content }}
       {{ format_children(children) }}
     </div>
-      
-'tabs': |
+#
+"tabs": |
     <div role="tablist" class="tabs tabs-lifted">
       {{ format_children(children) }}
     </div>
-    
-'tabs1': |
+#
+"tabs1": |
     <div class="tabs {{ attributes.class.value }}">
         {% for tab in attributes.tabs.value %}
             <a class="tab {{ tab.class }}">{{ tab.text }}</a>
         {% endfor %}
     </div>
-    
-'tabs2': |
+#
+"tabs2": |
     <div style="width: 100%;" class="overflow-x-auto">
     <div role="tablist" class="tabs tabs-lifted" style="width: auto;">
       <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 1" />
       <div role="tabpanel" style="width: auto;" class="tab-content bg-base-100 border-base-300 rounded-box p-6 w-full">
         Tab content 1
       </div>
-    
+
       <input
         type="radio"
         name="my_tabs_2"
@@ -1209,42 +1221,42 @@
       <div role="tabpanel" style="width: 100%;" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
         Tab content 2
       </div>
-    
-      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-          
-      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-          
-      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-      
-          
-      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-      
-          
-      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-      
-      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-        Tab content 3
-      </div>
-    </div>
-    </div>
 
-'collapse': |
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab whitespace-nowrap" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+          
+      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+      
+      <input type="radio" name="my_tabs_2" role="tab" class="tab" aria-label="Tab 3" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        Tab content 3
+      </div>
+    </div>
+    </div>
+#
+"collapse": |
     <div class="collapse bg-base-200">
         <input type="checkbox" /> 
         <div class="collapse-title text-xl font-medium">
@@ -1254,18 +1266,13 @@
             <p>{{ attributes.content.value }}</p>
         </div>
     </div>
-
-'tooltip': |
+#
+"tooltip": |
     <div class="tooltip" data-tip="{{ attributes.tip }}">
         <button class="btn">{{ attributes.text }}</button>
     </div>
-
-'stat1': |
-    <div class="tooltip" data-tip="{{ attributes.tip }}">
-        <button class="btn">{{ attributes.text }}</button>
-    </div>
-    
-'dropdown': |
+#
+"dropdown": |
     <div class="dropdown">
         <label tabindex="0" class="btn m-1">{{ attributes.label.value }}</label>
         <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
@@ -1274,8 +1281,8 @@
             {% endfor %}
         </ul>
     </div>
-
-'carousel1': |
+#
+"carousel1": |
     <div class="carousel w-full">
         {% for item in attributes.items.value %}
             <div id="slide{{ loop.index }}" class="carousel-item relative w-full">
@@ -1287,8 +1294,8 @@
             </div>
         {% endfor %}
     </div>
-
-'carousel': |
+#
+"carousel": |
     <div class="carousel carousel-center rounded-box">
       <div class="carousel-item">
         <img src="https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp" alt="Pizza" />
@@ -1320,8 +1327,6 @@
           alt="Pizza" />
       </div>
     </div>
-    
-    
     <div class="carousel w-full">
       <div id="item1" class="carousel-item w-full">
         <img
@@ -1350,7 +1355,8 @@
       <a href="#item3" class="btn btn-xs">3</a>
       <a href="#item4" class="btn btn-xs">4</a>
     </div>
-'modal': |
+#
+"modal": |
     <div class="modal" id="{{ attributes.id.value }}">
         <div class="modal-box">
             <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
@@ -1360,15 +1366,15 @@
             </div>
         </div>
     </div>
-
-'rating': |
+#
+"rating": |
     <div class="rating">
         {% for i in range(attributes.max.value) %}
             <input type="radio" name="{{ attributes.name.value }}" class="mask mask-star-2 bg-orange-400" {% if i + 1 == attributes.value.value %}checked{% endif %}>
         {% endfor %}
     </div>
-
-'timeline': |
+#
+"timeline": |
     <ul class="timeline timeline-vertical">
         {% for item in attributes.items.value %}
             <li>
@@ -1381,8 +1387,8 @@
             </li>
         {% endfor %}
     </ul>
-
-'drawer': |
+#
+"drawer": |
     <div class="drawer">
         <input id="{{ attributes.id.value }}" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content">
@@ -1398,15 +1404,15 @@
             </ul>
         </div>
     </div>
-
-'steps': |
+#
+"steps": |
     <ul class="steps steps-vertical lg:steps-horizontal">
         {% for step in attributes.steps.value %}
             <li class="step {% if loop.index <= attributes.current_step.value %}step-primary{% endif %}">{{ step }}</li>
         {% endfor %}
     </ul>
-
-'hero1': |
+#
+"hero1": |
     <div class="hero min-h-screen" style="background-image: url({{ attributes.background_image }});">
         <div class="hero-overlay bg-opacity-60"></div>
         <div class="hero-content text-center text-neutral-content">
@@ -1417,8 +1423,8 @@
             </div>
         </div>
     </div>
-    
-'hero': |
+#
+"hero": |
     <div class="hero rounded bg-base-200 min-h-screen">
       <div class="hero-content flex-col lg:flex-row">
         <img
@@ -1446,8 +1452,8 @@
         </div>
       </div>
     </div>
-
-'chat_bubble': |
+#
+"chat_bubble": |
     <div class="chat {% if attributes.position.value == 'end' %}chat-end{% else %}chat-start{% endif %}">
         <div class="chat-image avatar">
             <div class="w-10 rounded-full">
@@ -1463,13 +1469,13 @@
             {{ attributes.footer.value }}
         </div>
     </div>
-
-'stats': |
+#
+"stats": |
     <div class="stats stats-vertical shadow">
         {{ format_children(children) }}
     </div>
-
-'stat': |
+#
+"stat": |
     <div class="stats stats-vertical shadow">
       <div class="stat">
         <div class="stat-title">{{ attributes.title }}</div>
@@ -1477,23 +1483,23 @@
         <div class="stat-desc">{{ attributes.desc }}</div>
       </div>
     </div>
-    
-'file_input': |
+#
+"file_input": |
     <div class="form-control w-full ">
         <label class="label">
             <span class="label-text">{{ attributes.label.value }}</span>
         </label>
         <input type="file" class="file-input file-input-bordered w-full " />
     </div>
-
-'code': |
+#
+"code": |
     <div class="mockup-code">
         {% for line in attributes.code.value.split('\n') %}
         <pre data-prefix="{{ loop.index }}"><code>{{ line }}</code></pre>
         {% endfor %}
     </div>
-
-'breadcrumbs': |
+#
+"breadcrumbs": |
     <div class="text-sm breadcrumbs">
         <ul>
             {% for item in attributes.items.value %}
@@ -1501,8 +1507,8 @@
             {% endfor %}
         </ul>
     </div>
-
-'menu': |
+#
+"menu": |
     <ul class="menu bg-base-200 w-56 rounded-box">
         {% for item in attributes.items.value %}
         <li>
@@ -1521,14 +1527,14 @@
         </li>
         {% endfor %}
     </ul>
-
-'radial_progress': |
+#
+"radial_progress": |
     <div class="radial-progress text-primary" style="--value:{{ attributes.value.value }};">{{ attributes.value.value }}%</div>
-
-'skeleton': |
+#
+"skeleton": |
     <div class="skeleton w-{{ attributes.width.value }} h-{{ attributes.height.value }}"></div>
-
-'alert_dialog': |
+#
+"alert_dialog": |
     <input type="checkbox" id="{{ attributes.id.value }}" class="modal-toggle" />
     <div class="modal">
         <div class="modal-box">
@@ -1540,17 +1546,17 @@
             </div>
         </div>
     </div>
-
-'artboard': |
+#
+"artboard": |
     <div class="artboard artboard-demo">
         <div class="text-4xl font-bold">{{ attributes.text.value }}</div>
     </div>
-
-'btn': |
+#
+"btn": |
     <button hx-get="/create?table_name=Yuangong" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
-
-'button': |
+#
+"button": |
     <button
         class="btn btn-primary my-2
           {% if attributes.class %} {{ attributes.class }} {% endif %}"
@@ -1566,8 +1572,8 @@
           {% endfor %}>
         {{ attributes.text }}
     </button>
-
-'link': |
+#
+"link": |
     <a class="link {{ attributes.class if attributes and attributes.class else '' }}"
         {% for attr, value in attributes.items() %}
             {% if attr not in ['class'] %}
@@ -1577,23 +1583,8 @@
     >
         {{ config.label }}
     </a>
-
-# 'tag': |
-#     {% for d in data %}
-#       <{{ config.tag }} {{ format_attr(attributes) }}>
-#           {% if value and 'name' in value %}
-#             {{ d[value.name] }}
-#           {% endif %}
-#           {% if content and 'name' in content %}
-#             {{ d[content.name] }}
-#           {% endif %}
-#           {% if content %}
-#             {{ content }}
-#           {% endif %}
-#       </{{ config.tag }}>
-#     {% endfor %}
-    
-'h1': |
+#
+"h1": |
     {% for d in data %}
         <h1 {{ format_attr(attributes) }}>
             {% if value and 'name' in value and value['name'] in d %}
@@ -1603,8 +1594,8 @@
             {% endif %}
         </h1>
     {% endfor %}
-    
-'p': |
+#
+"p": |
     {% for d in data %}
       <p {{ format_attr(attributes) }}>
             {% if value and 'name' in value and value['name'] in d %}
@@ -1614,8 +1605,8 @@
             {% endif %}
       </p>
     {% endfor %}
-
-'div': |
+#
+"div": |
     {{ data }}
     {% for d in data %}
         <div {{ format_attr(attributes) }}>
@@ -1626,8 +1617,8 @@
             {% endif %}
         </div>
     {% endfor %}
-
-'file_upload_form': |
+#
+"file_upload_form": |
     <form id="uploadForm"
           hx-encoding="multipart/form-data"
           hx-post="/upload"
@@ -1673,8 +1664,8 @@
             }
         });
     </script>
-
-'file_manager': |
+#
+"file_manager": |
     <div id="file-manager">
         <style>
             .file-list {
@@ -1722,226 +1713,17 @@
         </div>
         <div id="preview"></div>
     </div>
-
-'form_container': |
+#
+"form_container": |
     <div {{ format_attr(attributes) }} >
     </div>
-    
-'blogs': |
+#
+"blogs": |
     <div {{ format_attr(attributes) }} >
         Blogs
     </div>
-    
-'post1': |
-    <div>
-        
-        <h1>Quill 富文本编辑器</h1>
-        <div id="editor-container" style="height: 200px; border: 1px solid #ccc;"></div>
-        <button id="saveBtn">保存内容</button>
-        <pre id="output"></pre>
-
-        <script>
-
-            const toolbarOptions = [
-                ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-                ['blockquote', 'code-block'],
-                ['link', 'image', 'video', 'formula'],
-
-                [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
-                [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-                [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-                [{ 'direction': 'rtl' }],                         // text direction
-
-                [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-                [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                [{ 'font': [] }],
-                [{ 'align': [] }],
-
-                ['clean']                                         // remove formatting button
-            ];
-
-            // 初始化 Quill 编辑器
-            var quill = new Quill('#editor-container', {
-            theme: 'snow',
-            modules: {
-                toolbar: toolbarOptions
-            }
-            });
-
-            // 保存按钮点击事件
-            document.getElementById('saveBtn').addEventListener('click', function () {
-            // 获取 Delta 格式内容
-            var deltaContent = quill.getContents();
-            document.getElementById('output').textContent = JSON.stringify(deltaContent, null, 2);
-            console.log("Delta 内容：", deltaContent);
-            });
-        </script>
-
-
-        <h1>Quill 富文本编辑器</h1>
-        <div id="editor-container" style="height: 200px; border: 1px solid #ccc;"></div>
-        <button id="saveBtn">保存内容</button>
-        <pre id="output"></pre>
-      
-        <script>
-          // 初始化 Quill 编辑器
-          var quill = new Quill('#editor-container', {
-            theme: 'snow',
-            modules: {
-              toolbar: [['bold', 'italic'], ['link', 'image']]
-            }
-          });
-      
-          // 保存按钮点击事件
-          document.getElementById('saveBtn').addEventListener('click', function () {
-            // 获取 HTML 格式内容
-            var htmlContent = quill.root.innerHTML;
-            document.getElementById('output').textContent = htmlContent;
-            console.log("HTML 内容：", htmlContent);
-          });
-        </script>
-
-
-      {% for d in data %}
-          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
-              {{ format_attr(attributes) }}
-          >
-              <div class="card-body">
-                  
-                  <!--
-                  <h1 class="card-title">{{ d.id if 'id' in d else 'no id'}}</h1>
-                  
-                  <h2 class="card-title">{{ d['status'] if d and 'status' in d else 'no status'}}</h2>
-                  <h2 class="card-title">{{ d['title'] if d and 'title' in d else 'no title'}}</h2>
-                  <p class="content">{{ d['content'] if d and 'content' in d else 'no content'}}</p>
-                  <textarea class="content" value="{{ d['content'] if d and 'content' in d else 'no content'}}"></textarea>
-                  -->
-                  {{ format_children(children) }}
-                  <div class="card-actions justify-end">
-                      <button class="btn btn-square btn-sm"
-                      hx-target="#blogs"
-                      {{ format_attr(config.back.attributes) }}
-                      >
-                          {{ icons.arrow_left }}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      {% endfor %}
-    </div>
-
-'post2': |
-    <div>
-        
-        <h1>Quill 富文本编辑器</h1>
-        <div id="editor-container" style="height: 200px; border: 1px solid #ccc;"></div>
-        <button id="saveBtn">保存内容</button>
-        <pre id="output"></pre>
-      
-        <script>
-          // 初始化 Quill 编辑器
-          var quill = new Quill('#editor-container', {
-            theme: 'snow',
-            modules: {
-              toolbar: [['bold', 'italic'], ['link', 'image']]
-            }
-          });
-      
-          // 保存按钮点击事件
-          document.getElementById('saveBtn').addEventListener('click', function () {
-            // 获取 HTML 格式内容
-            var htmlContent = quill.root.innerHTML;
-            document.getElementById('output').textContent = htmlContent;
-            console.log("HTML 内容：", htmlContent);
-          });
-        </script>
-
-
-      {% for d in data %}
-          <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 {{ attributes.class if attributes and attributes.class else '' }}"
-              {{ format_attr(attributes) }}
-          >
-              <div class="card-body">
-                  {{ format_children(children) }}
-                  <div class="card-actions justify-end">
-                      <button class="btn btn-square btn-sm"
-                      hx-target="#blogs"
-                      {{ format_attr(config.back.attributes) }}
-                      >
-                          {{ icons.arrow_left }}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      {% endfor %}
-    </div>
-
-'posts1': |
-    <div class="mt-5">
-        <div class="flex justify-end gap-2">
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.prev.attributes) }}
-            >
-            Prev
-            </button>
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.next.attributes) }}
-            >
-            Next
-            </button>
-        </div>  
-        {% for d in data %}
-            <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-                {{ attributes.class if attributes and attributes.class else '' }}"
-                {{ format_attr(attributes) }}
-            >
-                <div class="card-body">
-                    <div class="card-actions justify-end">
-                        <div class="hidden">
-                            <button class="btn btn-square btn-sm text-red-500"
-                                {{ format_attr(d.attributes.del) }}
-                            >
-                                {{ icons.trash }}
-                            </button>
-                            <button class="btn btn-square btn-sm"
-                                onclick="this.parentNode.classList.add('hidden');this.parentNode.nextElementSibling.classList.remove('hidden');">
-                                {{ icons.cancel }}
-                            </button>
-                            </div>
-                        <div>
-                            <button class="btn btn-square btn-sm" 
-                                onclick="this.parentNode.classList.add('hidden');this.parentNode.previousElementSibling.classList.remove('hidden');">
-                                {{ icons.trash }}
-                            </button>
-                        </div>
-                    </div>
-                    {{ d }}
-                    {{ format_children(children) }}
-                    <div class="card-actions justify-end">
-                    <button class="btn btn-square btn-sm"
-                        {{ format_attr(d.attributes.edit) }}
-                        >
-                            {{ icons.edit }}
-                    </button>
-                    <button class="btn btn-square btn-sm"
-                        {{ format_attr(d.attributes.go) }}
-                        >
-                            {{ icons.arrow_right }}
-                    </button>
-                    </div>
-                </div>
-            </div>
-      {% endfor %}
-    </div>
-
-'posts': |
+#
+"posts": |
     <div class="mt-5">
         <div class="flex justify-end gap-2">
             {% if config.is_single == False %}
@@ -1963,8 +1745,8 @@
         </div>  
         {{ format_children(children) }}
     </div>
-
-'post': |
+#
+"post": |
     {% for d in data['posts'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -1973,8 +1755,6 @@
             <div class="card-body">
                 <div class="card-actions justify-end">
                     {% if d and d.attributes and d.attributes.del %}
-                        
-                        
                         <div class="dropdown dropdown-end">
                           <button class="btn btn-square btn-sm" >
                                 {{ icons.ellipsis_horizontal }}
@@ -1982,41 +1762,39 @@
                           <ul
                             tabindex="0"
                             class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow">
-                            
                             {% if d and d.attributes and d.attributes.edit %}
                                 <li>
-                                  <a>
-                                    <button class="btn btn-square btn-sm"
+                                    <button 
+                                        class="btn btn-square btn-sm"
                                         {{ format_attr(d.attributes.edit) }}
                                     >
                                         {{ icons.edit }}
                                     </button>
-                                  </a>
                                 </li>
                             {% endif %}
                             <li>
-                            <div class="hidden">
-                                <button class="btn btn-square btn-sm text-red-500"
-                                    {{ format_attr(d.attributes.del) }}
-                                >
-                                    {{ icons.trash }}
-                                </button>
-                                <button class="btn btn-square btn-sm"
-                                    onmousedown="this.parentNode.classList.add('hidden');this.parentNode.nextElementSibling.classList.remove('hidden');">
-                                    {{ icons.cancel }}
-                                </button>
-                            </div>
-                            <div>
-                                <button class="btn btn-square btn-sm" 
-                                     onmousedown="this.parentNode.classList.add('hidden');this.parentNode.previousElementSibling.classList.remove('hidden');"
-                                >
-                                    {{ icons.trash }}
-                                </button>
-                            </div>
-                            
+                                <div class="hidden">
+                                    <button 
+                                        class="btn btn-square btn-sm text-red-500"
+                                        {{ format_attr(d.attributes.del) }}
+                                    >
+                                        {{ icons.trash }}
+                                    </button>
+                                    <button 
+                                        class="btn btn-square btn-sm"
+                                        onmousedown="onMousedownDataCardCancel(this)">
+                                        {{ icons.cancel }}
+                                    </button>
+                                </div>
+                                <div>
+                                    <button 
+                                        class="btn btn-square btn-sm" 
+                                        onmousedown="onMousedownDataCardTrash(this)"
+                                    >
+                                        {{ icons.trash }}
+                                    </button>
+                                </div>
                             </li>
-                            
-                            
                           </ul>
                         </div>
                     {% endif %}
@@ -2031,7 +1809,6 @@
                     {% endfor %}
                 {% endif%}
                 <div class="card-actions justify-end">
-                    
                     {% if d.attributes.is_single == False %}
                         {% if d and d.attributes and d.attributes.go %}
                             <button class="btn btn-square btn-sm"
@@ -2054,58 +1831,18 @@
                 </div>
             </div>
         </div>
-        
-       
-        
-          {% if d.attributes.is_single == True %}
-            
+        {% if d.attributes.is_single == True %}
             {{ format_children(children) }}
-            
-            {% if False %}
-            
-            {% if children %}
-              
-              <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 ">
-                <div class="card-body">
-                  <div class="card-actions justify-end">
-                    <button class="btn btn-square btn-sm">
-                      {{ icons.close }}
-                    </button>
-                  </div>
-                   {{ format_children(children) }}
-                </div>
-              </div>
-              
-            {% endif %}
-            
-            {% for c in data['comments'] %}
-                <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 ">
-                  <div class="card-body">
-                    
-                      {% for k in c %}
-                          {{ k }} : {{ c[k] }}
-                          </br>
-                      {% endfor %}
-                    
-                  </div>
-                </div>
-            {% endfor %}
-            
-            {% endif %}
-        
         {% endif %}
-        
-        
-        
     {% endfor %}
-
-'comments': |
+#
+"comments": |
     <div {{ format_attr(attributes) if attributes }}
     >
         {{ format_children(children) }}
     </div
-    
-'comment': |
+#
+"comment": |
     {% for d in data['comments'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -2124,19 +1861,59 @@
             </div>
         </div>
     {% endfor %}
-
-'container_data': |
+#
+"container_data": |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
-    
-'data_card': |
-    {% for d in data[attributes.id] %}
-        <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-            {{ attributes.class if attributes and attributes.class else '' }}"
+#
+"data_card": |
+    {% for d in data %}
+        <div 
+            class="
+                card bg-base-100 shadow-xl w-full mt-2 mb-2 
+                {{ attributes.class if attributes and attributes.class else '' }}
+            "
             {{ format_attr(attributes) if attributes }}
         >
             <div class="card-body break-all" style="word-wrap: break-word;">
+                <div class="card-actions justify-end">
+                    <div class="dropdown dropdown-end">
+                        <button class="btn btn-square btn-sm" >
+                            {{ icons.ellipsis_horizontal }}
+                        </button>
+                        <ul
+                            tabindex="0"
+                            class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow"
+                        >
+                            <li>
+                                <div>
+                                    <button class="btn btn-square btn-sm">
+                                        {{ icons.edit }}
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="hidden">
+                                    <button class="btn btn-square btn-sm text-red-500">
+                                        {{ icons.trash }}
+                                    </button>
+                                    <button class="btn btn-square btn-sm"
+                                        onmousedown="onMousedownDataCardCancel(this)">
+                                        {{ icons.cancel }}
+                                    </button>
+                                </div>
+                                <div>
+                                    <button class="btn btn-square btn-sm" 
+                                        onmousedown="onMousedownDataCardTrash(this)"
+                                    >
+                                        {{ icons.trash }}
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 {% if items %}
                     {% for item in items %}
                         {{ item.key }} :
@@ -2146,49 +1923,63 @@
                         </br>
                     {% endfor %}
                 {% endif%}
+                <div class="card-actions justify-end">
+                    <button class="btn btn-square btn-sm"
+                    >
+                        {{ icons.arrow_right }}
+                    </button>
+                    <button class="btn btn-square btn-sm"
+                    >
+                        {{ icons.arrow_left }}
+                    </button>
+                </div>
             </div>
         </div>
     {% endfor %}
-
-'editor-quill': |
+#
+"editor-quill": |
     <div>
         
       <h1 class="text-2xl font-bold mb-4">Quill 富文本编辑器 + DaisyUI</h1>
       
       <div id="editor-container" class="border mb-4" style="height: 200px;"></div>
       <button id="saveBtn" class="btn btn-primary mt-4">保存内容</button>
-    
+
       <h2 class="text-xl font-semibold mt-8">预览内容</h2>
       <div id="preview-container" class="prose mt-4 border p-4">
         <!-- 编辑后的内容会插入到这里 -->
       </div>
-    
+
       <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
       <script>
         var quill = new Quill('#editor-container', {
           theme: 'snow',
           modules: {
-            toolbar: [['bold', 'italic'], ['link', 'image'],                [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],]
+            toolbar: [
+                    ['bold', 'italic'], 
+                    ['link', 'image'], 
+                    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ]
           }
         });
-    
+
         // 保存按钮点击事件
         document.getElementById('saveBtn').addEventListener('click', function () {
           var htmlContent = quill.root.innerHTML;
-    
+
           // 包装内容以应用 DaisyUI 样式
           var styledContent = `<div class="prose">${htmlContent}</div>`;
           document.getElementById('preview-container').innerHTML = styledContent;
         });
       </script>
     </div>
-    
-'pg': |
+#
+"pg": |
     <div id="content">
       <!-- Initial content here -->
     </div>
-    
+
     <div id="pagination">
       <button class="btn" 
               id="p1"
@@ -2208,149 +1999,87 @@
       </button>
       <!-- More pagination buttons -->
     </div>
-
-'buttons': |
+#
+"buttons": |
     <div class="flex justify-start">
         {{ format_children(children) }}
     </div>
-
-'icons':
-    'add': |
+#
+"icons":
+    "add": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
-    'delete': |
+    "delete": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
         </svg>
-    'edit': |
+    "edit": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
         </svg>
-    'next': |
+    "next": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
-    'prev': |
+    "prev": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
         </svg>
-    'refresh': |
+    "refresh": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
         </svg>
-    'search': |
+    "search": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
         </svg>
-    'ok': |
+    "ok": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
         </svg>
-    'cancel': |
+    "cancel": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
         </svg>
-    'close': |
+    "close": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
         </svg>
-    'user': |
+    "user": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
         </svg>
-    'menu': |
+    "menu": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
-    'info': |
+    "info": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
         </svg>
-    'arrow_right': |
+    "arrow_right": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
         </svg>
-    'arrow_left': |
+    "arrow_left": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
         </svg>
-    'trash': |
+    "trash": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
         </svg>
-    'clear': |
+    "clear": |
         <svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
         </svg>
-    'ellipsis_horizontal': |
+    "ellipsis_horizontal": |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
         </svg>
-
-'classes':
-  'input': |
-    input input-bordered input-md w-full 
-
-'t': |
-  <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Image Upload Preview</title>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet">
-      <style>
-        .thumbnail {
-          width: 100px;
-          height: 100px;
-          object-fit: cover;
-        }
-      </style>
-    </head>
-    <body class="p-8 bg-gray-100">
-      <div class="flex flex-col items-center">
-        <label class="btn btn-primary">
-          <span>选择图片</span>
-          <input 
-            type="file" 
-            accept="image/*" 
-            class="hidden" 
-            id="image-input"
-          />
-        </label>
-        <div id="preview-container" class="mt-4 grid grid-cols-3 gap-4"></div>
-      </div>
-    
-      <script>
-        const imageInput = document.getElementById('image-input');
-        const previewContainer = document.getElementById('preview-container');
-    
-        imageInput.addEventListener('change', (event) => {
-          // 清空之前的缩略图
-          previewContainer.innerHTML = '';
-    
-          // 遍历用户选择的文件
-          Array.from(event.target.files).forEach(file => {
-            const reader = new FileReader();
-            
-            reader.onload = (e) => {
-              const img = document.createElement('img');
-              img.src = e.target.result;
-              img.alt = file.name;
-              img.className = 'thumbnail rounded border border-gray-300 shadow';
-              previewContainer.appendChild(img);
-            };
-    
-            reader.readAsDataURL(file);
-          });
-        });
-      </script>
-    </body>
-    </html>
-
-
-
-
-
+#
+"classes":
+    "input": |
+        input input-bordered input-md w-full
+#

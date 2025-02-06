@@ -1,13 +1,13 @@
 Device:
 
 Device Info:
-MANUFACTURER:Xiaomi DEVICE:raphael MODEL:Redmi K20 Pro BRAND:Xiaomi BOARD:raphael HARDWARE:qcom SDK_INT:34
+MANUFACTURER:motorola DEVICE:lyriq MODEL:motorola edge 40 BRAND:motorola BOARD:lyriq HARDWARE:mt6893 SDK_INT:34 GOOGLEDEVICE:false
 
 Device Interface:
 redfin
 
 HDR+ Model:
-redfin
+--
 
 Shot Mode:
 --
@@ -22,16 +22,16 @@ Sensor ID:
 0
 
 Merge Method:
-1 (军刀)(1)
+0 (wiener滤波器)(0)
 
 allowSabre:
-true
+false
 
 allowSpatialRgb:
 false
 
 shastaEnabled:
-true
+false
 
 shastaForced:
 false
@@ -40,7 +40,7 @@ Google Camera Logic:
 自动(0)
 
 FrameCount:
-pref_frame_count_key: -1=>-1
+--
 
 Expastro:
 --
@@ -64,16 +64,16 @@ IsoTime:
 --
 
 HardwareLevel:
-LEVEL_3(3) => LEVEL_3(3)
+null
 
 Preview:
-YUV_420_888(35)
+UNKNOWN(0)
 
 C2ALevel3:
 false
 
 Leica:
-true
+false
 
 DCI-P3:
 false

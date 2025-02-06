@@ -1,0 +1,329 @@
+title: Settings
+component_definitions:
+  main_layout:
+    base: main_layout
+    id: main_layout
+    type: layout
+    attributes:
+      title: Settings
+      url: '/blog/settings'
+    children:
+      content_main:
+        - type: alert
+        # - type: checkbox
+        - $ref: form_categorie
+        - $ref: container_categories
+        # - type: checkbox
+        - $ref: form_user
+        - $ref: container_users
+        # - type: checkbox
+        - $ref: form_tag
+        - $ref: container_tags
+        # - $ref: content_main
+      # left_sidebar:
+      #   - type: link
+      #     attributes:
+      #       href: /blog
+      #     config:
+      #       label: Blog
+      #   - type: link
+      #     attributes:
+      #       href: /blog/settings
+      #     config:
+      #       label: Settings
+      #   - type: link
+      #     attributes:
+      #       href: /blog/about
+      #     config:
+      #       label: About
+      # right_sidebar:
+      #   - type: alert
+      #     attributes:
+      #       class: alert alert-info
+      #       message: This is an informational message.
+
+  # 基本定义
+  base_form: &base_form
+    id: base_form
+    type: form_base_type_1
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      title: Edit
+      mode: edit
+      hx-post: "/blog/"
+      hx-target: "#target"
+  
+  base_container: &base_container
+    id: base_container
+    type: container_data
+    attributes:
+      hx-swap: innerHTML
+      hx-trigger: load delay:1ms
+  
+  base_data_card: &base_data_card
+    id: base_data_card
+    type: data_card
+
+  # 继承基本定义
+  form_tag:
+    id: form_tag
+    <<: *base_form
+    cols:
+      name:
+        value: tags.name
+      slug: 
+        value: tags.slug
+      description: 
+        value: tags.description
+    config:
+      id: tags
+    attributes:
+      id: form_tag
+      hx-post: "/blog/tag"
+  
+  container_tags:
+    id: container_tags
+    <<: *base_container
+    attributes:
+      id: container_tags
+      hx-get: /api/blog/tags
+      hx-trigger: load, newBlogTag from:body
+    children:
+      - $ref: tags
+  
+  tags:
+    id: tags
+    <<: *base_data_card
+    attributes:
+      id: tags
+    items:
+      - key: id
+      - key: name
+      - key: slug
+      - key: description
+    
+  form_user:
+    id: form_user
+    <<: *base_form
+    cols:
+      username: 
+        value: users.username
+      display_name: 
+        value: users.display_name
+      password_hash:
+        value: users.password_hash
+      email:
+        value: users.email
+    config:
+      id: users
+    attributes:
+      id: form_user
+      hx-post: "/blog/user"
+  
+  container_users:
+    id: container_users
+    <<: *base_container
+    attributes:
+      id: container_users
+      hx-get: /api/blog/users
+      hx-trigger: load delay:1ms, newBlogUser from:body
+    children:
+      - $ref: users
+  
+  users:
+    id: users
+    <<: *base_data_card
+    attributes:
+      id: users
+    items:
+      - key: id
+      - key: username
+      - key: password_hash
+  
+  form_categorie:
+    id: form_categorie
+    <<: *base_form
+    cols:
+      name: 
+        value: categories.name
+      slug: 
+        value: categories.slug
+      description: 
+        value: categories.description
+    config:
+      id: categories
+    attributes:
+      id: form_categorie
+      hx-post: "/blog/categorie"
+  
+  container_categories:
+    id: container_categories
+    <<: *base_container
+    attributes:
+      id: container_categories
+      hx-get: /api/blog/categories
+      hx-trigger: load delay:1ms, newBlogCategorie from:body
+    children:
+      - $ref: categories
+  
+  categories:
+    id: categories
+    <<: *base_data_card
+    attributes:
+      id: categories
+    items:
+      - key: id
+      - key: name
+      - key: slug
+      - key: description
+  
+    # form_tag:
+    #   id: form_tag
+    #   type: form_base_type_1
+    #   cols:
+    #     name:
+    #       value: tags.name
+    #     slug: 
+    #       value: tags.slug
+    #     description: 
+    #       value: tags.description
+    #   config:
+    #     id: tags
+    #     title: Edit
+    #     mode: edit
+    #     btns:
+    #       cancel:
+    #         attributes:
+    #           onclick: "removeForm();"
+    #   attributes:
+    #     id: form_tag
+    #     title: Edit
+    #     mode: edit
+    #     hx-post: "/blog/tag"
+    #     hx-target: "#target"
+  
+    # container_tags:
+    #   id: container_tags
+    #   type: container_data
+    #   attributes:
+    #     id: container_tags
+    #     hx-get: /api/blog/tags
+    #     hx-swap: innerHTML
+    #     hx-trigger: load, newBlogTag from:body
+    #   children:
+    #     - $ref: tags
+
+  # tags:
+  #   id: tags
+  #   type: data_card
+  #   attributes:
+  #     id: tags
+  #   items:
+  #     - key: id
+  #     - key: name
+  #     - key: slug
+  #     - key: description
+
+  # form_user:
+  #   id: form_user
+  #   type: form_base_type_1
+  #   cols:
+  #     username: 
+  #       value: users.username
+  #     display_name: 
+  #       value: users.display_name
+  #     password_hash:
+  #       value: users.password_hash
+  #     email:
+  #       value: users.email
+  #   config:
+  #     id: users
+  #     title: Edit
+  #     mode: edit
+  #     btns:
+  #       cancel:
+  #         attributes:
+  #           onclick: "removeForm();"
+  #   attributes:
+  #     id: form_user
+  #     title: Edit
+  #     mode: edit
+  #     hx-post: "/blog/user"
+  #     hx-target: "#target"
+
+  # container_users:
+  #   id: container_users
+  #   type: container_data
+  #   attributes:
+  #     id: container_users
+  #     hx-get: /api/blog/users
+  #     hx-swap: innerHTML
+  #     hx-trigger: load delay:1ms, newBlogUser from:body
+  #   children:
+  #     - $ref: users
+      
+  # users:
+  #   id: users
+  #   type: data_card
+  #   attributes:
+  #     id: users
+  #   items:
+  #     - key: id
+  #     - key: username
+  #     - key: password_hash
+
+  # form_categorie:
+  #   id: form_categorie
+  #   type: form_base_type_1
+  #   cols:
+  #     name: 
+  #       value: categories.name
+  #     slug: 
+  #       value: categories.slug
+  #     description: 
+  #       value: categories.description
+  #   config:
+  #     id: categories
+  #     title: Edit
+  #     mode: edit
+  #     btns:
+  #       cancel:
+  #         attributes:
+  #           onclick: "removeForm();"
+  #   attributes:
+  #     id: form_categorie
+  #     title: Edit
+  #     mode: edit
+  #     hx-post: "/blog/categorie"
+  #     hx-target: "#target"
+      
+  # container_categories:
+  #   id: container_categories
+  #   type: container_data
+  #   attributes:
+  #     id: container_categories
+  #     hx-get: /api/blog/categories
+  #     hx-swap: innerHTML
+  #     hx-trigger: load delay:1ms, newBlogCategorie from:body
+  #   children:
+  #     - $ref: categories
+      
+  # categories:
+  #   id: categories
+  #   type: data_card
+  #   attributes:
+  #     id: categories
+  #   items:
+  #     - key: id
+  #     - key: name
+  #     - key: slug
+  #     - key: description
+         
+components:
+  - $ref: main_layout

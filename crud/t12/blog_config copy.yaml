@@ -10,6 +10,8 @@ component_definitions:
 
   content_main:
     type: content_main
+    attributes:
+      id: content_main
     children:
       - $ref: form_search
       - type: buttons
@@ -17,7 +19,7 @@ component_definitions:
           - type: button
             attributes:
               text: New
-              hx-get: /blog/post/form
+              hx-post: /blog/post/form
               hx-target: '#form_container'
       - type: form_container
         attributes:
@@ -81,44 +83,32 @@ component_definitions:
       title: Search
       hx-get: "/api/blog/posts?api=posts"
       hx-target: "#blogs"
-      
-  form_edit:
-    id: form_edit
-    base: component_definitions.base_form_edit
-    cols: 
-      id: {}
-      title: {}
-      content: {}
-      category_id: {}
-      author_id: {}
-      featured_image:  
-        input_type: file
-        label: Imgae
-      status: 
-        input_type: select
-        label: Status
-        required: true
-        options:
-          - {value: draft, label: draft}
-          - {value: published, label: published}
-          - {value: archived, label: archived}
-      visibility: 
-        input_type: select
-        label: Visibility
-        required: true
-        options:
-          - {value: public, label: Public}
-          - {value: private, label: Private}
-          - {value: password_protected, label: Password Protected}
-    config:
-      id: posts
-    attributes:
-      id: form_edit
-      hx-post: "/blog/post"
-      hx-target: "#target"
+
+  # form_comment:
+  #   base: component_definitions.base_form_edit
+  #   #type: form_base_type_1
+  #   cols:
+  #     post_id: 
+  #       value: posts.id
+  #       is_hidden: true
+  #     content: 
+  #       value: comments.content
+  #   #config:
+  #   #  title: Edit
+  #   #  mode: edit
+  #   #  btns:
+  #   #    cancel:
+  #   #      attributes:
+  #   #        onclick: "removeForm();"
+  #   attributes:
+  #     title: Edit
+  #     mode: edit
+  #     hx-post: "/blog/post/comment"
+  #     hx-target: "#target"
 
   form_comment:
-    base: component_definitions.base_form_edit
+    id: form_comment
+    type: form_base_type_1
     cols:
       post_id: 
         value: posts.id
@@ -127,7 +117,16 @@ component_definitions:
         value: comments.content
     config:
       id: comments
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
     attributes:
+      id: form_comment
+      title: Edit
+      mode: edit
       hx-post: "/blog/post/comment"
       hx-target: "#target"
 

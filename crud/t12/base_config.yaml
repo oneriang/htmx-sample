@@ -1,0 +1,82 @@
+title: Responsive Dashboard
+component_definitions:
+  main_layout:
+    type: layout
+    attributes:
+      title: YY
+      dd: dd
+    children:
+      left_sidebar:
+        - type: link
+          attributes:
+            href: /blog
+          config:
+            label: Blog
+        - type: link
+          attributes:
+            href: /blog/settings
+          config:
+            label: Settings
+        - type: link
+          attributes:
+            href: /blog/about
+          config:
+            label: About
+        
+      content_main:
+        - $ref: content_main
+      right_sidebar:
+        - type: link
+          attributes:
+            href: /blog
+          config:
+            label: Blog
+        - type: link
+          attributes:
+            href: /blog/settings
+          config:
+            label: Settings
+        - type: link
+          attributes:
+            href: /blog/about
+          config:
+            label: About
+
+  content_main:
+    type: content_main
+
+  modal_message:
+    type: modal_message
+    attributes:
+      title: modal
+      content: aaaaa
+        
+  modal_form:
+    type: modal_form
+    attributes:
+      title: modal
+      content: aaaaa
+
+  base_container:
+    type: container_data
+    attributes:
+      hx-swap: innerHTML
+      hx-trigger: load delay:1ms
+  
+  base_form_edit:
+    type: form_base_type_1
+    config:
+      title: Edit
+      mode: edit
+      btns:
+        cancel:
+          attributes:
+            onclick: "removeForm();"
+    attributes:
+      title: Edit
+      mode: edit
+
+components:
+  - $ref: main_layout
+  - $ref: modal_form
+  - $ref: modal_message
