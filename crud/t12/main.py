@@ -19,13 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
-from sqlalchemy import create_engine, MetaData, Table, select, insert, update, delete, inspect, or_, and_, func, desc, asc
-from sqlalchemy.orm import sessionmaker, class_mapper
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.sql import expression
-from sqlalchemy.sql.sqltypes import String, Integer, DateTime, Date, Boolean, Enum
-from sqlalchemy import inspect, String, Integer, Float, DateTime, Date, Boolean, Enum
-
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Union, Optional
@@ -47,6 +40,9 @@ import gv as gv
 import transaction_module
 from transaction_module import convert_value, TransactionModule
 
+from DatabaseManager import DatabaseManager
+from ConfigManager import ConfigManager
+
 app = FastAPI()
 
 app.add_middleware(
@@ -55,7 +51,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    # expose_headers=["Hx-Push-Url"]  # 关键：暴露 Hx-Push-Url
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -69,19 +64,7 @@ logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory="templates")
 # 添加 min 函数到模板上下文
 templates.env.globals['min'] = min
-templates.env.globals['site_name'] = '6666'
-
-# Database connection configuration
-DATABASE_URL = "sqlite:///./cms.db"
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-metadata = MetaData()
-# Reflect existing database tables
-metadata.reflect(bind=engine, views=True)
-
-db = SessionLocal()
-
-TM = TransactionModule(engine=engine, db=db, metadata=metadata)
+templates.env.globals['site_name'] = ''
 
 gv.BASE_HTML = None
 gv.HTML_TEMPLATES = None
@@ -91,33 +74,20 @@ gv.classes = None
 gv.model = {}
 gv.models = []
 
-
 def init():
-
     ConfigManager.load_data()
-
     gv.tables = DatabaseManager.get_tables()
-
-    DatabaseManager.generate_all_configs(engine)
-
-    pass
 
 
 @app.api_route("/{any_path:path}", response_class=HTMLResponse, methods=['GET', 'POST'])
 async def universal_handler(any_path: str, request: Request):
     
     gv.request = request
-    
-    print('universal_handler')
-    print(request.url.path)
 
     print(dict(request.query_params))
 
     try:
         full_path = request.url.path
-
-        #extra header required to expose the Hx-Push-Url in the response
-        #res.set('Access-Control-Expose-Headers', 'Hx-Push-Url');
 
         path_parts = full_path.strip("/").split("/")  # 分解路径为列表
 
@@ -127,10 +97,8 @@ async def universal_handler(any_path: str, request: Request):
         # 判断请求方法
         if http_method == "GET":
             pass
-            # return f"Received a GET request at path: {any_path}"
         elif http_method == "POST":
             print(path_parts)
-            # return HTMLResponse(content='ok')
             if full_path == '/blog/post/comment':
                 return await BlogManager.post_blog_post_comment(request)
             if full_path == '/blog/post':
@@ -176,27 +144,13 @@ async def universal_handler(any_path: str, request: Request):
             if is_htmx_request:
                 return await BlogManager.get_posts(request)
             else:
-                CustomRenderer.get_blog(request)
-
-        # if request.url.path == '/blog/post/comment':
-        #      return await post_blog_post_comment(request)
-
-        # if len(path_parts) > 1 and path_parts[0] == 'api':
-        #     if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
-        #         return await CustomRenderer.get_posts(request)
-        #     elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
-        #         return await CustomRenderer.get_post(request)
-
-        if len(path_parts) == 1:
-            if path_parts[0] == 'blog':
-                return await CustomRenderer.get_blog(request)
-            elif path_parts[0] == 'settings':
-                return await CustomRenderer.get(request)
-        elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'posts':
-            return await CustomRenderer.get_blog(request)
-        elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'settings':
+                BlogManager.get_blog(request)
+        
+        if request.url.path == '/blog':
+            return await BlogManager.get_blog(request)
+        if request.url.path == '/blog/settings':
             return await CustomRenderer.get(request)
-        elif len(path_parts) > 1 and path_parts[0] == 'blog' and path_parts[1] == 'about':
+        if request.url.path == '/blog/about':
             return await CustomRenderer.get(request)
 
         return full_path
@@ -208,7 +162,6 @@ async def universal_handler(any_path: str, request: Request):
         line_number = traceback.extract_tb(exc_traceback)[-1].lineno
         print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
         return None
-
 
 class BlogManager:
 
@@ -236,7 +189,7 @@ class BlogManager:
             page_number = int(q_params['page_number']) if 'page_number' in q_params else 1
             post_id = int(q_params['post_id']) if 'post_id' in q_params else None
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='get_posts_list',
                 params={
                     'search_term': '%' + search_term + '%',
@@ -252,49 +205,6 @@ class BlogManager:
             h = ''
             try:
                 PageRenderer.load_page_config('blog_config.yaml')
-
-                # config = gv.component_dict['post']['config']
-                # config = copy.deepcopy(config)
-
-                # for d in result:
-                #     try:
-                #         for k, v in config['buttons'].items():
-                #             if 'attributes' in v:
-                #                 attr = v['attributes']
-                #                 if 'hx-delete' in attr:
-                #                     attr['hx-delete'] = attr['hx-delete'].format(id=d['id'])
-                #                 if 'hx-post' in attr:
-                #                     attr['hx-post'] = attr['hx-post'].format(id=d['id'])
-                #                 if 'hx-get' in attr:
-                #                     attr['hx-get'] = attr['hx-get'].format(id=d['id'])
-                #     except KeyError:
-                #         # 例外情報を取得
-                #         exc_type, exc_value, exc_traceback = sys.exc_info()
-                #         # 行番号を取得
-                #         line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-                #         print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-                #         return None
-                #         pass
-                #     d['config'] = config
-                #     # print(d['config'])
-                #     # d['attributes'] = {
-                #     #     'del': {
-                #     #         'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post"
-                #     #     },
-                #     #     'edit': {
-                #     #         'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
-                #     #         'hx-target': '#form_container'
-                #     #     },
-                #     #     'go': {
-                #     #         'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
-                #     #         'hx-target': '#blogs'
-                #     #     },
-                #     #     'back': {
-                #     #         'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
-                #     #     },
-                #     #     'is_single': True if post_id is not None else False
-                #     # }
-                #     pass
 
                 gv.component_dict['post']['config']['is_single'] = True if post_id is not None else False
 
@@ -322,49 +232,6 @@ class BlogManager:
                 except KeyError:
                     pass
                 
-                # hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
-                # hx_get = '/api' + hx_url + '&api=posts'
-            
-                # no_next = False
-                # if len(result) < page_size:
-                #     no_next = True
-    
-                # no_prev = False
-                # if page_number <= 1:
-                #     no_prev = True
-                
-                # prev_attr = {
-                #     'id': 'prev',
-                #     'hx-get': hx_get,
-                #     'hx-swap': 'innerHTML',
-                #     'hx-target': '#blogs',
-                #     'hx-url': hx_url,
-                # }
-                # if no_prev:
-                #     prev_attr['disabled'] = True
-
-                # hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
-                # hx_get = '/api' + hx_url + '&api=posts'
-
-                # next_attr = {
-                #     'id': 'prev',
-                #     'hx-get': hx_get,
-                #     'hx-swap': 'innerHTML',
-                #     'hx-target': '#blogs',
-                #     'hx-url': hx_url,
-                # }
-                # if no_next:
-                #     next_attr['disabled'] = True
-
-                # gv.component_dict['posts']['config'] = {
-                #     'prev': {
-                #         'attributes': prev_attr
-                #     },
-                #     'next': {
-                #         'attributes': next_attr
-                #     },
-                #     'is_single': True if post_id is not None else False
-                # }
                 h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
             except Exception as e:
                 # 例外情報を取得
@@ -375,12 +242,8 @@ class BlogManager:
                 return None
             
             response = HTMLResponse(content=h)
-            #response.headers["Hx-Push-Url"] = '/table'
-            # response.headers["Access-Control-Expose-Headers"] = "Hx-Push-Url"
             return response
             
-            #return HTMLResponse(content=h)
-
         except Exception as e:
             # 例外情報を取得
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -396,7 +259,7 @@ class BlogManager:
             form_data = await request.form()
             file = form_data.get('featured_image')
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='create_post',
                 params={
                     'title': form_data['title'],
@@ -432,7 +295,7 @@ class BlogManager:
             form_data = await request.form()
             file = form_data.get('featured_image')
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='update_post',
                 params={
                     'id': form_data['id'],
@@ -460,14 +323,13 @@ class BlogManager:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    # @app.delete("/blog/posts", response_class=HTMLResponse)
     @staticmethod
     async def delete_blog_post(request: Request):
         try:
             print('blog_post_delete')
             query_params = dict(request.query_params)
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='delete_post',
                 params={
                     'id': query_params['post_id']
@@ -493,7 +355,7 @@ class BlogManager:
 
             form_data = await request.form()
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='add_comment',
                 params={
                     'post_id': form_data['post_id'],
@@ -516,7 +378,6 @@ class BlogManager:
             return None
 
     @staticmethod
-    # @app.get("/blog/post/form", response_class=HTMLResponse)
     async def get_post_form(request: Request):
         try:
             print('get_post_form')
@@ -539,7 +400,7 @@ class BlogManager:
 
                 post_id = int(query_params['post_id'])
 
-                result = TM.execute_transactions(
+                result = DatabaseManager.tm.execute_transactions(
                     transaction_name='get_post_detail',
                     params={
                         'post_id': post_id
@@ -628,7 +489,7 @@ class BlogManager:
             page_number = int(
                 query_params['page_number']) if 'page_number' in query_params else 1
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='get_' + page_name,
                 params={
                     'search_term': '%' + search_term + '%',
@@ -678,7 +539,7 @@ class BlogManager:
             post_id = int(query_params['post_id']
                           ) if 'post_id' in query_params else None
 
-            result = TM.execute_transactions(
+            result = DatabaseManager.tm.execute_transactions(
                 transaction_name='get_post_comments',
                 params={
                     'search_term': '%' + search_term + '%',
@@ -705,541 +566,66 @@ class BlogManager:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    @app.post("/blog/categorie", response_class=HTMLResponse)
     @staticmethod
-    async def post_blog_categorie(request: Request):
-        try:
-            form_data = await request.form()
-
-            result = TM.execute_transactions(
-                transaction_name='add_categorie',
-                params={
-                    'name': form_data['name'],
-                    'slug': form_data['slug'],
-                    'description': form_data['description']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newBlogCategorie"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/blog/tag", response_class=HTMLResponse)
-    @staticmethod
-    async def post_blog_tag(request: Request):
-        try:
-            form_data = await request.form()
-
-            result = TM.execute_transactions(
-                transaction_name='add_tag',
-                params={
-                    'name': form_data['name'],
-                    'slug': form_data['slug'],
-                    'description': form_data['description']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newBlogTag"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/blog/user", response_class=HTMLResponse)
-    @staticmethod
-    async def post_blog_user(request: Request):
-        try:
-            form_data = await request.form()
-            result = TM.execute_transactions(
-                transaction_name='add_user',
-                params={
-                    'username': form_data['username'],
-                    'display_name': form_data['display_name'],
-                    'email': form_data['email'],
-                    'password_hash': form_data['password_hash']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newBlogUser"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-
-class CURDManager:
-
-    @app.get("/create", response_class=HTMLResponse)
-    @staticmethod
-    async def create_form(request: Request):
+    async def get_blog(request: Request):
+        print('get_blog')
         try:
             gv.request = request
 
-            table_name = None
-            id = None
-
             query_params = dict(request.query_params)
+            if query_params is None:
+                query_params = []
 
-            if 'table_name' in query_params:
-                table_name = query_params['table_name']
+            ConfigManager.load_data()
 
-            if 'id' in query_params:
-                id = query_params['id']
+            posts_config = ConfigManager.get_table_config('posts')
+            gv.posts_config = posts_config
 
-            if table_name is None:
-                table_name = 'users'
+            page_config = PageRenderer.load_page_config('blog_config.yaml')
 
-            table_config = ConfigManager.get_table_config(table_name)
+            comments_config = ConfigManager.get_table_config('comments')
+            gv.comments_config = comments_config
 
-            primary_key = None
+            categories_config = ConfigManager.get_table_config('categories')
+            gv.categories_config = categories_config
 
-            if True:
+            tags_config = ConfigManager.get_table_config('tags')
+            gv.tags_config = tags_config
 
-                component_id = None
+            users_config = ConfigManager.get_table_config('users')
+            gv.users_config = users_config
 
-                if 'component_id' in query_params:
-                    component_id = query_params['component_id']
-
-                if component_id is None:
-                    component_id = 'form_create'
-
-                PageRenderer.load_page_config()
-
-                gv.component_dict[component_id]['config'] = {
-                    'table_name': table_name,
-                    'id': id,
-                    'data': {},
-                    'primary_key': primary_key,
-                    'table_config': table_config
-                }
-
-                return generate_html(gv.component_dict[component_id])
-
-            raise HTTPException(status_code=404, detail="Item not found")
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/create/{table_name}")
-    @staticmethod
-    async def create_item(table_name: str, request: Request):
-        try:
-            table = None
-            if table_name in metadata.tables:
-                table = metadata.tables[table_name]
-            if table is None:
-                raise HTTPException(status_code=404, detail="Table not found")
-
-            form_data = await request.form()
-            data = {key: value for key, value in form_data.items()
-                    if key in table.columns.keys()}
-
-            table_config = ConfigManager.get_table_config(table_name)
-
-            for c in table_config['columns']:
-                if c['primary_key'] == 1:
-                    if 'autoincrement' in c and c['autoincrement'] == True:
-                        data[c['name']] = None
-
-            data_copy = copy.deepcopy(data)
-
-            for key in data_copy:
-                auto_update = False
-                for c in table_config['columns']:
-                    if key == c['name']:
-                        if 'auto_update' in c.keys():
-                            if c['auto_update'] == True:
-                                auto_update = True
-                                break
-
-                if auto_update:
-                    data[key] = datetime.now()
-                else:
-                    data[key] = convert_value(table.c[key].type, data[key])
+            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
 
             try:
-                with SessionLocal() as session:
-                    stmt = insert(table).values(**data)
-                    session.execute(stmt)
-                    session.commit()
-                return templates.TemplateResponse("table_content.html", {
-                    "request": request,
-                    "table_name": table_name,
-                    "columns": table.columns.keys(),
-                    "rows": session.execute(select(table)).fetchall(),
-                    "primary_key": ConfigManager.get_primary_key(table),
-                    "page": 1,
-                    "page_size": 10,
-                    "total_items": session.execute(select(func.count()).select_from(table)).scalar(),
-                    "total_pages": 1,
-                    "search": "",
-                })
-            except SQLAlchemyError as e:
-                return {"success": False, "message": str(e)}
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.get("/edit", response_class=HTMLResponse)
-    @staticmethod
-    async def edit_form(request: Request):
-        try:
-            gv.request = request
-
-            table_name = None
-            id = None
-
-            query_params = dict(request.query_params)
-
-            if 'table_name' in query_params:
-                table_name = query_params['table_name']
-
-            if 'id' in query_params:
-                id = query_params['id']
-
-            if table_name is None:
-                table_name = 'users'
-
-            if id is None:
-                id = 22
-
-            table_config = ConfigManager.get_table_config(table_name)
-            table = metadata.tables[table_name]
-
-            primary_key = next(
-                (c['name'] for c in table_config['columns'] if c['primary_key'] == 1), None)
-
-            if primary_key is None:
-                primary_key = ConfigManager.get_primary_key(table)
-
-            with SessionLocal() as session:
-                stmt = select(table).where(getattr(table.c, primary_key) == id)
-                result = session.execute(stmt).fetchone()._asdict()
-
-            if result:
-
-                data = dict(result)
-
-                component_id = None
-
-                if 'component_id' in query_params:
-                    component_id = query_params['component_id']
-
-                if component_id is None:
-                    component_id = 'form_edit'
-
-                PageRenderer.load_page_config()
-
-                gv.component_dict[component_id]['config'] = {
-                    'table_name': table_name,
-                    'id': id,
-                    'data': data,
-                    'primary_key': primary_key,
-                    'table_config': table_config
-                }
-
-                return generate_html(gv.component_dict[component_id])
-
-            raise HTTPException(status_code=404, detail="Item not found")
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/edit/{table_name}/{id}")
-    @staticmethod
-    async def edit_item(table_name: str, id: str, request: Request):
-        try:
-            table = None
-            if table_name in metadata.tables:
-                table = metadata.tables[table_name]
-            if table is None:
-                raise HTTPException(status_code=404, detail="Table not found")
-
-            primary_key = ConfigManager.get_primary_key(table)
-            form_data = await request.form()
-            data = {key: value for key, value in form_data.items()
-                    if key in table.columns.keys()}
-
-            table_config = ConfigManager.get_table_config(table_name)
-
-            data_copy = copy.deepcopy(data)
-
-            for key in data_copy:
-                auto_update = True
-                for c in table_config['columns']:
-                    if key == c['name']:
-                        if 'auto_update' in c.keys():
-                            if c['auto_update'] == False:
-                                auto_update = False
-                                break
-
-                if auto_update:
-                    data[key] = convert_value(table.c[key].type, data[key])
-                else:
-                    del data[key]
-
-            try:
-                with SessionLocal() as session:
-                    stmt = update(table).where(
-                        getattr(table.c, primary_key) == id).values(**data)
-                    session.execute(stmt)
-                    session.commit()
-                    return ''
-
-            except SQLAlchemyError as e:
-                return {"success": False, "message": str(e)}
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.get("/delete", response_class=HTMLResponse)
-    @staticmethod
-    async def delete_form(request: Request):
-        try:
-            gv.request = request
-
-            table_name = None
-            id = None
-
-            query_params = dict(request.query_params)
-
-            if 'table_name' in query_params:
-                table_name = query_params['table_name']
-
-            if 'id' in query_params:
-                id = query_params['id']
-
-            if table_name is None:
-                table_name = 'users'
-
-            table_config = ConfigManager.get_table_config(table_name)
-
-            table = metadata.tables[table_name]
-
-            primary_key = ConfigManager.get_primary_key(table)
-
-            with SessionLocal() as session:
-                stmt = select(table).where(getattr(table.c, primary_key) == id)
-                result = session.execute(stmt).fetchone()._asdict()
-
-            if result:
-
-                data = dict(result)
-
-                component_id = None
-
-                if 'component_id' in query_params:
-                    component_id = query_params['component_id']
-
-                if component_id is None:
-                    component_id = 'form_delete'
-
-                PageRenderer.load_page_config()
-
-                gv.component_dict[component_id]['config'] = {
-                    'table_name': table_name,
-                    'id': id,
-                    'data': data,
-                    'primary_key': primary_key,
-                    'table_config': table_config
-                }
-
-                return generate_html(gv.component_dict[component_id])
-
-            raise HTTPException(status_code=404, detail="Item not found")
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/delete/{table_name}/{id}")
-    @staticmethod
-    async def delete_item(table_name: str, id: str):
-        try:
-            table = None
-            if table_name in metadata.tables:
-                table = metadata.tables[table_name]
-            if table is None:
-                raise HTTPException(status_code=404, detail="Table not found")
-
-            primary_key = ConfigManager.get_primary_key(table)
-
-            try:
-                with SessionLocal() as session:
-                    stmt = delete(table).where(
-                        getattr(table.c, primary_key) == id)
-                    session.execute(stmt)
-                    session.commit()
-                # return {"success": True, "message": "Item deleted successfully"}
-                return "Item deleted successfully"
-            except SQLAlchemyError as e:
-                return {"success": False, "message": str(e)}
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-
-class ConfigManager:
-    """FastAPI 配置类，存储全局变量"""
-    '''
-    app = FastAPI()
-
-    # 允许 CORS
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    # 模板引擎
-    templates = Jinja2Templates(directory="templates")
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-    # 全局变量
-    
-    # JWT 相关设置
-    SECRET_KEY = "your-secret-key"
-    ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 30
-    
-    # 设置密码哈希
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-    '''
-
-    @staticmethod
-    def load_data_from_html(filename: str) -> Optional[str]:
-        try:
-            with open(filename, "r", encoding="utf-8") as file:
-                return file.read()
-        except IOError as e:
-            logging.error(f"Error loading data from {filename}: {e}")
-            return None
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
-        try:
-            if filename is None:
-                filename = 'main_config.yaml'
-            with open(filename, "r", encoding="utf-8") as file:
-                return yaml.safe_load(file)
-        except (IOError, yaml.YAMLError) as e:
-            logging.error(f"Error loading YAML data from {filename}: {e}")
-            return None
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def load_data():
-        try:
-            if gv.BASE_HTML:
+                attr = gv.component_dict['posts']['attributes']
+                attr['hx-get'] = attr['hx-get'].format(
+                    search_term=search_term, 
+                    page_size=page_size, 
+                    page_number=page_number,
+                    post_id=post_id)
+                    
+            except KeyError:
                 pass
-            else:
-                gv.BASE_HTML = ConfigManager.load_data_from_html(
-                    'base_html.html')
+                  
+            rendered_components = [PageRenderer.generate_html(
+                component) for component in page_config['components']]
 
-            if False: #gv.HTML_TEMPLATES:
-                pass
-            else:
-                gv.HTML_TEMPLATES = ConfigManager.load_data_from_yaml(
-                    'html_templates.yaml')
+            template = Template(gv.BASE_HTML)
+            h = template.render(
+                page_title=page_config['title'],
+                components=rendered_components,
+                min=min
+            )
+            
+            headers = {"HX-Trigger": "newBlogGet"}
+            
+            return HTMLResponse(content=h, headers=headers)
 
-            if gv.YAML_CONFIG:
-                pass
-            else:
-                gv.YAML_CONFIG = ConfigManager.load_data_from_yaml(
-                    'main_config.yaml')
-
-            if gv.icons:
-                pass
-            else:
-                gv.icons = gv.HTML_TEMPLATES.get('icons', {})
-
-            if gv.classes:
-                pass
-            else:
-                gv.classes = gv.HTML_TEMPLATES.get('classes', {})
-
-            # 加载嵌入的 YAML 数据
-            gv.base_config = ConfigManager.load_data_from_yaml(
-                'base_config.yaml')
-            # pprint.pprint(gv.base_config)
-            # child_config = yaml.safe_load(child_yaml)
-            '''    
-            # 合并所有基础数据
-            all_base_config = deep_merge(base_config, child_config)
-        
-            # 解析继承关系
-            resolved_config = resolve_inheritance(child_config, all_base_config)
-        
-            # 将 base_config 中不冲突的部分合并到最终结果中
-            final_config = deep_merge(base_config, resolved_config)
-            '''
+            #return h
 
         except Exception as e:
             # 例外情報を取得
@@ -1248,307 +634,10 @@ class ConfigManager:
             line_number = traceback.extract_tb(exc_traceback)[-1].lineno
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
-
-    @staticmethod
-    def get_table_config(table_name=None):
-        try:
-            request = None
-
-            if hasattr(gv, 'request'):
-                request = gv.request
-
-            search_params = {}
-            if request:
-                # Get all query parameters
-                search_params = dict(request.query_params)
-                if 'table_name' in search_params:
-                    table_name = search_params['table_name']
-
-            if table_name is None:
-                table_name = 'users'
-
-            with open(f'table_configs/{table_name}_config.yaml', 'r') as f:
-                config = yaml.safe_load(f)
-                config['component_id'] = 'main_data_table'
-                return config
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_primary_key(table):
-        try:
-            return next(iter(table.primary_key.columns)).name
-        except Exception as e:
-            return None
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_column_type(column_type):
-        try:
-            if isinstance(column_type, String):
-                return "text"
-            elif isinstance(column_type, Integer):
-                return "number"
-            elif isinstance(column_type, Boolean):
-                return "checkbox"
-            elif isinstance(column_type, (DateTime, Date)):
-                return "date"
-            else:
-                return "text"  # 默认为文本输入
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def generate_form_config(table_name):
-        try:
-            table = metadata.tables[table_name]
-            inspector = inspect(engine)
-            pk_constraint = inspector.get_pk_constraint(table_name)
-            primary_keys = pk_constraint['constrained_columns'] if pk_constraint else [
-            ]
-
-            fields = []
-            for column in table.columns:
-                field = {
-                    "name": column.name,
-                    "label": column.name.replace('_', ' ').title(),
-                    "type": ConfigManager.get_column_type(column.type),
-                    "required": not column.nullable and column.name not in primary_keys,
-                    "readonly": column.name in primary_keys
-                }
-                fields.append(field)
-
-            return {"fields": fields}
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_configs():
-        return ConfigManager.get_table_config()
-
-    @staticmethod
-    def deep_merge(base, child):
-        try:
-            """
-            递归合并两个字典，支持深层合并。
-            如果字段冲突，优先使用 child 的值。
-            """
-            if isinstance(base, dict) and isinstance(child, dict):
-                merged = base.copy()  # 复制 base 数据
-                for key, value in child.items():
-                    if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-                        # 如果键存在且值是字典，则递归合并
-                        merged[key] = ConfigManager.deep_merge(
-                            merged[key], value)
-                    else:
-                        # 否则直接使用 child 的值
-                        merged[key] = value
-                return merged
-            else:
-                # 如果 base 或 child 不是字典，则直接使用 child 的值
-                return child
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def resolve_inheritance(data, base_data):
-        try:
-            """
-            递归解析继承关系，支持 base 属性。
-            """
-            if isinstance(data, dict):
-                # 如果存在 base 属性，则进行继承
-                if 'base' in data:
-                    base_key = data.pop('base')  # 删除 base 键
-                    # 递归查找 base 数据
-                    base_value = ConfigManager.get_nested_value(
-                        base_data, base_key)
-                    if base_value is not None:
-                        # 递归解析 base 数据
-                        base_value = ConfigManager.resolve_inheritance(
-                            base_value, base_data)
-                        # 深层合并 base 数据和当前数据
-                        data = ConfigManager.deep_merge(base_value, data)
-                    else:
-                        raise ValueError(
-                            f"Base key '{base_key}' not found in base data.")
-
-                # 递归处理所有子属性
-                for key, value in data.items():
-                    data[key] = ConfigManager.resolve_inheritance(
-                        value, base_data)
-
-            elif isinstance(data, list):
-                # 如果是列表，递归处理每个元素
-                data = [ConfigManager.resolve_inheritance(
-                    item, base_data) for item in data]
-
-            return data
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_nested_value(data, key_path):
-        try:
-            """
-            根据点分隔的路径（如 'component_definitions.modal_form'）获取嵌套字典中的值。
-            """
-            keys = key_path.split('.')
-            current = data
-            for key in keys:
-                if isinstance(current, dict) and key in current:
-                    current = current[key]
-                else:
-                    return None
-            return current
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    '''
-    @staticmethod
-    def deep_merge(base, child):
-        """
-        递归合并两个字典，支持深层合并。
-        如果字段冲突，优先使用 child 的值。
-        """
-        if isinstance(base, dict) and isinstance(child, dict):
-            merged = base.copy()  # 复制 base 数据
-            for key, value in child.items():
-                if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-                    # 如果键存在且值是字典，则递归合并
-                    merged[key] = ConfigManager.deep_merge(merged[key], value)
-                else:
-                    # 否则直接使用 child 的值
-                    merged[key] = value
-            return merged
-        else:
-            # 如果 base 或 child 不是字典，则直接使用 child 的值
-            return child
-    
-    @staticmethod
-    def resolve_inheritance(data, base_data):
-        """
-        递归解析继承关系，支持 base 属性。
-        """
-        if isinstance(data, dict):
-            # 如果存在 base 属性，则进行继承
-            if 'base' in data:
-                base_key = data.pop('base')  # 删除 base 键
-                # 递归查找 base 数据
-                base_value = ConfigManager.get_nested_value(base_data, base_key)
-                if base_value is not None:
-                    # 递归解析 base 数据
-                    base_value = ConfigManager.resolve_inheritance(base_value, base_data)
-                    # 深层合并 base 数据和当前数据
-                    data = ConfigManager.deep_merge(base_value, data)
-                else:
-                    pass
-                    #raise ValueError(f"Base key '{base_key}' not found in base data.")
-    
-            # 递归处理所有子属性
-            for key, value in data.items():
-                data[key] = ConfigManager.resolve_inheritance(value, base_data)
-    
-        elif isinstance(data, list):
-            # 如果是列表，递归处理每个元素
-            data = [ConfigManager.resolve_inheritance(item, base_data) for item in data]
-    
-        return data
-    
-    @staticmethod
-    def get_nested_value(data, key_path):
-        """
-        根据点分隔的路径（如 'parent.form'）获取嵌套字典中的值。
-        """
-        keys = key_path.split('.')
-        current = data
-        for key in keys:
-            if isinstance(current, dict) and key in current:
-                current = current[key]
-            else:
-                return None
-        return current
-    '''
-
 
 class PageRenderer:
     """页面渲染管理类"""
     templates_env = Environment(loader=FileSystemLoader("templates"))
-
-    @staticmethod
-    def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
-        try:
-            with open(filename, "r", encoding="utf-8") as file:
-                return yaml.safe_load(file)
-        except Exception as e:
-            logger.error(f"Error loading YAML data: {e}")
-            return None
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def render_template(template_name: str, context: dict):
-        try:
-            template = PageRenderer.templates_env.get_template(template_name)
-            return template.render(**context)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    # 辅助函数：解析组件引用
 
     @staticmethod
     def resolve_component(comp):
@@ -1572,29 +661,6 @@ class PageRenderer:
             # config = yaml.safe_load(YAML_CONFIG)
             gv.YAML_CONFIG = ConfigManager.load_data_from_yaml(config_name)
             config = copy.deepcopy(gv.YAML_CONFIG)
-            # pprint.pprint(config)
-            # gv.component_dict = {
-            #     comp['id']: comp
-            #     for comp in config.get('component_definitions', {}).values()
-            # }
-            # gv.component_dict = config.get('component_definitions', {})
-            '''
-            # 合并所有基础数据
-            all_base_config = ConfigManager.deep_merge(gv.base_config, config)
-            print('********')
-            print(gv.base_config)
-            print(all_base_config)
-            print('********')
-            # 解析继承关系
-            resolved_config = ConfigManager.resolve_inheritance(config, gv.base_config)
-            #print(resolved_config)
-            print('111')
-            # 将 base_config 中不冲突的部分合并到最终结果中
-            final_config = ConfigManager.deep_merge(gv.base_config, resolved_config)
-            #print(final_config)
-            
-            config = final_config
-            '''
 
             # 合并所有基础数据
             all_base_data = ConfigManager.deep_merge(gv.base_config, config)
@@ -1607,9 +673,6 @@ class PageRenderer:
             final_data = ConfigManager.deep_merge(
                 gv.base_config, resolved_data)
             config = final_data
-            # print('-------')
-            # # print(config)
-            # print('-------')
 
             gv.component_dict = config.get('component_definitions', {})
             # print(gv.component_dict)
@@ -1725,25 +788,8 @@ class PageRenderer:
                             if value:
                                 rendered_children[key] = [PageRenderer.generate_html(
                                     PageRenderer.resolve_component(child)) for child in value]
-            # print('5')
-            # print(component['config'] if 'config' in component else '')
+
             data = component.get('data', {})
-            # print(data)
-            # print('6')
-            # if page_name == 'posts':
-            #     data = data[page_name]
-            #     pass
-
-            # if page_name == '':
-            #     data = data[page_name]
-            #     pass
-
-            # if 'posts' in data:
-            #     data = data['posts']
-
-            # if 'comment' in data:
-            #     data = data['comment']
-            #     # print(list(data.keys()))
 
             h = template.render(
                 attributes=component.get('attributes', {}),
@@ -1762,8 +808,7 @@ class PageRenderer:
                 min=min,
                 site_name='7777',
                 format_attr=PageRenderer.format_attr,
-                format_children=PageRenderer.format_children,
-                breadcrumb_filter=PageRenderer.breadcrumb_filter
+                format_children=PageRenderer.format_children
             )
 
             return h
@@ -1844,15 +889,6 @@ class PageRenderer:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    @staticmethod
-    def breadcrumb_filter(path: str) -> str:
-        """
-        Converts a path like '/Home/Documents/Add' into breadcrumb HTML.
-        """
-        parts = path.strip('/').split('/')
-        return ''.join(f'<li><a href="/{part}">{part}</a></li>' for part in parts)
-
-
 class CustomRenderer(PageRenderer):
     """继承 PageRenderer 并扩展功能"""
 
@@ -1904,1045 +940,6 @@ class CustomRenderer(PageRenderer):
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    # 主渲染函数保持不变
-    # @app.get("/blog", response_class=HTMLResponse)
-    @staticmethod
-    async def get_blog(request: Request):
-        print('get_blog')
-        try:
-            gv.request = request
-
-            query_params = dict(request.query_params)
-            if query_params is None:
-                query_params = []
-
-            # if 'api' in query_params:
-            #     if 'posts' == query_params['api']:
-            #         return await CustomRenderer.get_posts(request)
-            #     elif 'post' == query_params['api']:
-            #         return await CustomRenderer.get_post(request)
-            #     elif 'edit' == query_params['api']:
-            #         return await CustomRenderer.get_post_form(request)
-
-            ConfigManager.load_data()
-
-            posts_config = ConfigManager.get_table_config('posts')
-            gv.posts_config = posts_config
-
-            page_config = PageRenderer.load_page_config('blog_config.yaml')
-
-            comments_config = ConfigManager.get_table_config('comments')
-            gv.comments_config = comments_config
-
-            categories_config = ConfigManager.get_table_config('categories')
-            gv.categories_config = categories_config
-
-            tags_config = ConfigManager.get_table_config('tags')
-            gv.tags_config = tags_config
-
-            users_config = ConfigManager.get_table_config('users')
-            gv.users_config = users_config
-
-            '''
-            hx_get = '/blog' + '/posts'
-            hx_get_params = []
-
-            hx_get_params.append('api=posts')
-
-            if 'search_term' in query_params:
-                hx_get_params.append('search_term' + '=' +
-                                     str(query_params['search_term']))
-            if 'page_size' in query_params:
-                hx_get_params.append('page_size' + '=' +
-                                     str(query_params['page_size']))
-            if 'page_number' in query_params:
-                hx_get_params.append('page_number' + '=' +
-                                     str(query_params['page_number']))
-
-            hx_get_params.append('posts')
-
-            hx_get += '?' + ('&').join(hx_get_params)
-
-            blogs_attr = {
-                'hx-get': '/api' + hx_get,
-                'hx-swap': 'innerHTML',
-                'hx-trigger': 'load, newPost from:body, updatePost from:body, deletePost from:body',
-                'hx-url': hx_get
-            }
-            gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
-            '''
-            
-            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
-
-            try:
-                attr = gv.component_dict['posts']['attributes']
-                attr['hx-get'] = attr['hx-get'].format(
-                    search_term=search_term, 
-                    page_size=page_size, 
-                    page_number=page_number,
-                    post_id=post_id)
-                    
-            except KeyError:
-                pass
-                  
-            rendered_components = [PageRenderer.generate_html(
-                component) for component in page_config['components']]
-
-            template = Template(gv.BASE_HTML)
-            h = template.render(
-                page_title=page_config['title'],
-                components=rendered_components,
-                min=min
-            )
-            
-            headers = {"HX-Trigger": "newBlogGet"}
-            
-            return HTMLResponse(content=h, headers=headers)
-
-            #return h
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    @app.get("/blog/post", response_class=HTMLResponse)
-    async def get_post(request: Request):
-        try:
-            if "HX-Request" in request.headers:
-                pass
-                parsed_url = urlparse(request.headers['hx-current-url'])
-
-            query_params = dict(request.query_params)
-
-            if 'post_id' not in query_params:
-                return 'no data'
-
-            post_id = int(query_params['post_id'])
-
-            result = TM.execute_transactions(
-                transaction_name='get_post_detail',
-                params={
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
-            result = [dict(row) for row in result]  # 转换为字典列表
-
-            for d in result:
-                d['attributes'] = {
-                    'back': {
-                        'hx-get': f'/api{parsed_url.path}?{parsed_url.query}&api=posts',
-                    }
-                }
-
-            h = ''
-            PageRenderer.load_page_config('blog_config.yaml')
-            gv.component_dict['post']['data'] = result
-
-            h = PageRenderer.generate_html(gv.component_dict['post'])
-
-            return HTMLResponse(content=h)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-
-class DatabaseManager:
-    """数据库管理类，处理数据库连接和操作"""
-    DATABASE_URL = "sqlite:///./cms.db"
-    engine = create_engine(DATABASE_URL)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    metadata = MetaData()
-    metadata.reflect(bind=engine, views=True)
-
-    db = SessionLocal()
-    transaction_manager = TransactionModule(
-        engine=engine, db=db, metadata=metadata)
-
-    '''
-    @staticmethod
-    def get_table_names(self):
-        inspector = inspect(self.engine)
-        return inspector.get_table_names()
-    '''
-
-    @staticmethod
-    def get_table_names():
-        try:
-            inspector = inspect(engine)
-            return inspector.get_table_names()
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_view_names():
-        try:
-            inspector = inspect(engine)
-            return inspector.get_view_names()
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_tables():
-        try:
-            tables = DatabaseManager.get_table_names()
-            views = DatabaseManager.get_view_names()
-            values = []
-            for t in tables:
-                values.append(
-                    {
-                        'component_id': 'main_data_table',
-                        'text': t
-                    }
-                )
-                gv.models.append(t)
-                gv.model[t] = {
-                    'is_view': False
-                }
-            for v in views:
-                values.append(
-                    {
-                        'component_id': 'main_data_table',
-                        'text': v
-                    }
-                )
-                gv.models.append(v)
-                gv.model[v] = {
-                    'is_view': True
-                }
-            return values
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def generate_table_or_view_config(engine, name, is_view=False):
-        try:
-            inspector = inspect(engine)
-            columns = inspector.get_columns(name)
-
-            config_path = f'table_configs/{name}_config.yaml'
-
-            # Check if configuration file exists
-            if os.path.exists(config_path):
-                # Read existing configuration file
-                with open(config_path, 'r') as f:
-                    config = yaml.safe_load(f)
-                    return config
-
-            config = {
-                "name": name,
-                "type": "view" if is_view else "table",
-                "columns": []
-            }
-
-            for column in columns:
-                column_config = {
-                    "name": column['name'],
-                    "label": column['name'],
-                    "type": str(column['type']),
-                    # Views might not have this information
-                    "nullable": column.get('nullable', True),
-                    # Views might not have this information
-                    "primary_key": column.get('primary_key', False)
-                }
-
-                # Check if the column is auto-increment
-                if column.get('autoincrement', False):
-                    column_config['autoincrement'] = True
-
-                if column.get('primary_key', False) and isinstance(column['type'], Integer):
-                    # Additional checks might be needed depending on the database
-                    column_config['autoincrement'] = True
-
-                # Determine input type and additional properties
-                if isinstance(column['type'], String):
-                    column_config['input_type'] = 'text'
-                elif isinstance(column['type'], (Integer, Float)):
-                    column_config['input_type'] = 'number'
-                elif isinstance(column['type'], (DateTime, Date)):
-                    column_config['input_type'] = 'date'
-                elif isinstance(column['type'], Boolean):
-                    column_config['input_type'] = 'checkbox'
-                elif isinstance(column['type'], Enum):
-                    column_config['input_type'] = 'select'
-                    column_config['options'] = column['type'].enums
-                else:
-                    column_config['input_type'] = 'text'
-
-                config['columns'].append(column_config)
-
-            # Save configuration to a YAML file
-            os.makedirs('table_configs', exist_ok=True)
-            with open(config_path, 'w') as f:
-                yaml.dump(config, f, default_flow_style=False)
-
-            return config
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    # Generate configurations for all tables and views
-    @staticmethod
-    def generate_all_configs(engine):
-        try:
-            inspector = inspect(engine)
-
-            # Generate config for tables
-            for table_name in inspector.get_table_names():
-                DatabaseManager.generate_table_or_view_config(
-                    engine, table_name)
-
-            # Generate config for views
-            for view_name in inspector.get_view_names():
-                DatabaseManager.generate_table_or_view_config(
-                    engine, view_name, is_view=True)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def apply_search_filter(query, table, column_config, value, is_keyword_search=False):
-        try:
-            """
-            Apply search filter to a query based on column configuration and search value.
-            根据列配置和搜索值对查询应用搜索过滤器。
-
-            Args:
-                query: SQLAlchemy query object
-                    SQLAlchemy查询对象
-                table: SQLAlchemy table object
-                    SQLAlchemy表对象
-                column_config: Dictionary containing column configuration
-                            包含列配置的字典
-                value: Search value
-                    搜索值
-                is_keyword_search: Boolean indicating if this is a keyword search across all columns
-                                布尔值，指示是否是跨所有列的关键字搜索
-
-            Returns:
-                Modified query with search filter applied
-                应用了搜索过滤器的修改后的查询
-            """
-            if value:
-                column = getattr(table.c, column_config['name'])
-                input_type = column_config.get('input_type', 'text')
-
-                # For keyword search, we only apply LIKE filters on text and string columns
-                # 对于关键字搜索，我们只对文本和字符串列应用LIKE过滤器
-                if is_keyword_search:
-                    if isinstance(column.type, String):
-                        return query.where(column.ilike(f"%{value}%"))
-                    return query
-
-                if input_type == 'text':
-                    return query.where(column.ilike(f"%{value}%"))
-                elif input_type == 'number':
-                    try:
-                        value = float(value)
-                        return query.where(column == value)
-                    except ValueError:
-                        return query
-                elif input_type in ('date', 'datetime'):
-                    try:
-                        value = datetime.strptime(value, "%Y-%m-%d")
-                        return query.where(column == value)
-                    except ValueError:
-                        return query
-                elif input_type == 'checkbox':
-                    value = value.lower() in ('true', '1', 'yes', 'on')
-                    return query.where(column == value)
-                elif input_type == 'select':
-                    return query.where(column == value)
-            return query
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    def get_table_data(
-        request: Request = None,
-        table_name: str = None,
-        page: int = 1,
-        page_size: int = 5,
-        sort_column: str | None = None,
-        sort_direction: str = 'asc'
-    ):
-        try:
-            if request is None:
-                request = gv.request
-
-            search_params = {}
-            if request:
-                # Get query parameters from request
-                # 从请求中获取查询参数
-                search_params = dict(request.query_params)
-
-                # Process pagination parameters
-                # 处理分页参数
-                if 'page' in search_params:
-                    if search_params['page'] == '':
-                        page = 1
-                    else:
-                        page = int(search_params['page'])
-
-                if 'page_size' in search_params:
-                    if search_params['page_size'] == '':
-                        page_size = 10
-                    else:
-                        page_size = int(search_params['page_size'])
-
-                # Process sorting parameters
-                # 处理排序参数
-                if 'sort_column' in search_params:
-                    sort_column = search_params['sort_column']
-
-                if 'sort_direction' in search_params:
-                    sort_direction = search_params['sort_direction']
-
-                if 'table_name' in search_params:
-                    table_name = search_params['table_name']
-
-                # Remove known parameters from search params
-                # 从搜索参数中移除已知参数
-                for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
-                    search_params.pop(param, None)
-
-            # Set default table if none specified
-            # 如果未指定表，设置默认表
-            if table_name is None:
-                table_name = 'users'
-
-            # Get table object and verify it exists
-            # 获取表对象并验证其存在
-            table = None
-            if table_name in metadata.tables:
-                table = metadata.tables[table_name]
-            if table is None:
-                raise HTTPException(status_code=404, detail="Table not found")
-
-            table_config = ConfigManager.get_table_config(table_name)
-
-            # Get primary key and calculate offset for pagination
-            # 获取主键并计算分页的偏移量
-            primary_key = next(
-                (col['name'] for col in table_config['columns'] if col.get('primary_key')), None)
-            offset = (page - 1) * page_size
-
-            query = select(table.columns)
-
-            # Handle keyword search across all columns
-            # 处理跨所有列的关键字搜索
-            if 'keyword' in search_params and search_params['keyword']:
-                keyword = search_params['keyword']
-                keyword_conditions = []
-                for column_config in table_config['columns']:
-                    column = getattr(table.c, column_config['name'])
-                    # Only apply keyword search to text/string columns
-                    # 只对文本/字符串列应用关键字搜索
-                    if isinstance(column.type, String):
-                        keyword_conditions.append(column.ilike(f"%{keyword}%"))
-                if keyword_conditions:
-                    query = query.where(or_(*keyword_conditions))
-            else:
-                # Apply regular column-specific filters
-                # 应用常规的列特定过滤器
-                for column_config in table_config['columns']:
-                    if column_config['name'] in search_params:
-                        query = DatabaseManager.apply_search_filter(
-                            query, table, column_config, search_params[column_config['name']])
-
-            # Apply sorting if a sort column is specified
-            # 如果指定了排序列，应用排序
-            if sort_column and sort_column in table.columns:
-                sort_func = desc if sort_direction.lower() == 'desc' else asc
-                query = query.order_by(
-                    sort_func(getattr(table.c, sort_column)))
-
-            with SessionLocal() as session:
-                # Get total count and paginated results
-                # 获取总数和分页结果
-                count_query = select(func.count()).select_from(query.alias())
-                total_items = session.execute(count_query).scalar()
-                result = session.execute(query.offset(
-                    offset).limit(page_size)).fetchall()
-
-            # Calculate total pages
-            # 计算总页数
-            total_pages = (total_items + page_size - 1) // page_size
-
-            # Return the complete result set
-            # 返回完整的结果集
-            return {
-                "request": request,
-                "table_name": table_name,
-                "columns": [col['name'] for col in table_config['columns']],
-                "rows": result,
-                "primary_key": primary_key,
-                "page": page,
-                "page_size": page_size,
-                "total_items": total_items,
-                "total_pages": total_pages,
-                "table_config": table_config,
-                "sort_column": sort_column,
-                "sort_direction": sort_direction,
-                "search_params": search_params
-            }
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-
-class AuthManager:
-    """用户认证管理类"""
-
-    @staticmethod
-    def verify_password(plain_password, hashed_password):
-        return ConfigManager.pwd_context.verify(plain_password, hashed_password)
-
-    @staticmethod
-    def get_password_hash(password):
-        return ConfigManager.pwd_context.hash(password)
-
-    @staticmethod
-    def create_access_token(data: dict, expires_delta: timedelta = None):
-        try:
-            to_encode = data.copy()
-            expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
-            to_encode.update({"exp": expire})
-            return jwt.encode(to_encode, ConfigManager.SECRET_KEY, algorithm=ConfigManager.ALGORITHM)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    async def get_current_user(request: Request):
-        token = request.cookies.get("access_token")
-        if not token:
-            return None
-        try:
-            payload = jwt.decode(token, ConfigManager.SECRET_KEY, algorithms=[
-                                 ConfigManager.ALGORITHM])
-            username: str = payload.get("sub")
-            if username is None:
-                raise HTTPException(status_code=401, detail="Invalid token")
-            return {"username": username}
-        except JWTError:
-            return none
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    def verify_password(plain_password, hashed_password):
-        return pwd_context.verify(plain_password, hashed_password)
-
-    def get_password_hash(password):
-        return pwd_context.hash(password)
-
-    def create_access_token(data: dict, expires_delta: timedelta = None):
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=15)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
-
-    # async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
-    async def get_current_user(request: Request):
-
-        token = request.cookies.get("access_token")
-
-        if not token:
-            return None
-
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            username: str = payload.get("sub")
-            if username is None:
-                raise credentials_exception
-        # except JWTError:
-        #    raise credentials_exception
-        except JWTError:
-            # 检查请求头，判断是否是 HTMX 请求
-            if "HX-Request" in request.headers:
-                # 如果是 HTMX 请求，返回 401 错误
-                raise credentials_exception
-            else:
-                # 如果不是 HTMX 请求，重定向到登录页面
-                return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
-
-        # db = SessionLocal()
-        try:
-            user = db.execute(select(metadata.tables['Users']).where(
-                metadata.tables['Users'].c.Username == username
-            )).first()
-            if user is None:
-                raise credentials_exception
-            return user
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-        finally:
-            db.close()
-
-    def decode_token(token: str):
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            username: str = payload.get("sub")
-            if username is None:
-                raise HTTPException(status_code=401, detail="Invalid token")
-            return {"username": username, "role": payload.get("role")}
-        except JWTError:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    def login_required(func):
-        @wraps(func)
-        async def wrapper(request: Request, *args, **kwargs):
-            token = None
-
-            # 首先检查 Authorization header
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split()[1]
-
-            # 如果 header 中没有 token，则检查 cookie
-            if not token:
-                token = request.cookies.get('access_token')
-
-            if not token:
-                raise HTTPException(
-                    status_code=401, detail="Not authenticated")
-
-            try:
-                user = decode_token(token)
-                # 将用户信息添加到请求中，以便在路由函数中使用
-                request.state.user = user
-            except HTTPException:
-                raise HTTPException(status_code=401, detail="Invalid token")
-            except Exception as e:
-                # 例外情報を取得
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                # 行番号を取得
-                line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-                print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-                return None
-
-            return await func(request, *args, **kwargs)
-        return wrapper
-
-    @app.get("/login", response_class=HTMLResponse)
-    # async def login(request: Request, current_user: dict = Depends(get_current_user)):
-    #     """
-    #     Handle GET requests to the login page
-    #     处理登录页面的GET请求
-    #     Args:
-    #         request: FastAPI request object
-    #         current_user: Current user from JWT token dependency
-    #     """
-    #     # If user is already logged in, redirect to home page
-    #     # 如果用户已经登录，重定向到主页
-    #     if current_user:
-    #         return RedirectResponse(url="/", status_code=302)
-    async def login(request: Request):
-        try:
-            gv.request = request
-
-            # Load latest configuration
-            # 加载最新配置
-            ConfigManager.load_data()
-
-            # Load login page configuration
-            # 加载登录页面配置
-            page_config = PageRenderer.load_page_config('login_config.yaml')
-
-            # Render login page components
-            # 渲染登录页面组件
-            rendered_components = [generate_html(
-                component) for component in page_config['components']]
-
-            template = Template(gv.BASE_HTML)
-            return template.render(
-                page_title="User Management",
-                components=rendered_components,
-                min=min
-            )
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/login")
-    async def login(request: Request, response: Response):
-        """
-        Handle POST requests for login
-        处理登录的POST请求
-        """
-        form_data = await request.form()
-        params = {key: value for key, value in form_data.items()}
-
-        try:
-            # with SessionLocal() as db:
-            result = TM.execute_transactions(
-                transaction_name="UserLogin",
-                params=params,
-                config_file="login_txn.yaml"
-            )
-
-            user_data = gv.data.get("user_data", [])
-
-            if not user_data or not verify_password(params['password'], user_data[0]["Password"]):
-                return "<div class='alert alert-error'>Incorrect username or password</div>"
-
-            user = user_data[0]
-            access_token_expires = timedelta(
-                minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(
-                data={"sub": user["Username"], "role": user["Role"]},
-                expires_delta=access_token_expires
-            )
-
-            html_response = f"<div class='alert alert-success'>Login successful! Welcome</div>"
-            response = HTMLResponse(content=html_response)
-
-            # Set secure cookie with token
-            # 设置带有令牌的安全cookie
-            response.set_cookie(
-                key="access_token",
-                value=access_token,
-                httponly=True,
-                secure=True,  # Only transmit over HTTPS
-                samesite='lax',  # Prevent CSRF
-                max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
-            )
-
-            # Set cache control headers to prevent caching of login page
-            # 设置缓存控制头以防止登录页面被缓存
-            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
-            response.headers['HX-Redirect'] = '/'
-
-            return response
-
-        except Exception as e:
-            return HTMLResponse(content=f"<div class='alert alert-error'>Login failed: {str(e)}</div>")
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.middleware("http")
-    async def cache_control_middleware(request: Request, call_next):
-        try:
-            """
-            Middleware to handle cache control headers
-            处理缓存控制头的中间件
-            """
-            response = await call_next(request)
-
-            # Add cache control headers for login-related pages
-            # 为登录相关页面添加缓存控制头
-            if request.url.path in ["/login", "/register"]:
-                response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0'
-                response.headers['Pragma'] = 'no-cache'
-                response.headers['Expires'] = '0'
-
-            return response
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.get("/logout")
-    async def logout(request: Request):
-        try:
-            logger.info("Logout requested")
-            # response = RedirectResponse(url="/login", status_code=302)
-            response = HTMLResponse(content='')
-            response.headers['HX-Redirect'] = '/login'
-            response.delete_cookie(key="access_token")
-            logger.info("access_token cookie deleted")
-            return response
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.get("/register", response_class=HTMLResponse)
-    async def register(request: Request):
-        try:
-            gv.request = request
-
-            ConfigManager.load_data()  # 重新加载配置，确保使用最新的配置
-
-            page_config = PageRenderer.load_page_config('register_config.yaml')
-
-            rendered_components = [generate_html(
-                component) for component in page_config['components']]
-
-            template = Template(gv.BASE_HTML)
-            return template.render(
-                page_title="User Management",
-                components=rendered_components,
-                min=min
-            )
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/register", response_class=HTMLResponse)
-    async def register(request: Request):
-        form_data = await request.form()
-        params = {key: value for key, value in form_data.items()}
-        params['password'] = get_password_hash(params['password'])
-        try:
-            with SessionLocal() as db:
-                result = TM.execute_transactions(
-                    transaction_name="RegisterUser",
-                    params=params,
-                    config_file="register_txn.yaml"
-                )
-            # return f"<div class='alert alert-success'>User registered successfully!</div>"
-            response = HTMLResponse(content='')
-            response.headers['HX-Redirect'] = '/login'
-            response.delete_cookie(key="access_token")
-            logger.info("access_token cookie deleted")
-            return response
-        except Exception as e:
-            return f"<div class='alert alert-error'>Registration failed: {str(e)}</div>"
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-
-class FileManager:
-    """文件管理类，处理上传、验证"""
-    ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'}
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-    @staticmethod
-    def allowed_file(filename: str) -> bool:
-        return os.path.splitext(filename)[1].lower() in FileManager.ALLOWED_EXTENSIONS
-
-    @staticmethod
-    async def upload_file(file: UploadFile = File(...)):
-        if not FileManager.allowed_file(file.filename):
-            return HTMLResponse(f"<div class='error'>Unsupported file type</div>")
-
-        file_path = f"./uploaded/{file.filename}"
-        with open(file_path, "wb") as buffer:
-            buffer.write(file.file.read())
-
-        return HTMLResponse(f"<div class='success'>File uploaded successfully</div>")
-
-    def validate_file_type(file: UploadFile) -> bool:
-        mime = magic.Magic(mime=True)
-        file_type = mime.from_buffer(file.file.read(1024))
-        file.file.seek(0)  # Reset file pointer
-        return file_type.split('/')[1] in [ext.lstrip('.') for ext in ALLOWED_EXTENSIONS]
-
-    def validate_file_size(file: UploadFile) -> bool:
-        file.file.seek(0, 2)  # Move to the end of the file
-        file_size = file.file.tell()  # Get the position (size)
-        file.file.seek(0)  # Reset file pointer
-        return file_size <= MAX_FILE_SIZE
-
-    # @app.post("/upload", response_class=HTMLResponse)
-    def upload_file(
-        file: UploadFile = File(...)
-    ):
-        try:
-            # 文件验证
-            if not allowed_file(file.filename):
-                return HTMLResponse(f"<div class='error'>File type not allowed. Allowed types are: {', '.join(ALLOWED_EXTENSIONS)}</div>")
-
-            # if not validate_file_type(file):
-            #     return HTMLResponse("<div class='error'>File content does not match the allowed types</div>")
-
-            if not validate_file_size(file):
-                return HTMLResponse(f"<div class='error'>File size exceeds the maximum limit of {MAX_FILE_SIZE / (1024 * 1024)} MB</div>")
-
-            # # 临时保存文件
-            # temp_file_path = f"./temp_uploads/{file.filename}"
-            # os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
-            # with open(temp_file_path, "wb") as buffer:
-            #     shutil.copyfileobj(file.file, buffer)
-
-            # 准备事务参数
-            transaction_params = {
-                "file": file,
-                "file_name": file.filename,
-                "folder_path": "./uploaded"
-            }
-
-            # 执行事务
-            try:
-                result = TM.execute_transactions(
-                    transaction_name='file_operations',
-                    params=transaction_params,
-                    config_file='file_operations_txn.yaml'
-                )
-
-                # # 删除临时文件
-                # os.remove(temp_file_path)
-
-                # 根据结果返回适当的响应
-                if isinstance(result, dict) and 'filename' in result:
-                    PageRenderer.load_page_config()
-                    # # # print((gv.component_dict.keys())
-                    res = PageRenderer.generate_html(
-                        gv.component_dict['file_manager'])
-                    res = f'''
-                    <div hx-swap-oob="innerHTML:#file-manager">
-                        {res}
-                    </div>
-                    '''
-                    return HTMLResponse(res)
-                    # return HTMLResponse(f"<div class='success'>File '{result['filename']}' processed successfully</div>")
-                else:
-                    return HTMLResponse(f"<div class='success'>Transaction completed successfully</div>")
-
-            except HTTPException as he:
-                return HTMLResponse(f"<div class='error'>{he.detail}</div>")
-
-            except Exception as e:
-                logger.error(f"Error during transaction execution: {str(e)}")
-                return HTMLResponse(f"<div class='error'>An error occurred during transaction execution: {str(e)}</div>")
-
-        except Exception as e:
-            logger.error(f"Error during file upload: {str(e)}")
-            return HTMLResponse(f"<div class='error'>An error occurred during file upload: {str(e)}</div>")
-
-    def get_files():
-        files = os.listdir("uploaded")
-        return files
-
-    # @app.get("/preview/{filename}", response_class=HTMLResponse)
-    async def preview_file(request: Request, filename: str):
-        file_path = Path(f"uploaded/{filename}")
-        if file_path.is_file():
-            if file_path.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif']:
-                res = f'''
-                    <div>
-                        <h2>Preview: { filename }</h2>
-                        <img src="./uploaded/{ filename }" alt="{ filename }" style="max-width:100%;max-height:600px;">
-                    </div>
-                '''
-                return res
-        res = f'''
-            <div>
-                File not found or not supported
-            </div>
-        '''
-        return res
-
 
 if __name__ == "__main__":
 
@@ -2958,54 +955,3 @@ if __name__ == "__main__":
         access_log=False,
         reload_dirs=["./"]
     )
-
-
-def generate_table_config(engine, table_name):
-    inspector = inspect(engine)
-    columns = inspector.get_columns(table_name)
-
-    config_path = f'table_configs/{table_name}_config.yaml'
-
-    # Check if configuration file exists
-    if os.path.exists(config_path):
-        # Read existing configuration file
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-            return config
-
-    config = {
-        "table_name": table_name,
-        "columns": []
-    }
-
-    for column in columns:
-        column_config = {
-            "name": column['name'],
-            "label": column['name'],
-            "type": str(column['type']),
-            "nullable": column['nullable'],
-            "primary_key": column['primary_key']
-        }
-
-        # Determine input type and additional properties
-        if isinstance(column['type'], String):
-            column_config['input_type'] = 'text'
-        elif isinstance(column['type'], (Integer, Float)):
-            column_config['input_type'] = 'number'
-        elif isinstance(column['type'], (DateTime, Date)):
-            column_config['input_type'] = 'date'
-        elif isinstance(column['type'], Boolean):
-            column_config['input_type'] = 'checkbox'
-        elif isinstance(column['type'], Enum):
-            column_config['input_type'] = 'select'
-            column_config['options'] = column['type'].enums
-        else:
-            column_config['input_type'] = 'text'
-
-        config['columns'].append(column_config)
-
-    # Save configuration to a YAML file
-    with open(f'table_configs/{table_name}_config.yaml', 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
-
-    return config

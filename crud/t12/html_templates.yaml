@@ -77,11 +77,6 @@ layout: |
                         {{ icons.menu }}
                     </label>
                 </div>
-                <div class="breadcrumbs text-sm hidden">
-                    <ul>
-                        breadcrumb_filter(attributes.url) | safe 
-                    </ul>
-                </div>
                 <div class="flex-1 px-2 mx-2"><a href="{{ attributes.url if attributes and attributes.url else '/' }}">{{ attributes.title }}</a></div>
                 <div class="flex-none">
                     <label for="drawer-right" aria-label="open right sidebar" class="btn btn-square btn-ghost">
