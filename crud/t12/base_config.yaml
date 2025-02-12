@@ -75,6 +75,16 @@ component_definitions:
     attributes:
       title: Edit
       mode: edit
+      
+  base_data_card:
+    type: data_card
+    config:
+      buttons: 
+        cancel: 
+          attributes: {}
+    attributes:
+      title: ''
+    items: []
 
 components:
   - $ref: main_layout

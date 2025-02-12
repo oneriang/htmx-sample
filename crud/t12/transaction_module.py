@@ -580,7 +580,7 @@ class TransactionModule:
             raise ValueError("Only .db extension is supported for SQLite databases")
 
     def execute_step(self, step: Dict[str, Any]) -> Any:
-        print('execute_step1')
+        # print('execute_step1')
         """执行单个步骤，包含增强的错误处理"""
         try:
             # 记录开始执行的步骤
@@ -956,7 +956,7 @@ class TransactionModule:
                 logger.info("\nProcessing JOINs:")
                 for j in join:
                     #logger.info(f"  Processing join: {j}")
-                    print('Processing')
+                    # print('Processing')
                     left_table = Table(j["left_table"], self.metadata, autoload_with=self.engine)
                     right_table = Table(j["right_table"], self.metadata, autoload_with=self.engine)
                     join_on = [left_table.c[o["left_column"]] == right_table.c[o["right_column"]] for o in j["on"]]
@@ -1369,7 +1369,7 @@ class TransactionModule:
             logger.error(f"Unexpected error executing transaction {transaction_name} from {config_file}: {e}")
             raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
         finally:
-            print('all finish')
+            # print('all finish')
             return result
     
 # if __name__ == "__main__":

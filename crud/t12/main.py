@@ -55,6 +55,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # expose_headers=["Hx-Push-Url"]  # 关键：暴露 Hx-Push-Url
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -104,8 +105,19 @@ def init():
 
 @app.api_route("/{any_path:path}", response_class=HTMLResponse, methods=['GET', 'POST'])
 async def universal_handler(any_path: str, request: Request):
+    
+    gv.request = request
+    
+    print('universal_handler')
+    print(request.url.path)
+
+    print(dict(request.query_params))
+
     try:
         full_path = request.url.path
+
+        #extra header required to expose the Hx-Push-Url in the response
+        #res.set('Access-Control-Expose-Headers', 'Hx-Push-Url');
 
         path_parts = full_path.strip("/").split("/")  # 分解路径为列表
 
@@ -158,15 +170,22 @@ async def universal_handler(any_path: str, request: Request):
 
         if request.url.path == '/blog/post/form':
             return await BlogManager.get_post_form(request)
+            
+        if request.url.path == '/blog/posts':
+            is_htmx_request = request.headers.get("HX-Request") == "true"
+            if is_htmx_request:
+                return await BlogManager.get_posts(request)
+            else:
+                CustomRenderer.get_blog(request)
 
         # if request.url.path == '/blog/post/comment':
         #      return await post_blog_post_comment(request)
 
-        if len(path_parts) > 1 and path_parts[0] == 'api':
-            if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
-                return await CustomRenderer.get_posts(request)
-            elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
-                return await CustomRenderer.get_post(request)
+        # if len(path_parts) > 1 and path_parts[0] == 'api':
+        #     if len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'posts':
+        #         return await CustomRenderer.get_posts(request)
+        #     elif len(path_parts) > 2 and path_parts[1] == 'blog' and path_parts[2] == 'post':
+        #         return await CustomRenderer.get_post(request)
 
         if len(path_parts) == 1:
             if path_parts[0] == 'blog':
@@ -192,6 +211,183 @@ async def universal_handler(any_path: str, request: Request):
 
 
 class BlogManager:
+
+    @staticmethod
+    async def get_posts(request: Request):
+        try:
+            print('get_posts')
+            path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
+
+            if "HX-Request" in request.headers:
+                # print((request.headers)
+                pass
+                
+            if "hx-current-url" in request.headers:
+                # print(request.headers)
+                print(request.headers['hx-current-url'])
+                parsed_url = urlparse(request.headers['hx-current-url'])
+                print(parsed_url)
+                pass
+
+            q_params = dict(request.query_params)
+
+            search_term = str(q_params['search_term']) if 'search_term' in q_params else ''
+            page_size = int(q_params['page_size']) if 'page_size' in q_params else 5
+            page_number = int(q_params['page_number']) if 'page_number' in q_params else 1
+            post_id = int(q_params['post_id']) if 'post_id' in q_params else None
+
+            result = TM.execute_transactions(
+                transaction_name='get_posts_list',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size,
+                    'post_id': post_id
+                },
+                config_file="cms.yaml"
+            )
+
+            result = gv.data['posts']
+
+            h = ''
+            try:
+                PageRenderer.load_page_config('blog_config.yaml')
+
+                # config = gv.component_dict['post']['config']
+                # config = copy.deepcopy(config)
+
+                # for d in result:
+                #     try:
+                #         for k, v in config['buttons'].items():
+                #             if 'attributes' in v:
+                #                 attr = v['attributes']
+                #                 if 'hx-delete' in attr:
+                #                     attr['hx-delete'] = attr['hx-delete'].format(id=d['id'])
+                #                 if 'hx-post' in attr:
+                #                     attr['hx-post'] = attr['hx-post'].format(id=d['id'])
+                #                 if 'hx-get' in attr:
+                #                     attr['hx-get'] = attr['hx-get'].format(id=d['id'])
+                #     except KeyError:
+                #         # 例外情報を取得
+                #         exc_type, exc_value, exc_traceback = sys.exc_info()
+                #         # 行番号を取得
+                #         line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+                #         print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+                #         return None
+                #         pass
+                #     d['config'] = config
+                #     # print(d['config'])
+                #     # d['attributes'] = {
+                #     #     'del': {
+                #     #         'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post"
+                #     #     },
+                #     #     'edit': {
+                #     #         'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
+                #     #         'hx-target': '#form_container'
+                #     #     },
+                #     #     'go': {
+                #     #         'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
+                #     #         'hx-target': '#blogs'
+                #     #     },
+                #     #     'back': {
+                #     #         'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
+                #     #     },
+                #     #     'is_single': True if post_id is not None else False
+                #     # }
+                #     pass
+
+                gv.component_dict['post']['config']['is_single'] = True if post_id is not None else False
+
+                gv.component_dict['posts']['data'] = result
+
+                try:
+                    attr = gv.component_dict['posts']['config']['buttons']['prev']['attributes']
+                    attr['hx-get'] = attr['hx-get'].format(
+                        search_term=search_term, 
+                        page_size=page_size, 
+                        page_number=page_number - 1)
+                    if page_number <= 1:
+                        attr['disabled'] = 'disabled'
+                except KeyError:
+                    pass
+
+                try:
+                    attr = gv.component_dict['posts']['config']['buttons']['next']['attributes']
+                    attr['hx-get'] = attr['hx-get'].format(
+                        search_term=search_term, 
+                        page_size=page_size, 
+                        page_number=page_number + 1)
+                    if len(result) < page_size:
+                        attr['disabled'] = 'disabled'
+                except KeyError:
+                    pass
+                
+                # hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
+                # hx_get = '/api' + hx_url + '&api=posts'
+            
+                # no_next = False
+                # if len(result) < page_size:
+                #     no_next = True
+    
+                # no_prev = False
+                # if page_number <= 1:
+                #     no_prev = True
+                
+                # prev_attr = {
+                #     'id': 'prev',
+                #     'hx-get': hx_get,
+                #     'hx-swap': 'innerHTML',
+                #     'hx-target': '#blogs',
+                #     'hx-url': hx_url,
+                # }
+                # if no_prev:
+                #     prev_attr['disabled'] = True
+
+                # hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
+                # hx_get = '/api' + hx_url + '&api=posts'
+
+                # next_attr = {
+                #     'id': 'prev',
+                #     'hx-get': hx_get,
+                #     'hx-swap': 'innerHTML',
+                #     'hx-target': '#blogs',
+                #     'hx-url': hx_url,
+                # }
+                # if no_next:
+                #     next_attr['disabled'] = True
+
+                # gv.component_dict['posts']['config'] = {
+                #     'prev': {
+                #         'attributes': prev_attr
+                #     },
+                #     'next': {
+                #         'attributes': next_attr
+                #     },
+                #     'is_single': True if post_id is not None else False
+                # }
+                h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
+            except Exception as e:
+                # 例外情報を取得
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                # 行番号を取得
+                line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+                print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+                return None
+            
+            response = HTMLResponse(content=h)
+            #response.headers["Hx-Push-Url"] = '/table'
+            # response.headers["Access-Control-Expose-Headers"] = "Hx-Push-Url"
+            return response
+            
+            #return HTMLResponse(content=h)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
 
     @app.post("/blog/post", response_class=HTMLResponse)
     @staticmethod
@@ -407,82 +603,6 @@ class BlogManager:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    @app.get("/blog/post/comments", response_class=HTMLResponse)
-    @staticmethod
-    async def get_blog_post_comments(request: Request):
-        try:
-
-            gv.request = request
-
-            ConfigManager.load_data()
-
-            if "HX-Request" in request.headers:
-                pass
-
-            query_params = dict(request.query_params)
-
-            search_term = str(
-                query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']
-                            ) if 'page_size' in query_params else 5
-            page_number = int(
-                query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']
-                          ) if 'post_id' in query_params else None
-
-            result = TM.execute_transactions(
-                transaction_name='get_post_comments',
-                params={
-                    'search_term': '%' + search_term + '%',
-                    'limit': page_size,
-                    'offset': (page_number - 1) * page_size,
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
-
-            page_config = PageRenderer.load_page_config('blog_config.yaml')
-
-            gv.component_dict['comment']['data'] = gv.data
-
-            h = PageRenderer.generate_html(gv.component_dict['comment'])
-
-            return HTMLResponse(content=h)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/blog/categorie", response_class=HTMLResponse)
-    @staticmethod
-    async def post_blog_categorie(request: Request):
-        try:
-            form_data = await request.form()
-
-            result = TM.execute_transactions(
-                transaction_name='add_categorie',
-                params={
-                    'name': form_data['name'],
-                    'slug': form_data['slug'],
-                    'description': form_data['description']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newBlogCategorie"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
 
     @staticmethod
     async def get(request: Request):
@@ -526,6 +646,83 @@ class BlogManager:
                 gv.component_dict[page_name], page_name)
 
             return HTMLResponse(content=h)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @app.get("/blog/post/comments", response_class=HTMLResponse)
+    @staticmethod
+    async def get_blog_post_comments(request: Request):
+        try:
+
+            gv.request = request
+
+            ConfigManager.load_data()
+
+            if "HX-Request" in request.headers:
+                pass
+
+            query_params = dict(request.query_params)
+
+            search_term = str(
+                query_params['search_term']) if 'search_term' in query_params else ''
+            page_size = int(query_params['page_size']
+                            ) if 'page_size' in query_params else 5
+            page_number = int(
+                query_params['page_number']) if 'page_number' in query_params else 1
+            post_id = int(query_params['post_id']
+                          ) if 'post_id' in query_params else None
+
+            result = TM.execute_transactions(
+                transaction_name='get_post_comments',
+                params={
+                    'search_term': '%' + search_term + '%',
+                    'limit': page_size,
+                    'offset': (page_number - 1) * page_size,
+                    'post_id': post_id
+                },
+                config_file="cms.yaml"
+            )
+
+            page_config = PageRenderer.load_page_config('blog_config.yaml')
+
+            gv.component_dict['comment']['data'] = gv.data
+
+            h = PageRenderer.generate_html(gv.component_dict['comment'], 'comment')
+
+            return HTMLResponse(content=h)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @app.post("/blog/categorie", response_class=HTMLResponse)
+    @staticmethod
+    async def post_blog_categorie(request: Request):
+        try:
+            form_data = await request.form()
+
+            result = TM.execute_transactions(
+                transaction_name='add_categorie',
+                params={
+                    'name': form_data['name'],
+                    'slug': form_data['slug'],
+                    'description': form_data['description']
+                },
+                config_file="cms.yaml"
+            )
+
+            headers = {"HX-Trigger": "newBlogCategorie"}
+            return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
             # 例外情報を取得
@@ -1006,7 +1203,7 @@ class ConfigManager:
                 gv.BASE_HTML = ConfigManager.load_data_from_html(
                     'base_html.html')
 
-            if gv.HTML_TEMPLATES:
+            if False: #gv.HTML_TEMPLATES:
                 pass
             else:
                 gv.HTML_TEMPLATES = ConfigManager.load_data_from_yaml(
@@ -1156,7 +1353,6 @@ class ConfigManager:
 
     @staticmethod
     def deep_merge(base, child):
-        print('deep_merge')
         try:
             """
             递归合并两个字典，支持深层合并。
@@ -1373,7 +1569,6 @@ class PageRenderer:
     @staticmethod
     def load_page_config(config_name=None) -> Dict[str, Any]:
         try:
-            print('load_page_config')
             # config = yaml.safe_load(YAML_CONFIG)
             gv.YAML_CONFIG = ConfigManager.load_data_from_yaml(config_name)
             config = copy.deepcopy(gv.YAML_CONFIG)
@@ -1400,10 +1595,10 @@ class PageRenderer:
             
             config = final_config
             '''
-            print('a')
+
             # 合并所有基础数据
             all_base_data = ConfigManager.deep_merge(gv.base_config, config)
-            print('b')
+
             # 解析继承关系
             resolved_data = ConfigManager.resolve_inheritance(
                 config, all_base_data)
@@ -1412,13 +1607,13 @@ class PageRenderer:
             final_data = ConfigManager.deep_merge(
                 gv.base_config, resolved_data)
             config = final_data
-            print('-------')
-            # print(config)
-            print('-------')
+            # print('-------')
+            # # print(config)
+            # print('-------')
 
             gv.component_dict = config.get('component_definitions', {})
             # print(gv.component_dict)
-            print('1')
+            # print('1')
 
             def resolve_components(components):
                 resolved = []
@@ -1435,7 +1630,7 @@ class PageRenderer:
                 return resolved
 
             config['components'] = resolve_components(config['components'])
-            print('2')
+            # print('2')
             return config
 
         except Exception as e:
@@ -1448,7 +1643,6 @@ class PageRenderer:
 
     @staticmethod
     def generate_html(component: Dict[str, Any], page_name='') -> str:
-
         try:
             if 'type' not in component:
                 component['type'] = 'div'
@@ -1465,7 +1659,7 @@ class PageRenderer:
                             component[key] = getattr(cls, k[1])()
                     pass
 
-            print('3')
+            # print('3')
             if 'cols' in component:
                 for key in component['cols']:
                     if component['type'] == 'form_base_type_1':
@@ -1502,7 +1696,7 @@ class PageRenderer:
                                 component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
             template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
             rendered_children = {}
-            print('4')
+            # print('4')
             if 'children' in component:
                 if isinstance(component['children'], list):
                     rendered_children = []
@@ -1525,19 +1719,31 @@ class PageRenderer:
                         rendered_children.append(
                             PageRenderer.generate_html(child))
                 else:
-                    print('6')
+                    # print('6')
                     for key, value in component['children'].items():
-                        print(key)
-                        print(value)
                         if isinstance(key, str):
                             if value:
                                 rendered_children[key] = [PageRenderer.generate_html(
                                     PageRenderer.resolve_component(child)) for child in value]
-            print('5')
+            # print('5')
             # print(component['config'] if 'config' in component else '')
             data = component.get('data', {})
-            if page_name in data:
-                data = data[page_name]
+            # print(data)
+            # print('6')
+            # if page_name == 'posts':
+            #     data = data[page_name]
+            #     pass
+
+            # if page_name == '':
+            #     data = data[page_name]
+            #     pass
+
+            # if 'posts' in data:
+            #     data = data['posts']
+
+            # if 'comment' in data:
+            #     data = data['comment']
+            #     # print(list(data.keys()))
 
             h = template.render(
                 attributes=component.get('attributes', {}),
@@ -1570,32 +1776,46 @@ class PageRenderer:
             return None
 
     @staticmethod
-    def format_attr(attributes):
+    def format_attr(attributes, data = None):
         try:
             s = ''
             if attributes:
                 for attr, value in attributes.items():
-                    # if attr not in ['class']:
-
                     if isinstance(value, str):
-                        # matches = re.findall(r'\{\{(.*?)\}\}', value)
-                        matches = re.findall(r'\{\{.*?\}\}', value)
+                        if attr == 'hx-get' and value == 'history_back':
+                            parsed_url = urlparse(gv.request.headers['hx-current-url'])
+                            value = '{}?{}'.format(parsed_url.path, parsed_url.query)
 
-                        # 去除多余的空格
-                        matches = [match.strip() for match in matches]
-
-                        if matches:
-                            param_name = matches[0]
-
-                            k = param_name.replace(
-                                '{{', '').replace('}}', '').strip().split('.')
-                            if len(k) == 2:
-                                if k[0] in gv.data:
-                                    if len(gv.data[k[0]]) > 0:
-                                        if k[1] in gv.data[k[0]][0]:
-
-                                            value = value.replace(
-                                                param_name, str(gv.data[k[0]][0][k[1]]))
+                        elif '{search_term}' in value:
+                            q_params = dict(gv.request.query_params)
+    
+                            search_term = str(q_params['search_term']) if 'search_term' in q_params else ''
+                            page_size = int(q_params['page_size']) if 'page_size' in q_params else 5
+                            page_number = int(q_params['page_number']) if 'page_number' in q_params else 1
+                            post_id = int(q_params['id']) if 'id' in q_params else None
+                            
+                            value = value.format(
+                                search_term=search_term, 
+                                page_size=page_size, 
+                                page_number=page_number)
+                        
+                        elif data:
+                            value = value.format(id=data['id'])
+                            pass
+                        else:
+                            matches = re.findall(r'\{\{.*?\}\}', value)
+                            # 去除多余的空格
+                            matches = [match.strip() for match in matches]
+                            if matches:
+                                param_name = matches[0]
+                                k = param_name.replace(
+                                    '{{', '').replace('}}', '').strip().split('.')
+                                if len(k) == 2:
+                                    if k[0] in gv.data:
+                                        if len(gv.data[k[0]]) > 0:
+                                            if k[1] in gv.data[k[0]][0]:
+                                                value = value.replace(
+                                                    param_name, str(gv.data[k[0]][0][k[1]]))
 
                     s += f' {attr}="{value}" '
             return s
@@ -1612,10 +1832,8 @@ class PageRenderer:
         try:
             s = ''
             if children:
-                print(children)
                 for child in children:
                     if child:
-                        print(child)
                         s += child
             return s
         except Exception as e:
@@ -1690,6 +1908,7 @@ class CustomRenderer(PageRenderer):
     # @app.get("/blog", response_class=HTMLResponse)
     @staticmethod
     async def get_blog(request: Request):
+        print('get_blog')
         try:
             gv.request = request
 
@@ -1697,13 +1916,13 @@ class CustomRenderer(PageRenderer):
             if query_params is None:
                 query_params = []
 
-            if 'api' in query_params:
-                if 'posts' == query_params['api']:
-                    return await CustomRenderer.get_posts(request)
-                elif 'post' == query_params['api']:
-                    return await CustomRenderer.get_post(request)
-                elif 'edit' == query_params['api']:
-                    return await CustomRenderer.get_post_form(request)
+            # if 'api' in query_params:
+            #     if 'posts' == query_params['api']:
+            #         return await CustomRenderer.get_posts(request)
+            #     elif 'post' == query_params['api']:
+            #         return await CustomRenderer.get_post(request)
+            #     elif 'edit' == query_params['api']:
+            #         return await CustomRenderer.get_post_form(request)
 
             ConfigManager.load_data()
 
@@ -1724,6 +1943,7 @@ class CustomRenderer(PageRenderer):
             users_config = ConfigManager.get_table_config('users')
             gv.users_config = users_config
 
+            '''
             hx_get = '/blog' + '/posts'
             hx_get_params = []
 
@@ -1750,7 +1970,24 @@ class CustomRenderer(PageRenderer):
                 'hx-url': hx_get
             }
             gv.component_dict['blogs']['attributes'] = gv.component_dict['blogs']['attributes'] | blogs_attr
+            '''
+            
+            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
 
+            try:
+                attr = gv.component_dict['posts']['attributes']
+                attr['hx-get'] = attr['hx-get'].format(
+                    search_term=search_term, 
+                    page_size=page_size, 
+                    page_number=page_number,
+                    post_id=post_id)
+                    
+            except KeyError:
+                pass
+                  
             rendered_components = [PageRenderer.generate_html(
                 component) for component in page_config['components']]
 
@@ -1760,128 +1997,12 @@ class CustomRenderer(PageRenderer):
                 components=rendered_components,
                 min=min
             )
+            
+            headers = {"HX-Trigger": "newBlogGet"}
+            
+            return HTMLResponse(content=h, headers=headers)
 
-            return h
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    # @app.get("/blog/posts", response_class=HTMLResponse)
-    # async def get_posts(request: Request):
-    @staticmethod
-    async def get_posts(request: Request):
-        try:
-            print('get_posts')
-            print(request.url)
-            path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
-            print(path_parts)
-
-            if "HX-Request" in request.headers:
-                # print((request.headers)
-                pass
-
-            query_params = dict(request.query_params)
-
-            search_term = str(
-                query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']
-                            ) if 'page_size' in query_params else 5
-            page_number = int(
-                query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']
-                          ) if 'post_id' in query_params else None
-
-            result = TM.execute_transactions(
-                transaction_name='get_posts_list',
-                params={
-                    'search_term': '%' + search_term + '%',
-                    'limit': page_size,
-                    'offset': (page_number - 1) * page_size,
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
-
-            result = gv.data['posts']
-
-            no_next = False
-            if len(result) < page_size:
-                no_next = True
-
-            no_prev = False
-            if page_number <= 1:
-                no_prev = True
-
-            h = ''
-            try:
-                PageRenderer.load_page_config('blog_config.yaml')
-
-                for d in result:
-                    d['attributes'] = {
-                        'del': {
-                            'hx-delete': f"/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post"
-                        },
-                        'edit': {
-                            'hx-post': f"/{path_parts[1]}/{path_parts[2]}/form?post_id={d['id']}&post",
-                            'hx-target': '#form_container'
-                        },
-                        'go': {
-                            'hx-get': f"/api/{path_parts[1]}/{path_parts[2]}?post_id={d['id']}&post",
-                            'hx-target': '#blogs'
-                        },
-                        'back': {
-                            'hx-get': f'/api/{path_parts[1]}/{path_parts[2]}?api=posts',
-                        },
-                        'is_single': True if post_id is not None else False
-                    }
-
-                gv.component_dict['posts']['data'] = gv.data  # result
-
-                hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}"
-                hx_get = '/api' + hx_url + '&api=posts'
-
-                prev_attr = {
-                    'id': 'prev',
-                    'hx-get': hx_get,
-                    'hx-swap': 'innerHTML',
-                    'hx-target': '#blogs',
-                    'hx-url': hx_url,
-                }
-                if no_prev:
-                    prev_attr['disabled'] = True
-
-                hx_url = f"/{path_parts[1]}/{path_parts[2]}?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}"
-                hx_get = '/api' + hx_url + '&api=posts'
-
-                next_attr = {
-                    'id': 'prev',
-                    'hx-get': hx_get,
-                    'hx-swap': 'innerHTML',
-                    'hx-target': '#blogs',
-                    'hx-url': hx_url,
-                }
-                if no_next:
-                    next_attr['disabled'] = True
-
-                gv.component_dict['posts']['config'] = {
-                    'prev': {
-                        'attributes': prev_attr
-                    },
-                    'next': {
-                        'attributes': next_attr
-                    },
-                    'is_single': True if post_id is not None else False
-                }
-                h = PageRenderer.generate_html(gv.component_dict['posts'])
-            except Exception as e:
-                pass
-
-            return HTMLResponse(content=h)
+            #return h
 
         except Exception as e:
             # 例外情報を取得
@@ -2888,351 +3009,3 @@ def generate_table_config(engine, table_name):
         yaml.dump(config, f, default_flow_style=False)
 
     return config
-
-
-'''
-
-
-@app.get("/component", response_class=HTMLResponse)
-# async def rendered_component(request: Request, current_user: dict = Depends(get_current_user)):
-async def rendered_component(request: Request):
-    gv.request = request
-    query_params = dict(request.query_params)
-
-    if "HX-Request" in request.headers:
-        # 如果是 HTMX 请求，重新抛出异常
-        pass
-    else:
-        # 如果是普通请求，重定向到登录页面
-        return await home(request, current_user)
-        pass
-      
-    if 'component_id' in query_params:
-        component_id = query_params['component_id']
-    elif 'table_name' in query_params:
-            component_id = 'main_data_table'
-    else:
-        return ''
-
-    PageRenderer.load_page_config()
-
-    res = generate_html(gv.component_dict[component_id])
-    return res
-
-@app.get("/tables")
-async def read_root(request: Request):
-    tables = get_table_names()
-    return templates.TemplateResponse("all_in_one.html", {"request": request, "tables": tables})
-
-@app.get("/table/{table_name}")
-async def read_table(request: Request, table_name: str):
-
-    if table_name not in gv.models:
-        raise HTTPException(status_code=404, detail="Table not found")
-    
-    table_config = ConfigManager.get_table_config(table_name)
-    return templates.TemplateResponse("all_in_one.html", {
-        "request": request,
-        "table_name": table_name,
-        "table_config": table_config
-    })
-
-@app.get("/table_content/{table_name}")
-async def read_table_content(
-        request: Request, 
-        table_name: str, 
-        page: int = 1, 
-        page_size: int = 10,
-        sort_column: str | None = None,
-        sort_direction: str = 'asc'
-    ):
-
-    # if table_name not in metadata.tables:
-    #     raise HTTPException(status_code=404, detail="Table not found")
-    table = None
-    if table_name in metadata.tables:
-        table = metadata.tables[table_name]
-    if table is None:
-        raise HTTPException(status_code=404, detail="Table not found")
-
-    table_config = ConfigManager.get_table_config(table_name)
-    # table = metadata.tables[table_name]
-    primary_key = next(col['name'] for col in table_config['columns'] if col.get('primary_key', False))
-    offset = (page - 1) * page_size
-    
-    query = select(table.columns)
-    
-    # Get all query parameters
-    search_params = dict(request.query_params)
-    # Remove known parameters
-    for param in ['page', 'page_size', 'sort_column', 'sort_direction']:
-        search_params.pop(param, None)
-    
-    # Apply search filters for each column based on JSON configuration
-    for column_config in table_config['columns']:
-        if column_config['name'] in search_params:
-            query = DatabaseManager.apply_search_filter(query, table, column_config, search_params[column_config['name']])
-    
-    # Apply sorting if a sort column is specified
-    if sort_column and sort_column in table.columns:
-        sort_func = desc if sort_direction.lower() == 'desc' else asc
-        query = query.order_by(sort_func(getattr(table.c, sort_column)))
-    
-    with SessionLocal() as session:
-        count_query = select(func.count()).select_from(query.alias())
-        total_items = session.execute(count_query).scalar()
-        result = session.execute(query.offset(offset).limit(page_size)).fetchall()
-        
-    total_pages = (total_items + page_size - 1) // page_size
-    
-    return templates.TemplateResponse("table_content.html", {
-        "request": request,
-        "table_name": table_name,
-        "columns": [col['name'] for col in table_config['columns']],
-        "rows": result,
-        "primary_key": primary_key,
-        "page": page,
-        "page_size": page_size,
-        "total_items": total_items,
-        "total_pages": total_pages,
-        "table_config": table_config,
-        "sort_column": sort_column,
-        "sort_direction": sort_direction,
-        "search_params": search_params
-    })
-    
-
-@app.get("/form_config/{table_name}")
-async def get_form_config(table_name: str):
-    if table_name not in metadata.tables:
-        raise HTTPException(status_code=404, detail="Table not found")
-    return generate_form_config(table_name)
-
-@app.get("/record/{table_name}/{id}")
-async def get_record(table_name: str, id: str):
-    if table_name not in metadata.tables:
-        raise HTTPException(status_code=404, detail="Table not found")
-    
-    table = metadata.tables[table_name]
-    primary_key = ConfigManager.get_primary_key(table)
-    
-    with SessionLocal() as session:
-        stmt = select(table).where(getattr(table.c, primary_key) == id)
-        result = session.execute(stmt).fetchone()
-        if result:
-            return dict(result._mapping)
-        else:
-            raise HTTPException(status_code=404, detail="Record not found")
-
-@app.get("/execute_all_transactions")
-def execute_transactions():
-    try:
-        with SessionLocal() as db:
-            return TM.execute_all_transactions(db)
-    except HTTPException as e:
-        logger.error(f"Error executing transactions: {e.detail}")
-        logger.error(traceback.format_exc())
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-@app.get("/test", response_class=HTMLResponse)
-async def blog(request: Request):
-    
-    gv.request = request
-
-    query_params = dict(request.query_params)
-    
-    ConfigManager.load_data()
-
-    page_config = PageRenderer.load_page_config('test_config.yaml')
-
-    rendered_components = [generate_html(component) for component in page_config['components']]
-
-    template = Template(gv.BASE_HTML)
-    h = template.render(
-        page_title=page_config['title'],
-        components=rendered_components,
-        min=min
-    )
-    
-    return h;
-    
-
-@app.get("/api/data", response_class=HTMLResponse)
-async def api_data(request: Request):
-    
-    gv.request = request
-
-    query_params = dict(request.query_params)
-    ## print((query_params)
-
-    return str(query_params);
-
-
-'''
-
-'''
-# Set up the Jinja2 environment
-env = Environment(loader=FileSystemLoader('.'))
-
-# Define globals
-env.globals['site_name'] = "My Awesome Site"
-# env.globals['get_user'] = lambda user_id: fetch_user_from_db(user_id)  # A function
-'''
-
-'''
-class MyClass:
-    @staticmethod
-    def my_static_method():
-        print("This is a static method.")
-
-# 类名作为字符串
-class_name = "MyClass"
-method_name = "my_static_method"
-
-# 获取类
-cls = globals()[class_name]
-
-# 获取静态方法并调用
-getattr(cls, method_name)()
-'''
-
-'''
-                  if component['id'] == 'form_comment':
-  
-                      if 'value' in component['cols'][key]:
-                          value = component['cols'][key]['value']
-                          component['cols'][key]['value'] = None
-                          
-                          k = value.split('.')
-                          if len(k) == 2:
-                              if k[0] in gv.data:
-                                  if len(gv.data[k[0]]) > 0:
-                                      if k[1] in gv.data[k[0]][0]:
-                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                      if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
-                              component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
-                  
-                  elif component['id'] == 'form_categorie':
-                      
-                      if 'value' in component['cols'][key]:
-                          value = component['cols'][key]['value']
-                          component['cols'][key]['value'] = None
-                          k = value.split('.')
-                          if len(k) == 2:
-                              if k[0] in gv.data:
-                                  if len(gv.data[k[0]]) > 0:
-                                      if k[1] in gv.data[k[0]][0]:
-                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                     
-                      if gv.categories_config and 'cols' in gv.categories_config and key in gv.categories_config['cols']:
-                              component['cols'][key] = gv.categories_config['cols'][key] | component['cols'][key]
-  
-                  elif component['id'] == 'form_tag':
-                      
-                      if 'value' in component['cols'][key]:
-                          value = component['cols'][key]['value']
-                          component['cols'][key]['value'] = None
-                          k = value.split('.')
-                          if len(k) == 2:
-                              if k[0] in gv.data:
-                                  if len(gv.data[k[0]]) > 0:
-                                      if k[1] in gv.data[k[0]][0]:
-                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                     
-                      if gv.tags_config and 'cols' in gv.tags_config and key in gv.tags_config['cols']:
-                              component['cols'][key] = gv.tags_config['cols'][key] | component['cols'][key]
-  
-                  elif component['id'] == 'form_user':
-                      
-                      if 'value' in component['cols'][key]:
-                          value = component['cols'][key]['value']
-                          component['cols'][key]['value'] = None
-                          k = value.split('.')
-                          if len(k) == 2:
-                              if k[0] in gv.data:
-                                  if len(gv.data[k[0]]) > 0:
-                                      if k[1] in gv.data[k[0]][0]:
-                                          component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
-                     
-                      if gv.users_config and 'cols' in gv.users_config and key in gv.users_config['cols']:
-                              component['cols'][key] = gv.users_config['cols'][key] | component['cols'][key]
-'''
-'''
-
-import yaml
-from pathlib import Path
-
-def load_yaml(file_path):
-    """加载 YAML 文件并返回字典"""
-    with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
-
-def deep_merge(base_data, child_data):
-    """
-    递归合并字典，支持深层合并。
-    """
-    if isinstance(child_data, dict) and isinstance(base_data, dict):
-        for key, value in child_data.items():
-            if key in base_data:
-                base_data[key] = deep_merge(base_data[key], value)
-            else:
-                base_data[key] = value
-        return base_data
-    else:
-        return child_data
-
-def resolve_inheritance(data, base_data):
-    """
-    递归解析继承关系，支持任意层级的 base 属性。
-    """
-    if isinstance(data, dict):
-        # 如果存在 base 属性，则进行继承
-        if 'base' in data:
-            base_key = data.pop('base')  # 删除 base 键
-            if base_key in base_data:
-                # 递归解析 base 数据
-                base_value = resolve_inheritance(base_data[base_key], base_data)
-                # 深层合并 base 数据和当前数据
-                data = deep_merge(base_value, data)
-            else:
-                raise ValueError(f"Base key '{base_key}' not found in base data.")
-
-        # 递归处理所有子属性
-        for key, value in data.items():
-            data[key] = resolve_inheritance(value, base_data)
-
-    elif isinstance(data, list):
-        # 如果是列表，递归处理每个元素
-        data = [resolve_inheritance(item, base_data) for item in data]
-
-    return data
-
-def main():
-    # 文件路径
-    base_file = Path('base.yaml')
-    middle_file = Path('middle.yaml')
-    child_file = Path('child.yaml')
-    base_nested_file = Path('base_nested_field.yaml')
-
-    # 加载 YAML 文件
-    base_data = load_yaml(base_file)
-    middle_data = load_yaml(middle_file)
-    child_data = load_yaml(child_file)
-    base_nested_data = load_yaml(base_nested_file)
-
-    # 合并所有基础数据
-    all_base_data = {**base_data, **base_nested_data}
-
-    # 解析继承关系
-    resolved_data = resolve_inheritance({**middle_data, **child_data}, all_base_data)
-
-    # 输出合并后的 YAML
-    print(yaml.dump(resolved_data))
-
-if __name__ == '__main__':
-    main()
-'''

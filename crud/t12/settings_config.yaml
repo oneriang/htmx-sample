@@ -19,9 +19,14 @@ component_definitions:
       - $ref: tags
 
   tags:
-    type: data_card
+    base: component_definitions.base_data_card
     attributes:
       id: tags
+    config:
+      buttons:
+        delete:
+          attributes:
+            hx-delete: ""
     items:
       - key: id
       - key: name

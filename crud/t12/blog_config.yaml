@@ -3,7 +3,7 @@ component_definitions:
   main_layout:
     attributes:
       title: Blog
-      url: '/blog'
+      url: "/blog"
     children:
       content_main:
         - $ref: content_main
@@ -18,7 +18,7 @@ component_definitions:
             attributes:
               text: New
               hx-get: /blog/post/form
-              hx-target: '#form_container'
+              hx-target: "#form_container"
       - type: form_container
         attributes:
           id: form_container
@@ -29,14 +29,82 @@ component_definitions:
     type: blogs
     attributes:
       id: blogs
-
+      # hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+      # hx-swap: innerHTML
+      # hx-target: '#blogs'
+      # # hx-push-url: 'true'
+      # hx-trigger: load, newBlogPost from:body
+    children:
+      - $ref: posts
+      
   posts:
+    id: posts
     type: posts
+    attributes:
+      id: posts
+      hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+      hx-swap: innerHTML
+      hx-target: '#blogs'
+      # hx-push-url: 'true'
+      hx-trigger: init, newBlogGet from:body
+    config:
+      buttons:
+        prev:
+          attributes:
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-swap: 'innerHTML'
+            hx-target: '#blogs'
+            # hx-push-url: 'true'
+        next:
+          attributes:
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-swap: 'innerHTML'
+            hx-target: '#blogs'
+            # hx-push-url: 'true'
+      is_single: False
     children:
       - $ref: post
-   
+
+  posts1:
+    type: posts
+    config:
+      buttons:
+        prev:
+          attributes:
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-swap: 'innerHTML'
+            hx-target: '#blogs'
+            # hx-push-url: 'true'
+        next:
+          attributes:
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-swap: 'innerHTML'
+            hx-target: '#blogs'
+            # hx-push-url: 'true'
+      is_single: False
+    children:
+      - $ref: post
+
   post:
-    type: post
+    base: component_definitions.base_data_card
+    config:
+      buttons:
+        delete:
+          attributes:
+            hx-delete: /blog/posts?post_id={id}
+        edit: 
+          attributes:
+            hx-post: /blog/posts/form?post_id={id}
+            hx-target: '#form_container'
+        left:
+          attributes:
+            hx-get: history_back
+            hx-target: '#blogs'
+        right:
+          attributes:
+            hx-get: /blog/posts?post_id={id}
+            hx-target: '#blogs'
+      is_single: False
     attributes:
       id: post
     children:
@@ -59,12 +127,12 @@ component_definitions:
     type: comments
     attributes:
       id: comments
-      hx-get: '/api/blog/post/comments?post_id={{posts.id}}'
+      hx-get: "/api/blog/post/comments?post_id={{posts.id}}"
       hx-swap: innerHTML
       hx-trigger: newPostComment from:body
     children:
       - $ref: comment
-      
+
   comment:
     id: comment
     type: comment
@@ -81,35 +149,35 @@ component_definitions:
       title: Search
       hx-get: "/api/blog/posts?api=posts"
       hx-target: "#blogs"
-      
+
   form_edit:
     id: form_edit
     base: component_definitions.base_form_edit
-    cols: 
+    cols:
       id: {}
       title: {}
       content: {}
       category_id: {}
       author_id: {}
-      featured_image:  
+      featured_image:
         input_type: file
         label: Imgae
-      status: 
+      status:
         input_type: select
         label: Status
         required: true
         options:
-          - {value: draft, label: draft}
-          - {value: published, label: published}
-          - {value: archived, label: archived}
-      visibility: 
+          - { value: draft, label: draft }
+          - { value: published, label: published }
+          - { value: archived, label: archived }
+      visibility:
         input_type: select
         label: Visibility
         required: true
         options:
-          - {value: public, label: Public}
-          - {value: private, label: Private}
-          - {value: password_protected, label: Password Protected}
+          - { value: public, label: Public }
+          - { value: private, label: Private }
+          - { value: password_protected, label: Password Protected }
     config:
       id: posts
     attributes:
@@ -120,10 +188,10 @@ component_definitions:
   form_comment:
     base: component_definitions.base_form_edit
     cols:
-      post_id: 
+      post_id:
         value: posts.id
         is_hidden: true
-      content: 
+      content:
         value: comments.content
     config:
       id: comments

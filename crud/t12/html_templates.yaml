@@ -1,4 +1,4 @@
-"layout": |
+layout: |
     <style>
         html:has(.drawer-toggle:checked) {
             overflow-y: hidden;
@@ -1721,28 +1721,32 @@
 "blogs": |
     <div {{ format_attr(attributes) }} >
         Blogs
+        {{ format_children(children) }}
+
+
     </div>
+        
 #
 "posts": |
-    <div class="mt-5">
-        <div class="flex justify-end gap-2">
-            {% if config.is_single == False %}
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.prev.attributes) }}
-            >
-            Prev
-            </button>
-            <button 
-                type="submit"
-                class="btn bg-green-500 hover:bg-blue-700 text-white"
-                {{ format_attr(config.next.attributes) }}
-            >
-            Next
-            </button>
-            {% endif %}
-        </div>  
+    <div class="mt-5" {{ format_attr(attributes) }}>
+        {% if data|length > 1 %}
+            <div class="flex justify-end gap-2">
+                <button 
+                    type="submit"
+                    class="btn bg-green-500 hover:bg-blue-700 text-white"
+                    {{ format_attr(config.buttons.prev.attributes) }}
+                >
+                    Prev
+                </button>
+                <button 
+                    type="submit"
+                    class="btn bg-green-500 hover:bg-blue-700 text-white"
+                    {{ format_attr(config.buttons.next.attributes) }}
+                >
+                    Next
+                </button>
+            </div>
+        {% endif %}
         {{ format_children(children) }}
     </div>
 #
@@ -1867,7 +1871,7 @@
         {{ format_children(children) }}
     </div>
 #
-"data_card": |
+data_card: |
     {% for d in data %}
         <div 
             class="
@@ -1877,43 +1881,56 @@
             {{ format_attr(attributes) if attributes }}
         >
             <div class="card-body break-all" style="word-wrap: break-word;">
-                <div class="card-actions justify-end">
-                    <div class="dropdown dropdown-end">
-                        <button class="btn btn-square btn-sm" >
-                            {{ icons.ellipsis_horizontal }}
-                        </button>
-                        <ul
-                            tabindex="0"
-                            class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow"
-                        >
-                            <li>
-                                <div>
-                                    <button class="btn btn-square btn-sm">
-                                        {{ icons.edit }}
-                                    </button>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="hidden">
-                                    <button class="btn btn-square btn-sm text-red-500">
-                                        {{ icons.trash }}
-                                    </button>
-                                    <button class="btn btn-square btn-sm"
-                                        onmousedown="onMousedownDataCardCancel(this)">
-                                        {{ icons.cancel }}
-                                    </button>
-                                </div>
-                                <div>
-                                    <button class="btn btn-square btn-sm" 
-                                        onmousedown="onMousedownDataCardTrash(this)"
-                                    >
-                                        {{ icons.trash }}
-                                    </button>
-                                </div>
-                            </li>
-                        </ul>
+                {% if config %}
+                    <div class="card-actions justify-end">
+                        <div class="dropdown dropdown-end">
+                            <button class="btn btn-square btn-sm" >
+                                {{ icons.ellipsis_horizontal }}
+                            </button>
+                            <ul
+                                tabindex="0"
+                                class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow"
+                            >
+                                <li>
+                                    <div>
+                                        <button class="btn btn-square btn-sm">
+                                            {{ icons.edit }}
+                                        </button>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="hidden">
+                                        {% if config.buttons and config.buttons.delete %}
+                                            <button 
+                                                class="btn btn-square btn-sm text-red-500"
+                                                {{ format_attr(config.buttons.delete.attributes) }}
+                                            >
+                                                {{ icons.trash }}
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if config.buttons and config.buttons.cancel %}
+                                            <button class="btn btn-square btn-sm"
+                                                onmousedown="onMousedownDataCardCancel(this)">
+                                                {{ icons.cancel }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        {% if config.buttons and config.buttons.delete %}
+                                            <button class="btn btn-square btn-sm" 
+                                                onmousedown="onMousedownDataCardTrash(this)"
+                                            >
+                                                {{ icons.trash }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                        
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
+                {% endif%}
                 {% if items %}
                     {% for item in items %}
                         {{ item.key }} :
@@ -1924,14 +1941,115 @@
                     {% endfor %}
                 {% endif%}
                 <div class="card-actions justify-end">
-                    <button class="btn btn-square btn-sm"
-                    >
-                        {{ icons.arrow_right }}
-                    </button>
-                    <button class="btn btn-square btn-sm"
-                    >
-                        {{ icons.arrow_left }}
-                    </button>
+                    {% if config.is_single == True %}
+                        {% if config.buttons and config.buttons.left %}
+                            <button 
+                                class="btn btn-square btn-sm"
+                                {{ format_attr(config.buttons.left.attributes, d) }}
+                            >
+                                {{ icons.arrow_left }}
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    {% if config.is_single == False %}
+                        {% if config.buttons and config.buttons.right %}
+                            <button 
+                                class="btn btn-square btn-sm"
+                                {{ format_attr(config.buttons.right.attributes, d) }}
+                            >
+                                {{ icons.arrow_right }}
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+#
+data_card1: |
+    {% for d in data %}
+        <div 
+            class="
+                card bg-base-100 shadow-xl w-full mt-2 mb-2 
+                {{ attributes.class if attributes and attributes.class else '' }}
+            "
+            {{ format_attr(attributes) if attributes }}
+        >
+            <div class="card-body break-all" style="word-wrap: break-word;">
+                {% if config %}
+                    <div class="card-actions justify-end">
+                        <div class="dropdown dropdown-end">
+                            <button class="btn btn-square btn-sm" >
+                                {{ icons.ellipsis_horizontal }}
+                            </button>
+                            <ul
+                                tabindex="0"
+                                class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow"
+                            >
+                                <li>
+                                    <div>
+                                        <button class="btn btn-square btn-sm">
+                                            {{ icons.edit }}
+                                        </button>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="hidden">
+                                        {% if config.buttons and config.buttons.delete %}
+                                            <button 
+                                                class="btn btn-square btn-sm text-red-500"
+                                                {{ format_attr(config.buttons.delete.attributes) }}
+                                            >
+                                                {{ icons.trash }}
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if config.buttons and config.buttons.cancel %}
+                                            <button class="btn btn-square btn-sm"
+                                                onmousedown="onMousedownDataCardCancel(this)">
+                                                {{ icons.cancel }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        {% if config.buttons and config.buttons.delete %}
+                                            <button class="btn btn-square btn-sm" 
+                                                onmousedown="onMousedownDataCardTrash(this)"
+                                            >
+                                                {{ icons.trash }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                        
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                {% endif%}
+                {% if items %}
+                    {% for item in items %}
+                        {{ item.key }} :
+                        {% if item.key in d %}
+                            {{ d[item.key] }} 
+                        {% endif %}
+                        </br>
+                    {% endfor %}
+                {% endif%}
+                <div class="card-actions justify-end">
+                    {% if config.buttons and config.buttons.left %}>
+                        <button class="btn btn-square btn-sm"
+                        >
+                            {{ icons.arrow_left }}
+                        </button>
+                    {% endif %}
+                    {% if config.buttons and config.buttons.right %}
+                        <button 
+                            class="btn btn-square btn-sm"
+                            {{ format_attr(d.attributes.go) }}
+                        >
+                            {{ icons.arrow_right }}
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -2005,8 +2123,8 @@
         {{ format_children(children) }}
     </div>
 #
-"icons":
-    "add": |
+icons:
+    add: |
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
@@ -2082,4 +2200,5 @@
 "classes":
     "input": |
         input input-bordered input-md w-full
+
 #
