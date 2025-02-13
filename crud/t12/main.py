@@ -171,17 +171,6 @@ class BlogManager:
             print('get_posts')
             path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
 
-            if "HX-Request" in request.headers:
-                # print((request.headers)
-                pass
-                
-            if "hx-current-url" in request.headers:
-                # print(request.headers)
-                print(request.headers['hx-current-url'])
-                parsed_url = urlparse(request.headers['hx-current-url'])
-                print(parsed_url)
-                pass
-
             q_params = dict(request.query_params)
 
             search_term = str(q_params['search_term']) if 'search_term' in q_params else ''
@@ -386,11 +375,6 @@ class BlogManager:
 
             ConfigManager.load_data()
 
-            if "HX-Request" in request.headers:
-                pass
-
-            parsed_url = urlparse(request.headers['hx-current-url'])
-            print(parsed_url)
             query_params = dict(request.query_params)
 
             result = []
@@ -583,18 +567,6 @@ class BlogManager:
 
             page_config = PageRenderer.load_page_config('blog_config.yaml')
 
-            comments_config = ConfigManager.get_table_config('comments')
-            gv.comments_config = comments_config
-
-            categories_config = ConfigManager.get_table_config('categories')
-            gv.categories_config = categories_config
-
-            tags_config = ConfigManager.get_table_config('tags')
-            gv.tags_config = tags_config
-
-            users_config = ConfigManager.get_table_config('users')
-            gv.users_config = users_config
-
             search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
             page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
             page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
@@ -621,11 +593,7 @@ class BlogManager:
                 min=min
             )
             
-            headers = {"HX-Trigger": "newBlogGet"}
-            
             return HTMLResponse(content=h, headers=headers)
-
-            #return h
 
         except Exception as e:
             # 例外情報を取得

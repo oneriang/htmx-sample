@@ -22,18 +22,13 @@ component_definitions:
       - type: form_container
         attributes:
           id: form_container
-      - $ref: blogs
+      - $ref: blog
 
-  blogs:
-    id: blogs
-    type: blogs
+  blog:
+    id: blog
+    type: blog
     attributes:
-      id: blogs
-      # hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
-      # hx-swap: innerHTML
-      # hx-target: '#blogs'
-      # # hx-push-url: 'true'
-      # hx-trigger: load, newBlogPost from:body
+      id: blog
     children:
       - $ref: posts
       
@@ -44,8 +39,7 @@ component_definitions:
       id: posts
       hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
       hx-swap: innerHTML
-      hx-target: '#blogs'
-      # hx-push-url: 'true'
+      hx-target: '#blog'
       hx-trigger: init, newBlogGet from:body
     config:
       buttons:
@@ -53,34 +47,12 @@ component_definitions:
           attributes:
             hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
             hx-swap: 'innerHTML'
-            hx-target: '#blogs'
-            # hx-push-url: 'true'
+            hx-target: '#blog'
         next:
           attributes:
             hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
             hx-swap: 'innerHTML'
-            hx-target: '#blogs'
-            # hx-push-url: 'true'
-      is_single: False
-    children:
-      - $ref: post
-
-  posts1:
-    type: posts
-    config:
-      buttons:
-        prev:
-          attributes:
-            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
-            hx-swap: 'innerHTML'
-            hx-target: '#blogs'
-            # hx-push-url: 'true'
-        next:
-          attributes:
-            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
-            hx-swap: 'innerHTML'
-            hx-target: '#blogs'
-            # hx-push-url: 'true'
+            hx-target: '#blog'
       is_single: False
     children:
       - $ref: post
@@ -99,11 +71,11 @@ component_definitions:
         left:
           attributes:
             hx-get: history_back
-            hx-target: '#blogs'
+            hx-target: '#blog'
         right:
           attributes:
             hx-get: /blog/posts?post_id={id}
-            hx-target: '#blogs'
+            hx-target: '#blog'
       is_single: False
     attributes:
       id: post
@@ -148,7 +120,7 @@ component_definitions:
     attributes:
       title: Search
       hx-get: "/api/blog/posts?api=posts"
-      hx-target: "#blogs"
+      hx-target: "#blog"
 
   form_edit:
     id: form_edit

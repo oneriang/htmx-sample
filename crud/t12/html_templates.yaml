@@ -1713,9 +1713,8 @@ layout: |
     <div {{ format_attr(attributes) }} >
     </div>
 #
-"blogs": |
+"blog": |
     <div {{ format_attr(attributes) }} >
-        Blogs
         {{ format_children(children) }}
 
 
@@ -1820,7 +1819,7 @@ layout: |
                     {% if d.attributes.is_single == True %}
                         {% if d and d.attributes and d.attributes.back %}
                             <button class="btn btn-square btn-sm"
-                                hx-target="#blogs"
+                                hx-target="#blog"
                                 {{ format_attr(d.attributes.back) }}
                             >
                                 {{ icons.arrow_left }}

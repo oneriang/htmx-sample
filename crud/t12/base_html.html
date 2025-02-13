@@ -50,7 +50,6 @@
 
 <body>
 
-
   {% for component in components %}
   {{ component | safe }}
   {% endfor %}
@@ -62,8 +61,6 @@
   <script>
 
     var is_popstate = false;
-
-    //htmx.config.historyEnabled = false;
 
     document.getElementById('loading-indicator').style.display = 'none';
 
@@ -88,75 +85,7 @@
       }
       document.getElementById('loading-indicator').style.display = 'none';
       is_popstate = false;
-    //   console.log(event)
-
-    //   if (is_popstate == false) {
-    //     if (event.detail.requestConfig.verb == 'get') {
-
-    //       console.log(event.detail.pathInfo.responsePath);
-
-    //       let url = event.detail.pathInfo.responsePath;
-
-    //       // 找到最后一个 '&' 或 '?' 的位置
-    //       let index = url.lastIndexOf('&');
-    //       if (index === -1) {
-    //         index = url.lastIndexOf('?');
-    //         // 移除最后一个参数
-    //         if (index !== -1) {
-    //           url = url.slice(0, index);
-    //         }
-    //       } else {
-    //         // 移除最后一个参数
-    //         if (index !== -1) {
-    //           url = url.slice(0, index);
-    //         }
-    //       }
-          
-    //       url = url.replace('/api/', '/');
-
-    //       console.log(url); // 输出 '/page?name=John'
-
-    //       // history.pushState({}, '', url); ----!!!!
-
-    //       /*
-    //       const url = new URL(event.detail.pathInfo.responsePath);
-    //       console.log(url);
-     
-    //       if (event.detail.pathInfo.responsePath.includes('&')) {
-          
-    //           // 获取所有查询参数
-    //         const searchParams = url.searchParams;
-            
-    //         // 找到最后一个参数并删除它
-    //         const lastParamKey = Array.from(searchParams.keys()).pop();
-    //         if (lastParamKey) {
-    //             searchParams.delete(lastParamKey);
-    //         }
-            
-    //         console.log(url.toString()); // 输出 'https://example.com:8080/path/to/page?name=John'
-            
-    //         history.pushState({}, '', url.toString());
-    //       }
-    //       else {
-    //           // 只保留问号前的部分
-    //         const baseUrl = `${url.origin}${url.pathname}`;
-            
-    //         console.log(baseUrl); // 输出 'https://example.com:8080/path/to/page'
-    //         history.pushState({}, '', baseUrl);
     
-    //       }
-    //       */
-    //       /*
-    //       if (event.detail.pathInfo.responsePath.endsWith('?posts')) {
-    //         history.pushState({}, '', event.detail.pathInfo.responsePath.replace('?posts', ''));
-    //       }
-    //       else if (event.detail.pathInfo.responsePath.endsWith('&posts')) {
-    //         history.pushState({}, '', event.detail.pathInfo.responsePath.replace('&posts', ''));
-    //       }
-    //       */
-    //     }
-    //   }
-    //   is_popstate = false;
     });
 
     // document.body.addEventListener('htmx:historyRestore', function (event) {
@@ -168,17 +97,13 @@
     window.addEventListener('popstate', function (event) {
       console.log('popstate');
       is_popstate = true;
-      // const elements = document.querySelectorAll(`[hx-url="${window.location.pathname + window.location.search}"]`);
-      // elements.forEach(element => {
-      //   console.log(element);
-      //   htmx.trigger(element, "click");
-      // });
+
       // 获取当前 URL
       const currentUrl = window.location.pathname + window.location.search;
 
       // 触发 HTMX 请求
       htmx.ajax('GET', currentUrl, {
-          target: '#blogs', // 替换为目标区域的 ID
+          target: '#blog', // 替换为目标区域的 ID
           swap: 'innerHTML'
       });
     });
@@ -250,13 +175,6 @@
   
   <script>
           document.addEventListener('DOMContentLoaded', function() {
-            // alert(1)
-            // 触发元素的hx-get请求
-            // htmx.trigger('#posts', 'load');
-            
-            // 或者直接调用AJAX
-            //htmx.ajax('GET', '/your-endpoint', '#targetElement');
-            
             htmx.trigger('#posts', 'init');
           });
         </script>
