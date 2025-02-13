@@ -166,6 +166,59 @@ async def universal_handler(any_path: str, request: Request):
 class BlogManager:
 
     @staticmethod
+    async def get_blog(request: Request):
+        print('get_blog')
+        try:
+            gv.request = request
+
+            query_params = dict(request.query_params)
+            if query_params is None:
+                query_params = []
+
+            ConfigManager.load_data()
+
+            posts_config = ConfigManager.get_table_config('posts')
+            gv.posts_config = posts_config
+
+            page_config = PageRenderer.load_page_config('blog_config.yaml')
+
+            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
+            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
+            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
+            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
+
+            try:
+                attr = gv.component_dict['posts']['attributes']
+                attr['hx-get'] = attr['hx-get'].format(
+                    search_term=search_term, 
+                    page_size=page_size, 
+                    page_number=page_number,
+                    post_id=post_id)
+                    
+            except KeyError:
+                pass
+                  
+            rendered_components = [PageRenderer.generate_html(
+                component) for component in page_config['components']]
+
+            template = Template(gv.BASE_HTML)
+            h = template.render(
+                page_title=page_config['title'],
+                components=rendered_components,
+                min=min
+            )
+            
+            return HTMLResponse(content=h)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @staticmethod
     async def get_posts(request: Request):
         try:
             print('get_posts')
@@ -233,131 +286,6 @@ class BlogManager:
             response = HTMLResponse(content=h)
             return response
             
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/blog/post", response_class=HTMLResponse)
-    @staticmethod
-    async def post_blog_post(request: Request):
-        try:
-            form_data = await request.form()
-            file = form_data.get('featured_image')
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='create_post',
-                params={
-                    'title': form_data['title'],
-                    'slug': "slug",
-                    'content': form_data['content'],
-                    'status': form_data['status'],
-                    # 'file': form_data['featured_image']
-                    'visibility': form_data['visibility'],
-                    'category_id': form_data['category_id'],
-                    'author_id': form_data['author_id'],
-                    "file": file,
-                    "file_name": file.filename,
-                    "folder_path": "./uploaded"
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newPost"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.put("/blog/post", response_class=HTMLResponse)
-    @staticmethod
-    async def put_blog_post(request: Request):
-        try:
-            form_data = await request.form()
-            file = form_data.get('featured_image')
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='update_post',
-                params={
-                    'id': form_data['id'],
-                    'title': form_data['title'],
-                    'content': form_data['content'],
-                    'status': form_data['status'],
-                    'visibility': form_data['visibility'],
-                    'category_id': form_data['category_id'],
-                    'author_id': form_data['author_id'],
-                    "file": file,
-                    "file_name": file.filename,
-                    "folder_path": "./uploaded"
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "updatePost"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @staticmethod
-    async def delete_blog_post(request: Request):
-        try:
-            print('blog_post_delete')
-            query_params = dict(request.query_params)
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='delete_post',
-                params={
-                    'id': query_params['post_id']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "deletePost"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
-
-    @app.post("/blog/post/comment", response_class=HTMLResponse)
-    @staticmethod
-    async def post_blog_post_comment(request: Request):
-        try:
-
-            form_data = await request.form()
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='add_comment',
-                params={
-                    'post_id': form_data['post_id'],
-                    # 'parent_id': form_data['parent_id'],
-                    # 'user_id': form_data['user_id'],
-                    'content': form_data['content']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newPostComment"}
-            return HTMLResponse(content='ok', headers=headers)
-
         except Exception as e:
             # 例外情報を取得
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -448,7 +376,6 @@ class BlogManager:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-
     @staticmethod
     async def get(request: Request):
         try:
@@ -500,7 +427,6 @@ class BlogManager:
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
 
-    @app.get("/blog/post/comments", response_class=HTMLResponse)
     @staticmethod
     async def get_blog_post_comments(request: Request):
         try:
@@ -551,49 +477,118 @@ class BlogManager:
             return None
 
     @staticmethod
-    async def get_blog(request: Request):
-        print('get_blog')
+    async def post_blog_post(request: Request):
         try:
-            gv.request = request
+            form_data = await request.form()
+            file = form_data.get('featured_image')
 
-            query_params = dict(request.query_params)
-            if query_params is None:
-                query_params = []
-
-            ConfigManager.load_data()
-
-            posts_config = ConfigManager.get_table_config('posts')
-            gv.posts_config = posts_config
-
-            page_config = PageRenderer.load_page_config('blog_config.yaml')
-
-            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
-
-            try:
-                attr = gv.component_dict['posts']['attributes']
-                attr['hx-get'] = attr['hx-get'].format(
-                    search_term=search_term, 
-                    page_size=page_size, 
-                    page_number=page_number,
-                    post_id=post_id)
-                    
-            except KeyError:
-                pass
-                  
-            rendered_components = [PageRenderer.generate_html(
-                component) for component in page_config['components']]
-
-            template = Template(gv.BASE_HTML)
-            h = template.render(
-                page_title=page_config['title'],
-                components=rendered_components,
-                min=min
+            result = DatabaseManager.tm.execute_transactions(
+                transaction_name='create_post',
+                params={
+                    'title': form_data['title'],
+                    'slug': "slug",
+                    'content': form_data['content'],
+                    'status': form_data['status'],
+                    # 'file': form_data['featured_image']
+                    'visibility': form_data['visibility'],
+                    'category_id': form_data['category_id'],
+                    'author_id': form_data['author_id'],
+                    "file": file,
+                    "file_name": file.filename,
+                    "folder_path": "./uploaded"
+                },
+                config_file="cms.yaml"
             )
-            
-            return HTMLResponse(content=h, headers=headers)
+
+            headers = {"HX-Trigger": "newPost"}
+            return HTMLResponse(content='ok', headers=headers)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @staticmethod
+    async def put_blog_post(request: Request):
+        try:
+            form_data = await request.form()
+            file = form_data.get('featured_image')
+
+            result = DatabaseManager.tm.execute_transactions(
+                transaction_name='update_post',
+                params={
+                    'id': form_data['id'],
+                    'title': form_data['title'],
+                    'content': form_data['content'],
+                    'status': form_data['status'],
+                    'visibility': form_data['visibility'],
+                    'category_id': form_data['category_id'],
+                    'author_id': form_data['author_id'],
+                    "file": file,
+                    "file_name": file.filename,
+                    "folder_path": "./uploaded"
+                },
+                config_file="cms.yaml"
+            )
+
+            headers = {"HX-Trigger": "updatePost"}
+            return HTMLResponse(content='ok', headers=headers)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @staticmethod
+    async def delete_blog_post(request: Request):
+        try:
+            print('blog_post_delete')
+            query_params = dict(request.query_params)
+
+            result = DatabaseManager.tm.execute_transactions(
+                transaction_name='delete_post',
+                params={
+                    'id': query_params['post_id']
+                },
+                config_file="cms.yaml"
+            )
+
+            headers = {"HX-Trigger": "deletePost"}
+            return HTMLResponse(content='ok', headers=headers)
+
+        except Exception as e:
+            # 例外情報を取得
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # 行番号を取得
+            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            return None
+
+    @staticmethod
+    async def post_blog_post_comment(request: Request):
+        try:
+
+            form_data = await request.form()
+
+            result = DatabaseManager.tm.execute_transactions(
+                transaction_name='add_comment',
+                params={
+                    'post_id': form_data['post_id'],
+                    # 'parent_id': form_data['parent_id'],
+                    # 'user_id': form_data['user_id'],
+                    'content': form_data['content']
+                },
+                config_file="cms.yaml"
+            )
+
+            headers = {"HX-Trigger": "newPostComment"}
+            return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
             # 例外情報を取得
@@ -636,16 +631,14 @@ class PageRenderer:
             # 解析继承关系
             resolved_data = ConfigManager.resolve_inheritance(
                 config, all_base_data)
-
+                
             # 将 base_data 中不冲突的部分合并到最终结果中
             final_data = ConfigManager.deep_merge(
                 gv.base_config, resolved_data)
             config = final_data
-
+            
             gv.component_dict = config.get('component_definitions', {})
-            # print(gv.component_dict)
-            # print('1')
-
+            
             def resolve_components(components):
                 resolved = []
                 for comp in components:
@@ -659,9 +652,9 @@ class PageRenderer:
                     else:
                         resolved.append(comp)
                 return resolved
-
+                
             config['components'] = resolve_components(config['components'])
-            # print('2')
+            
             return config
 
         except Exception as e:
@@ -888,8 +881,6 @@ class CustomRenderer(PageRenderer):
 
             rendered_components = [PageRenderer.generate_html(
                 component) for component in page_config['components']]
-            # print('rendered_components')
-            # print(rendered_components)
 
             template = Template(gv.BASE_HTML)
             h = template.render(
@@ -907,7 +898,6 @@ class CustomRenderer(PageRenderer):
             line_number = traceback.extract_tb(exc_traceback)[-1].lineno
             print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
             return None
-
 
 if __name__ == "__main__":
 
