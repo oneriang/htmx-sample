@@ -11,7 +11,7 @@ layout: |
         .drawer-side.drawer-side-left{
             left: -30rem; /* Start off-screen */
             transition: left 0.3s ease-in-out;
-            width: 90%;
+            # width: 90%;
         }
         .drawer-side.drawer-side-left ul.menu{
             flex-wrap: nowrap;
@@ -1714,15 +1714,14 @@ layout: |
     </div>
 #
 "blog": |
-    <div {{ format_attr(attributes) }} >
+    <div {{ format_attr(attributes, None, component) }} >
         {{ format_children(children) }}
-
-
     </div>
         
 #
-"posts": |
-    <div class="mt-5" {{ format_attr(attributes) }}>
+posts: |
+    {{ data }}
+    <div class="mt-5" {{ format_attr(attributes, None, component) }}>
         {% if data|length > 1 %}
             <div class="flex justify-end gap-2">
                 <button 
@@ -1744,7 +1743,8 @@ layout: |
         {{ format_children(children) }}
     </div>
 #
-"post": |
+post: |
+    {{ data }}
     {% for d in data['posts'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -1807,7 +1807,7 @@ layout: |
                     {% endfor %}
                 {% endif%}
                 <div class="card-actions justify-end">
-                    {% if d.attributes.is_single == False %}
+                    {% if data['posts']|length > 1 %}
                         {% if d and d.attributes and d.attributes.go %}
                             <button class="btn btn-square btn-sm"
                                 {{ format_attr(d.attributes.go) }}
@@ -1815,8 +1815,7 @@ layout: |
                                 {{ icons.arrow_right }}
                             </button>
                         {% endif %}
-                    {% endif %}
-                    {% if d.attributes.is_single == True %}
+                    {% else %}
                         {% if d and d.attributes and d.attributes.back %}
                             <button class="btn btn-square btn-sm"
                                 hx-target="#blog"
@@ -1829,7 +1828,7 @@ layout: |
                 </div>
             </div>
         </div>
-        {% if d.attributes.is_single == True %}
+        {% if data['posts']|length == 1 %}
             {{ format_children(children) }}
         {% endif %}
     {% endfor %}
@@ -1935,7 +1934,7 @@ data_card: |
                     {% endfor %}
                 {% endif%}
                 <div class="card-actions justify-end">
-                    {% if config.is_single == True %}
+                    {% if data|length == 1 %}
                         {% if config.buttons and config.buttons.left %}
                             <button 
                                 class="btn btn-square btn-sm"
@@ -1944,8 +1943,7 @@ data_card: |
                                 {{ icons.arrow_left }}
                             </button>
                         {% endif %}
-                    {% endif %}
-                    {% if config.is_single == False %}
+                    {% else %}
                         {% if config.buttons and config.buttons.right %}
                             <button 
                                 class="btn btn-square btn-sm"

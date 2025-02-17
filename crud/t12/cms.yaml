@@ -430,7 +430,7 @@ transactions:
             value: "{{ id }}"
 
   # 4. 获取文章列表
-  - name: get_posts_list
+  - name: get_posts
     steps:
     # 更新浏览次数
       - action: execute

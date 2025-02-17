@@ -49,12 +49,7 @@ class CURDManager:
             raise HTTPException(status_code=404, detail="Item not found")
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.post("/create/{table_name}")
     @staticmethod
@@ -114,12 +109,7 @@ class CURDManager:
                 return {"success": False, "message": str(e)}
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.get("/edit", response_class=HTMLResponse)
     @staticmethod
@@ -184,12 +174,7 @@ class CURDManager:
             raise HTTPException(status_code=404, detail="Item not found")
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.post("/edit/{table_name}/{id}")
     @staticmethod
@@ -236,12 +221,7 @@ class CURDManager:
                 return {"success": False, "message": str(e)}
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.get("/delete", response_class=HTMLResponse)
     @staticmethod
@@ -300,12 +280,7 @@ class CURDManager:
             raise HTTPException(status_code=404, detail="Item not found")
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.post("/delete/{table_name}/{id}")
     @staticmethod
@@ -331,9 +306,4 @@ class CURDManager:
                 return {"success": False, "message": str(e)}
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)

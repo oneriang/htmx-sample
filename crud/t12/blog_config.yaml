@@ -1,4 +1,5 @@
 title: Blog
+
 component_definitions:
   main_layout:
     attributes:
@@ -35,6 +36,13 @@ component_definitions:
   posts:
     id: posts
     type: posts
+    const:
+      params:
+        data_name: 'posts'
+        search_term: ''
+        page_size: 10
+        page_number: 1
+        post_id: ''
     attributes:
       id: posts
       hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
@@ -45,15 +53,14 @@ component_definitions:
       buttons:
         prev:
           attributes:
-            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}
             hx-swap: 'innerHTML'
             hx-target: '#blog'
         next:
           attributes:
-            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
+            hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
             hx-swap: 'innerHTML'
             hx-target: '#blog'
-      is_single: False
     children:
       - $ref: post
 
@@ -76,7 +83,6 @@ component_definitions:
           attributes:
             hx-get: /blog/posts?post_id={id}
             hx-target: '#blog'
-      is_single: False
     attributes:
       id: post
     children:
@@ -173,3 +179,4 @@ component_definitions:
 
 components:
   - $ref: main_layout
+

@@ -3,7 +3,9 @@ import sys
 import re
 import uvicorn
 import json
+import inspect
 from pathlib import Path
+from urllib.parse import unquote
 
 import traceback
 
@@ -36,6 +38,7 @@ import yaml
 import logging
 import copy
 
+from gv import *
 import gv as gv
 import transaction_module
 from transaction_module import convert_value, TransactionModule
@@ -78,18 +81,13 @@ def init():
     ConfigManager.load_data()
     gv.tables = DatabaseManager.get_tables()
 
-
 @app.api_route("/{any_path:path}", response_class=HTMLResponse, methods=['GET', 'POST'])
 async def universal_handler(any_path: str, request: Request):
     
     gv.request = request
 
-    print(dict(request.query_params))
-
     try:
         full_path = request.url.path
-
-        path_parts = full_path.strip("/").split("/")  # 分解路径为列表
 
         # 获取 HTTP 方法
         http_method = request.method
@@ -98,7 +96,6 @@ async def universal_handler(any_path: str, request: Request):
         if http_method == "GET":
             pass
         elif http_method == "POST":
-            print(path_parts)
             if full_path == '/blog/post/comment':
                 return await BlogManager.post_blog_post_comment(request)
             if full_path == '/blog/post':
@@ -144,7 +141,7 @@ async def universal_handler(any_path: str, request: Request):
             if is_htmx_request:
                 return await BlogManager.get_posts(request)
             else:
-                BlogManager.get_blog(request)
+                await BlogManager.get_blog(request)
         
         if request.url.path == '/blog':
             return await BlogManager.get_blog(request)
@@ -156,83 +153,93 @@ async def universal_handler(any_path: str, request: Request):
         return full_path
 
     except Exception as e:
-        # 例外情報を取得
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        # 行番号を取得
-        line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-        print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-        return None
+        eee(e)
 
 class BlogManager:
 
     @staticmethod
-    async def get_blog(request: Request):
-        print('get_blog')
+    def get_query_paramas(request, PRMS = {}):
+        print('get_query_paramas')
         try:
-            gv.request = request
+            if request.query_params:
+                query_params = dict(request.query_params)
+                print(query_params)
+                for k, v in query_params.items():                
+                    if v:
+                        try:
+                            # 尝试解析为整数
+                            v = int(v)
+                        except ValueError:
+                            try:
+                                # 尝试解析为浮点数
+                                v = float(v)
+                            except ValueError:
+                                pass
+                        query_params[k] = v
+                print('PRMS')
+                print(PRMS)
+                PRMS.update(query_params)
+                query_params = PRMS
+                print(query_params)
+            else:
+                query_params = PRMS
 
-            query_params = dict(request.query_params)
-            if query_params is None:
-                query_params = []
-
-            ConfigManager.load_data()
-
-            posts_config = ConfigManager.get_table_config('posts')
-            gv.posts_config = posts_config
-
-            page_config = PageRenderer.load_page_config('blog_config.yaml')
-
-            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
-
-            try:
-                attr = gv.component_dict['posts']['attributes']
-                attr['hx-get'] = attr['hx-get'].format(
-                    search_term=search_term, 
-                    page_size=page_size, 
-                    page_number=page_number,
-                    post_id=post_id)
-                    
-            except KeyError:
-                pass
-                  
-            rendered_components = [PageRenderer.generate_html(
-                component) for component in page_config['components']]
-
-            template = Template(gv.BASE_HTML)
-            h = template.render(
-                page_title=page_config['title'],
-                components=rendered_components,
-                min=min
-            )
-            
-            return HTMLResponse(content=h)
-
+            return query_params
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
-    async def get_posts(request: Request):
+    def get_formatted_url(url, query_params):
         try:
-            print('get_posts')
-            path_parts = request.url.path.strip("/").split("/")  # 分解路径为列表
+          
+            '''
+            # 使用正则表达式提取占位符
+            placeholders = re.findall(r'\{(.*?)\}', url)
+            
+            # 动态替换
+            formatted_url = url
+            for placeholder in placeholders:
+                v = ''
+                if placeholder in query_params:
+                    v = str(query_params[placeholder])
+                formatted_url = formatted_url.replace(f'{{{placeholder}}}', v)
+            '''
+            
+            # 自定义替换函数
+            def replace_expression(match):
+                expression = match.group(1)  # 提取表达式
+                if ' - ' in expression:
+                    var, offset = expression.split(' - ')
+                    return str(query_params.get(var, 0) - int(offset))
+                elif ' + ' in expression:
+                    var, offset = expression.split(' + ')
+                    return str(query_params.get(var, 0) + int(offset))
+                else:
+                    return str(query_params.get(expression, ''))
+        
+            # 使用正则表达式替换
+            formatted_url = re.sub(r'\{(.*?)\}', replace_expression, url)
 
-            q_params = dict(request.query_params)
+            return formatted_url
+        except Exception as e:
+            eee(e)
 
-            search_term = str(q_params['search_term']) if 'search_term' in q_params else ''
-            page_size = int(q_params['page_size']) if 'page_size' in q_params else 5
-            page_number = int(q_params['page_number']) if 'page_number' in q_params else 1
-            post_id = int(q_params['post_id']) if 'post_id' in q_params else None
+    @staticmethod
+    def get_data(query_params):
+        try:
+            data_name = query_params.get('data_name', '')
+
+            if data_name == '':
+                return None
+            
+            search_term = query_params.get('search_term', '')
+            page_size = query_params.get('page_size', 5)
+            page_number = query_params.get('page_number', 1)
+            
+            post_id = query_params.get('post_id', None)
 
             result = DatabaseManager.tm.execute_transactions(
-                transaction_name='get_posts_list',
+                transaction_name='get_' + data_name,
                 params={
                     'search_term': '%' + search_term + '%',
                     'limit': page_size,
@@ -242,57 +249,70 @@ class BlogManager:
                 config_file="cms.yaml"
             )
 
-            result = gv.data['posts']
+            result = gv.data[data_name]
 
-            h = ''
-            try:
-                PageRenderer.load_page_config('blog_config.yaml')
+            return result
+        except Exception as e:
+            eee(e)
 
-                gv.component_dict['post']['config']['is_single'] = True if post_id is not None else False
+    @staticmethod
+    async def get_blog(request: Request):
+        print('get_blog')
+        try:
+            gv.request = request
+            
+            ConfigManager.load_data()
+            
+            page_config = PageRenderer.load_page_config('blog_config.yaml')
 
-                gv.component_dict['posts']['data'] = result
+            # PRMS = page_config['const']['params']
 
-                try:
-                    attr = gv.component_dict['posts']['config']['buttons']['prev']['attributes']
-                    attr['hx-get'] = attr['hx-get'].format(
-                        search_term=search_term, 
-                        page_size=page_size, 
-                        page_number=page_number - 1)
-                    if page_number <= 1:
-                        attr['disabled'] = 'disabled'
-                except KeyError:
-                    pass
+            # query_params = BlogManager.get_query_paramas(request, PRMS)
 
-                try:
-                    attr = gv.component_dict['posts']['config']['buttons']['next']['attributes']
-                    attr['hx-get'] = attr['hx-get'].format(
-                        search_term=search_term, 
-                        page_size=page_size, 
-                        page_number=page_number + 1)
-                    if len(result) < page_size:
-                        attr['disabled'] = 'disabled'
-                except KeyError:
-                    pass
-                
-                h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
-            except Exception as e:
-                # 例外情報を取得
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                # 行番号を取得
-                line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-                print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-                return None
+            # try:
+            #     attr = gv.component_dict['posts']['attributes']
+            #     attr['hx-get'] = BlogManager.get_formatted_url(attr['hx-get'], query_params) 
+            # except KeyError:
+            #     pass
+                  
+            rendered_components = [
+                PageRenderer.generate_html(component) for component in page_config['components']
+            ]
+
+            template = Template(gv.BASE_HTML)
+            h = template.render(
+                page_title=page_config['title'],
+                components=rendered_components
+            )
+            
+            return HTMLResponse(content=h)
+
+        except Exception as e:
+            eee(e)
+
+    @staticmethod
+    async def get_posts(request: Request):
+        try:
+            print('get_posts')
+
+            ConfigManager.load_data()
+            print(request.query_params)
+            query_params = BlogManager.get_query_paramas(request)
+            query_params['data_name'] = 'posts'
+            print(query_params)
+
+            result = BlogManager.get_data(query_params)
+            print(result)
+            
+            gv.component_dict['posts']['data'] = result
+            
+            h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
             
             response = HTMLResponse(content=h)
             return response
             
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def get_post_form(request: Request):
@@ -306,7 +326,6 @@ class BlogManager:
             query_params = dict(request.query_params)
 
             result = []
-            print(query_params)
 
             if 'post_id' in query_params:
 
@@ -330,15 +349,7 @@ class BlogManager:
                         h = PageRenderer.generate_html(
                             gv.component_dict['form_edit'])
                 except Exception as e:
-                    print(e)
-                    # 例外情報を取得
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    # 行番号を取得
-                    line_number = traceback.extract_tb(
-                        exc_traceback)[-1].lineno
-                    print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-                    # return None
-                    pass
+                    eee(e)
 
                 return HTMLResponse(content=h)
 
@@ -355,77 +366,46 @@ class BlogManager:
 
                         print(h)
                 except Exception as e:
-                    print(e)
-                    # 例外情報を取得
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    # 行番号を取得
-                    line_number = traceback.extract_tb(
-                        exc_traceback)[-1].lineno
-                    print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-                    # return None
-                    pass
+                    eee(e)
 
                 return h
                 return HTMLResponse(content=h)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def get(request: Request):
         try:
             gv.request = request
 
+            # 获取 URL 路径
             full_path = request.url.path
 
-            path_parts = full_path.strip("/").split("/")  # 分解路径为列表
+            # 去除末尾的斜杠，然后按 "/" 分割路径
+            path_parts = full_path.rstrip("/").split("/")
 
-            page_name = path_parts[-1]
-            print(page_name)
-
-            if "HX-Request" in request.headers:
-                pass
+            # 获取最后一个部分作为 page_name
+            page_name = unquote(path_parts[-1]) if path_parts else ""
 
             query_params = dict(request.query_params)
 
-            search_term = str(
-                query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']
-                            ) if 'page_size' in query_params else 5
-            page_number = int(
-                query_params['page_number']) if 'page_number' in query_params else 1
+            # page_config = PageRenderer.load_page_config(page_name + '_config.yaml')
+            # PRMS = page_config['const']['params']
+            # query_params = BlogManager.get_query_paramas(request, PRMS)
 
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='get_' + page_name,
-                params={
-                    'search_term': '%' + search_term + '%',
-                    'limit': page_size,
-                    'offset': (page_number - 1) * page_size
-                },
-                config_file="cms.yaml"
-            )
+            query_params['data_name'] = page_name
 
-            page_config = PageRenderer.load_page_config('settings_config.yaml')
+            result = BlogManager.get_data(query_params)
 
-            gv.component_dict[page_name]['data'] = gv.data
+            gv.component_dict[page_name]['data'] = result
 
-            h = PageRenderer.generate_html(
-                gv.component_dict[page_name], page_name)
+            h = PageRenderer.generate_html(gv.component_dict[page_name], page_name)
 
             return HTMLResponse(content=h)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def get_blog_post_comments(request: Request):
@@ -434,9 +414,6 @@ class BlogManager:
             gv.request = request
 
             ConfigManager.load_data()
-
-            if "HX-Request" in request.headers:
-                pass
 
             query_params = dict(request.query_params)
 
@@ -469,12 +446,7 @@ class BlogManager:
             return HTMLResponse(content=h)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def post_blog_post(request: Request):
@@ -504,12 +476,7 @@ class BlogManager:
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def put_blog_post(request: Request):
@@ -538,12 +505,7 @@ class BlogManager:
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def delete_blog_post(request: Request):
@@ -563,12 +525,7 @@ class BlogManager:
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def post_blog_post_comment(request: Request):
@@ -591,12 +548,7 @@ class BlogManager:
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
 class PageRenderer:
     """页面渲染管理类"""
@@ -610,12 +562,7 @@ class PageRenderer:
             return comp
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     # 修改加载配置函数
     @staticmethod
@@ -658,12 +605,7 @@ class PageRenderer:
             return config
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def generate_html(component: Dict[str, Any], page_name='') -> str:
@@ -690,13 +632,16 @@ class PageRenderer:
                         if 'value' in component['cols'][key]:
                             value = component['cols'][key]['value']
                             component['cols'][key]['value'] = None
-
-                            k = value.split('.')
-                            if len(k) == 2:
-                                if k[0] in gv.data:
-                                    if len(gv.data[k[0]]) > 0:
-                                        if k[1] in gv.data[k[0]][0]:
-                                            component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                            print(key)
+                            print(component['cols'])
+                            if value:
+                              print(value)
+                              k = value.split('.')
+                              if len(k) == 2:
+                                  if k[0] in gv.data:
+                                      if len(gv.data[k[0]]) > 0:
+                                          if k[1] in gv.data[k[0]][0]:
+                                              component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
 
                         config_id = component['config']['id'] + '_config'
                         if hasattr(gv, config_id):
@@ -753,6 +698,7 @@ class PageRenderer:
             data = component.get('data', {})
 
             h = template.render(
+                component=component,
                 attributes=component.get('attributes', {}),
                 config=component.get('config', {}),
                 # data=component.get('data', {}),
@@ -774,64 +720,53 @@ class PageRenderer:
 
             return h
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
-    def format_attr(attributes, data = None):
+    def format_attr(attributes, data = None, component = None):
         try:
             s = ''
             if attributes:
                 for attr, value in attributes.items():
-                    if isinstance(value, str):
-                        if attr == 'hx-get' and value == 'history_back':
+                    if attr == 'hx-get':
+                        if value == 'history_back':
                             parsed_url = urlparse(gv.request.headers['hx-current-url'])
                             value = '{}?{}'.format(parsed_url.path, parsed_url.query)
-
-                        elif '{search_term}' in value:
-                            q_params = dict(gv.request.query_params)
-    
-                            search_term = str(q_params['search_term']) if 'search_term' in q_params else ''
-                            page_size = int(q_params['page_size']) if 'page_size' in q_params else 5
-                            page_number = int(q_params['page_number']) if 'page_number' in q_params else 1
-                            post_id = int(q_params['id']) if 'id' in q_params else None
-                            
-                            value = value.format(
-                                search_term=search_term, 
-                                page_size=page_size, 
-                                page_number=page_number)
-                        
-                        elif data:
-                            value = value.format(id=data['id'])
-                            pass
                         else:
-                            matches = re.findall(r'\{\{.*?\}\}', value)
-                            # 去除多余的空格
-                            matches = [match.strip() for match in matches]
-                            if matches:
-                                param_name = matches[0]
-                                k = param_name.replace(
-                                    '{{', '').replace('}}', '').strip().split('.')
-                                if len(k) == 2:
-                                    if k[0] in gv.data:
-                                        if len(gv.data[k[0]]) > 0:
-                                            if k[1] in gv.data[k[0]][0]:
-                                                value = value.replace(
-                                                    param_name, str(gv.data[k[0]][0][k[1]]))
+                            if data:
+                                value = BlogManager.get_formatted_url(value, data)
+                            else:
+                                query_params = BlogManager.get_query_paramas(gv.request)
 
+                                if component:
+                                    print('*******************')
+                                    PRMS = component.get('const', {}).get('params', {})
+                                    print(PRMS)
+                                    query_params = BlogManager.get_query_paramas(gv.request, PRMS.copy())
+                                    PRMS = component.get('const', {}).get('params', {})
+                                    print(PRMS)
+                                    
+                                value = BlogManager.get_formatted_url(value, query_params)
+                    '''
+                    else:
+                        matches = re.findall(r'\{\{.*?\}\}', value)
+                        # 去除多余的空格
+                        matches = [match.strip() for match in matches]
+                        if matches:
+                            param_name = matches[0]
+                            k = param_name.replace(
+                                '{{', '').replace('}}', '').strip().split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            value = value.replace(
+                                                param_name, str(gv.data[k[0]][0][k[1]]))
+                    '''
                     s += f' {attr}="{value}" '
             return s
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def format_children(children):
@@ -843,12 +778,7 @@ class PageRenderer:
                         s += child
             return s
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
 class CustomRenderer(PageRenderer):
     """继承 PageRenderer 并扩展功能"""
@@ -892,12 +822,7 @@ class CustomRenderer(PageRenderer):
             return h
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
 if __name__ == "__main__":
 

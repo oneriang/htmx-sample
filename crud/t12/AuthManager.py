@@ -18,12 +18,7 @@ class AuthManager:
             return jwt.encode(to_encode, ConfigManager.SECRET_KEY, algorithm=ConfigManager.ALGORITHM)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     async def get_current_user(request: Request):
@@ -41,12 +36,7 @@ class AuthManager:
             return none
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     def verify_password(plain_password, hashed_password):
         return pwd_context.verify(plain_password, hashed_password)
@@ -103,12 +93,7 @@ class AuthManager:
             return user
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
         finally:
             db.close()
@@ -124,12 +109,7 @@ class AuthManager:
             raise HTTPException(status_code=401, detail="Invalid token")
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     def login_required(func):
         @wraps(func)
@@ -204,12 +184,7 @@ class AuthManager:
             )
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.post("/login")
     async def login(request: Request, response: Response):
@@ -268,12 +243,7 @@ class AuthManager:
             return HTMLResponse(content=f"<div class='alert alert-error'>Login failed: {str(e)}</div>")
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.middleware("http")
     async def cache_control_middleware(request: Request, call_next):
@@ -294,12 +264,7 @@ class AuthManager:
             return response
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.get("/logout")
     async def logout(request: Request):
@@ -313,12 +278,7 @@ class AuthManager:
             return response
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.get("/register", response_class=HTMLResponse)
     async def register(request: Request):
@@ -340,12 +300,7 @@ class AuthManager:
             )
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @app.post("/register", response_class=HTMLResponse)
     async def register(request: Request):
@@ -369,9 +324,4 @@ class AuthManager:
             return f"<div class='alert alert-error'>Registration failed: {str(e)}</div>"
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)

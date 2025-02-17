@@ -53,12 +53,7 @@ class ConfigManager:
             return None
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def load_data_from_yaml(filename: str) -> Optional[Dict[str, Any]]:
@@ -72,12 +67,7 @@ class ConfigManager:
             return None
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def load_data():
@@ -127,12 +117,13 @@ class ConfigManager:
             '''
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
+            # # 例外情報を取得
+            # exc_type, exc_value, exc_traceback = sys.exc_info()
+            # # 行番号を取得
+            # line_number = traceback.extract_tb(exc_traceback)[-1].lineno
+            # print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
+            # return None
 
     @staticmethod
     def get_table_config(table_name=None):
@@ -158,12 +149,7 @@ class ConfigManager:
                 return config
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_primary_key(table):
@@ -173,12 +159,7 @@ class ConfigManager:
             return None
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_column_type(column_type):
@@ -195,12 +176,7 @@ class ConfigManager:
                 return "text"  # 默认为文本输入
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_configs():
@@ -228,12 +204,7 @@ class ConfigManager:
                 # 如果 base 或 child 不是字典，则直接使用 child 的值
                 return child
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def resolve_inheritance(data, base_data):
@@ -271,12 +242,7 @@ class ConfigManager:
             return data
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_nested_value(data, key_path):
@@ -294,9 +260,4 @@ class ConfigManager:
             return current
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)

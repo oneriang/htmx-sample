@@ -31,8 +31,7 @@ class DatabaseManager:
     metadata.reflect(bind=engine, views=True)
 
     db = SessionLocal()
-    tm = TransactionModule(
-        engine=engine, db=db, metadata=metadata)
+    tm = TransactionModule(engine=engine, db=db, metadata=metadata)
 
     @staticmethod
     def get_table_names():
@@ -41,12 +40,7 @@ class DatabaseManager:
             return inspector.get_table_names()
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_view_names():
@@ -55,12 +49,7 @@ class DatabaseManager:
             return inspector.get_view_names()
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_tables():
@@ -93,12 +82,7 @@ class DatabaseManager:
             return values
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def generate_table_or_view_config(engine, name, is_view=False):
@@ -165,12 +149,7 @@ class DatabaseManager:
             return config
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     # Generate configurations for all tables and views
     @staticmethod
@@ -189,12 +168,7 @@ class DatabaseManager:
                     engine, view_name, is_view=True)
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def apply_search_filter(query, table, column_config, value, is_keyword_search=False):
@@ -252,22 +226,17 @@ class DatabaseManager:
             return query
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
 
     @staticmethod
     def get_table_data(
-        request: Request = None,
-        table_name: str = None,
-        page: int = 1,
-        page_size: int = 5,
-        sort_column: str | None = None,
-        sort_direction: str = 'asc'
-    ):
+            request: Request = None,
+            table_name: str = None,
+            page: int = 1,
+            page_size: int = 5,
+            sort_column: str | None = None,
+            sort_direction: str = 'asc'
+        ):
         try:
             if request is None:
                 request = gv.request
@@ -390,9 +359,4 @@ class DatabaseManager:
             }
 
         except Exception as e:
-            # 例外情報を取得
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            # 行番号を取得
-            line_number = traceback.extract_tb(exc_traceback)[-1].lineno
-            print(f"例外の型: {exc_type.__name__}, 行番号: {line_number}")
-            return None
+            eee(e)
