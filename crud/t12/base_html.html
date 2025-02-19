@@ -50,6 +50,8 @@
 
 <body>
 
+  <div id="target" class="hidden"></div>
+
   {% for component in components %}
   {{ component | safe }}
   {% endfor %}
@@ -57,6 +59,7 @@
   <div id="loading-indicator">
     <div class="loader"></div>
   </div>
+
 
   <script>
 

@@ -89,6 +89,10 @@ async def universal_handler(any_path: str, request: Request):
     try:
         any_path = any_path.rstrip('/')
         full_path = request.url.path.rstrip('/')
+        #print('-----------full_path-----------')
+        #print(any_path)
+        #print(full_path)
+        #print('-----------full_path-----------')
 
         # 获取 HTTP 方法
         http_method = request.method
@@ -164,10 +168,15 @@ class BlogManager:
 
     @staticmethod
     def get_query_paramas(request, PRMS = None):
+        #print('get_query_paramas')
+        #print('PRMS')
+        #print(PRMS)
         try:
             query_params = {}
             if request.query_params:
                 query_params = dict(request.query_params)
+                #print('-------------')
+                #print(query_params)
                 for k, v in query_params.items():                
                     if v:
                         try:
@@ -180,9 +189,15 @@ class BlogManager:
                             except ValueError:
                                 pass
                         query_params[k] = v
+                #print('PRMS')
+                #print(PRMS)
                 if PRMS:
                     PRMS.update(query_params)
                     query_params = PRMS
+                    
+                #print('PRMS')
+                #print(PRMS)
+                #print('-------------')
             else:
                 if PRMS:
                     query_params = PRMS
@@ -194,6 +209,20 @@ class BlogManager:
     @staticmethod
     def get_formatted_url(url, query_params):
         try:
+          
+            '''
+            # 使用正则表达式提取占位符
+            placeholders = re.findall(r'\{(.*?)\}', url)
+            
+            # 动态替换
+            formatted_url = url
+            for placeholder in placeholders:
+                v = ''
+                if placeholder in query_params:
+                    v = str(query_params[placeholder])
+                formatted_url = formatted_url.replace(f'{{{placeholder}}}', v)
+            '''
+            
             # 自定义替换函数
             def replace_expression(match):
                 expression = match.group(1)  # 提取表达式
@@ -204,6 +233,8 @@ class BlogManager:
                     var, offset = expression.split(' + ')
                     return str(query_params.get(var, 0) + int(offset))
                 else:
+                    print(expression)
+                    print(query_params)
                     return str(query_params.get(expression, ''))
         
             # 使用正则表达式替换
@@ -246,17 +277,20 @@ class BlogManager:
 
     @staticmethod
     async def get_blog(request: Request):
+        #print('get_blog')
         try:
             gv.request = request
             
             ConfigManager.load_data()
             
-            page_config = PageRenderer.load_page_config('blog_config.yaml').copy()
+            page_config = PageRenderer.load_page_config('blog_config.yaml')
             
+            #print('@@@@@@@@@@@@@@@@')
             rendered_components = [
                 PageRenderer.generate_html(component) for component in page_config['components']
             ]
-            
+            #print('@@@@@@@@@@@@@@@@')
+
             template = Template(gv.BASE_HTML)
             h = template.render(
                 page_title=page_config['title'],
@@ -271,17 +305,23 @@ class BlogManager:
     @staticmethod
     async def get_posts(request: Request):
         try:
-            ConfigManager.load_data()
+            #print('get_posts')
 
+            ConfigManager.load_data()
+            #print('###########@')
+            #print(request.query_params)
             query_params = BlogManager.get_query_paramas(request)
             query_params['data_name'] = 'posts'
-            
+            #print(query_params)
+
             result = BlogManager.get_data(query_params)
+            #print(result)
+            #print('###########@')
             
             gv.component_dict['posts']['data'] = result
             
             h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
-
+            
             response = HTMLResponse(content=h)
             return response
             
@@ -291,6 +331,8 @@ class BlogManager:
     @staticmethod
     async def get_post_form(request: Request):
         try:
+            #print('get_post_form')
+
             gv.request = request
 
             ConfigManager.load_data()
@@ -318,7 +360,8 @@ class BlogManager:
                         PageRenderer.load_page_config('blog_config.yaml')
                         gv.component_dict['form_edit']['data'] = result[0]
 
-                        h = PageRenderer.generate_html(gv.component_dict['form_edit'])
+                        h = PageRenderer.generate_html(
+                            gv.component_dict['form_edit'])
                 except Exception as e:
                     eee(e)
 
@@ -331,7 +374,11 @@ class BlogManager:
                     if True:
                         PageRenderer.load_page_config('blog_config.yaml')
                         gv.component_dict['form_edit']['data'] = result
-                        h = PageRenderer.generate_html(gv.component_dict['form_edit'])
+                        # #print(gv.component_dict['form_edit'])
+                        h = PageRenderer.generate_html(
+                            gv.component_dict['form_edit'])
+
+                        ##print(h)
                 except Exception as e:
                     eee(e)
 
@@ -357,6 +404,10 @@ class BlogManager:
 
             query_params = dict(request.query_params)
 
+            # page_config = PageRenderer.load_page_config(page_name + '_config.yaml')
+            # PRMS = page_config['const']['params']
+            # query_params = BlogManager.get_query_paramas(request, PRMS)
+
             query_params['data_name'] = page_name
 
             result = BlogManager.get_data(query_params)
@@ -373,16 +424,21 @@ class BlogManager:
     @staticmethod
     async def get_blog_post_comments(request: Request):
         try:
+
             gv.request = request
 
             ConfigManager.load_data()
 
             query_params = dict(request.query_params)
 
-            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
+            search_term = str(
+                query_params['search_term']) if 'search_term' in query_params else ''
+            page_size = int(query_params['page_size']
+                            ) if 'page_size' in query_params else 5
+            page_number = int(
+                query_params['page_number']) if 'page_number' in query_params else 1
+            post_id = int(query_params['post_id']
+                          ) if 'post_id' in query_params else None
 
             result = DatabaseManager.tm.execute_transactions(
                 transaction_name='get_post_comments',
@@ -399,7 +455,7 @@ class BlogManager:
 
             gv.component_dict['comment']['data'] = gv.data
 
-            h = PageRenderer.generate_html(gv.component_dict['comment'].copy(), 'comment')
+            h = PageRenderer.generate_html(gv.component_dict['comment'], 'comment')
 
             return HTMLResponse(content=h)
 
@@ -468,6 +524,7 @@ class BlogManager:
     @staticmethod
     async def delete_blog_post(request: Request):
         try:
+            #print('delete_blog_post')
             query_params = dict(request.query_params)
 
             result = DatabaseManager.tm.execute_transactions(
@@ -533,10 +590,12 @@ class PageRenderer:
             all_base_data = ConfigManager.deep_merge(gv.base_config, config)
 
             # 解析继承关系
-            resolved_data = ConfigManager.resolve_inheritance(config, all_base_data)
+            resolved_data = ConfigManager.resolve_inheritance(
+                config, all_base_data)
                 
             # 将 base_data 中不冲突的部分合并到最终结果中
-            final_data = ConfigManager.deep_merge(gv.base_config, resolved_data)
+            final_data = ConfigManager.deep_merge(
+                gv.base_config, resolved_data)
             config = final_data
             
             gv.component_dict = config.get('component_definitions', {})
@@ -565,8 +624,6 @@ class PageRenderer:
     @staticmethod
     def generate_html(component: Dict[str, Any], page_name='') -> str:
         try:
-            component = copy.deepcopy(component)
-
             if 'type' not in component:
                 component['type'] = 'div'
 
@@ -575,52 +632,129 @@ class PageRenderer:
                     if '.' in component[key]:
                         k = component[key].split('.')
                         if len(k) == 2:
+                            ##print(k)
                             # 获取类
                             cls = globals()[k[0]]
                             # 获取静态方法并调用
                             component[key] = getattr(cls, k[1])()
                     pass
 
+            # #print('3')
             if 'cols' in component:
+                #print('🍺🍺🍺🍺🍺🍺🍺🍺')
+                #print(component['cols'])
+                #print('🍺🍺🍺🍺🍺🍺🍺🍺')
                 
                 for key in component['cols']:
                     if component['type'] == 'form_base_type_1':
+                        #print('😭😭😭😭😭😭😭😭')
+                        #print(key)
+                        #print(component['cols'][key])
+                        #print('😭😭😭😭😭😭😭😭')
+                        
                         config_id = component['config']['id'] + '_config'
                         if hasattr(gv, config_id):
                             pass
                         else:
-                            setattr(gv, config_id, ConfigManager.get_table_config(component['config']['id']))
+                            setattr(gv, config_id, ConfigManager.get_table_config(
+                                component['config']['id']))
                   
                         config = getattr(gv, config_id)
                         if 'cols' in config and key in config['cols']:
                             component['cols'][key] = config['cols'][key] | component['cols'][key]
                         
+                        #print('😎😎😎😎😎😎😎😎')
+                        #print(key)
+                        #print(component['cols'][key])
+                        #print('😎😎😎😎😎😎😎😎')
+                        
                         if 'value' in component['cols'][key]:
                             value = component['cols'][key]['value']
-                            if value and isinstance(value, str):
-                                k = value.split('.')
-                                if len(k) == 2:
-                                    data = component.get('data', {})
-                                    if len(data) == 1: 
-                                        if k[1] in data[0]:
-                                            component['cols'][key]['value'] = data[0][k[1]]
-
+                            component['cols'][key]['value'] = None
+                            ##print(key)
+                            ##print(component['cols'])
+                            #'''
+                            print('🙄🙄🙄🙄🙄🙄🙄🙄🙄')
+                            print(key)
+                            print(value)
+                            #print(gv.data)
+                            if value:
+                              print(value)
+                              k = value.split('.')
+                              if len(k) == 2:
+                                  print(k)
+                                  print(component['data'])
+                                  if k[0] in gv.data:
+                                      print(gv.data[k[0]])
+                                      if len(gv.data[k[0]]) > 0:
+                                          if k[1] in gv.data[k[0]][0]:
+                                              component['cols'][key]['value'] = gv.data[k[0]][0][k[1]]
+                            print('🙄🙄🙄🙄🙄🙄🙄🙄🙄')
+                            
+                            #'''
+                        
+                        config_id = component['config']['id'] + '_config'
+                        if hasattr(gv, config_id):
+                            pass
+                        else:
+                            setattr(gv, config_id, ConfigManager.get_table_config(
+                                component['config']['id']))
+                        '''
+                        config = getattr(gv, config_id)
+                        if 'cols' in config and key in config['cols']:
+                            component['cols'][key] = config['cols'][key] | component['cols'][key]
+                        '''
+                    '''
+                    else:
+                        if 'data_from' in component:
+                            if component['data_from'] == 'comments':
+                                if gv.comments_config and 'cols' in gv.comments_config and key in gv.comments_config['cols']:
+                                    # component['cols'][key] = gv.comments_config['cols'][key]
+                                    component['cols'][key] = gv.comments_config['cols'][key] | component['cols'][key]
+                        else:
+                            if gv.posts_config and 'cols' in gv.posts_config and key in gv.posts_config['cols']:
+                                # component['cols'][key] = gv.posts_config['cols'][key]
+                                component['cols'][key] = gv.posts_config['cols'][key] | component['cols'][key]
+                    '''
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            print(component['type'])
+            print(gv.HTML_TEMPLATES.get(component['type'], ''))
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             template = Template(gv.HTML_TEMPLATES.get(component['type'], ''))
             rendered_children = {}
-            
+            # #print('4')
             if 'children' in component:
                 if isinstance(component['children'], list):
                     rendered_children = []
                     for child in component.get('children', []):
-                        child1 = PageRenderer.resolve_component(child)
+                        child = PageRenderer.resolve_component(child)
+                        # # if 'data_from' in child and child['data_from'] in component.get('data', {}):
+                        # if False:
+                        #     child['data'] = component.get(
+                        #         'data', {})[child['data_from']]
 
-                        child1['data'] = component.get('data', {})
-                        rendered_children.append(PageRenderer.generate_html(child1))
+                        # child['data'] = []
+                        # if 'data_from' in child:
+                        #     if child['data_from'] in gv.data:
+                        #         child['data'] = gv.data.get(child['data_from'], [])
+
+                        # else:
+                        #     child['data'] = component.get('data', {})
+
+                        child['data'] = component.get('data', {})
+                        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>1111')
+                        print(child['data'])
+                        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>1111')
+
+                        rendered_children.append(
+                            PageRenderer.generate_html(child))
                 else:
+                    # #print('6')
                     for key, value in component['children'].items():
                         if isinstance(key, str):
                             if value:
-                                rendered_children[key] = [PageRenderer.generate_html(PageRenderer.resolve_component(child)) for child in value]
+                                rendered_children[key] = [PageRenderer.generate_html(
+                                    PageRenderer.resolve_component(child)) for child in value]
 
             data = component.get('data', {})
 
@@ -651,6 +785,9 @@ class PageRenderer:
 
     @staticmethod
     def format_attr(attributes, data = None, component = None):
+        #print('format_attr')
+        #print(data)
+        #print(component)
         try:
             s = ''
             if attributes:
@@ -661,15 +798,45 @@ class PageRenderer:
                             value = '{}?{}'.format(parsed_url.path, parsed_url.query)
                         else:
                             if data:
+                                #print('-----------------data----------')
+                                #print(data)
+                                #print(value)
                                 value = BlogManager.get_formatted_url(value, data)
+                                #print(value)
+                                #print('-----------------data----------')
                             else:
+                                #print('aaa')
+                                ##print(PRMS)
                                 query_params = BlogManager.get_query_paramas(gv.request)
+                                #print(query_params)
+                                #print('aaa')
                                 if component:
+                                    #print('*******************')
                                     PRMS = component.get('const', {}).get('params', {})
+                                    #print(PRMS)
                                     query_params = BlogManager.get_query_paramas(gv.request, PRMS.copy())
+                                    #print(query_params)
                                     PRMS = component.get('const', {}).get('params', {})
+                                    #print(PRMS)
+                                    #print('*******************')
                                     
                                 value = BlogManager.get_formatted_url(value, query_params)
+                    '''
+                    else:
+                        matches = re.findall(r'\{\{.*?\}\}', value)
+                        # 去除多余的空格
+                        matches = [match.strip() for match in matches]
+                        if matches:
+                            param_name = matches[0]
+                            k = param_name.replace(
+                                '{{', '').replace('}}', '').strip().split('.')
+                            if len(k) == 2:
+                                if k[0] in gv.data:
+                                    if len(gv.data[k[0]]) > 0:
+                                        if k[1] in gv.data[k[0]][0]:
+                                            value = value.replace(
+                                                param_name, str(gv.data[k[0]][0][k[1]]))
+                    '''
                     s += f' {attr}="{value}" '
             return s
         except Exception as e:
@@ -713,9 +880,11 @@ class CustomRenderer(PageRenderer):
             if page_name == '':
                 page_name = 'main'
 
-            page_config = PageRenderer.load_page_config(page_name + '_config.yaml')
+            page_config = PageRenderer.load_page_config(
+                page_name + '_config.yaml')
 
-            rendered_components = [PageRenderer.generate_html(component) for component in page_config['components']]
+            rendered_components = [PageRenderer.generate_html(
+                component) for component in page_config['components']]
 
             template = Template(gv.BASE_HTML)
             h = template.render(

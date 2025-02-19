@@ -40,7 +40,7 @@ component_definitions:
       params:
         data_name: 'posts'
         search_term: ''
-        page_size: 10
+        page_size: 5
         page_number: 1
         post_id: ''
     attributes:
@@ -48,7 +48,7 @@ component_definitions:
       hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
       hx-swap: innerHTML
       hx-target: '#blog'
-      hx-trigger: init, newBlogGet from:body
+      hx-trigger: init, newPost from:body, deletePost from:body
     config:
       buttons:
         prev:
@@ -71,6 +71,7 @@ component_definitions:
         delete:
           attributes:
             hx-delete: /blog/posts?post_id={id}
+            hx-target: '#target'
         edit: 
           attributes:
             hx-post: /blog/posts/form?post_id={id}
@@ -90,24 +91,25 @@ component_definitions:
       - $ref: comments
     items:
       - key: id
-      - key: title
-      - key: content
-      - key: status
-      - key: visibility
-      - key: category_name
-      - key: category_id
-      - key: author_id
-      - key: author_name
-      - key: views_count
+      # - key: title
+      # - key: content
+      # - key: status
+      # - key: visibility
+      # - key: category_name
+      # - key: category_id
+      # - key: author_id
+      # - key: author_name
+      # - key: views_count
 
   comments:
     id: comments
     type: comments
     attributes:
       id: comments
-      hx-get: "/api/blog/post/comments?post_id={{posts.id}}"
+      hx-get: "/blog/post/comments?post_id={id}"
       hx-swap: innerHTML
-      hx-trigger: newPostComment from:body
+      hx-target: '#comments'
+      hx-trigger: load, newPostComment from:body
     children:
       - $ref: comment
 
@@ -125,7 +127,7 @@ component_definitions:
     type: form_search
     attributes:
       title: Search
-      hx-get: "/api/blog/posts?api=posts"
+      hx-get: "/blog/posts?api=posts"
       hx-target: "#blog"
 
   form_edit:
@@ -168,7 +170,7 @@ component_definitions:
     cols:
       post_id:
         value: posts.id
-        is_hidden: true
+        is_hidden: false
       content:
         value: comments.content
     config:

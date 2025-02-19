@@ -1720,7 +1720,6 @@ layout: |
         
 #
 posts: |
-    {{ data }}
     <div class="mt-5" {{ format_attr(attributes, None, component) }}>
         {% if data|length > 1 %}
             <div class="flex justify-end gap-2">
@@ -1744,7 +1743,8 @@ posts: |
     </div>
 #
 post: |
-    {{ data }}
+    {{ children }}
+    aaa
     {% for d in data['posts'] %}
         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
             {{ attributes.class if attributes and attributes.class else '' }}"
@@ -1834,10 +1834,11 @@ post: |
     {% endfor %}
 #
 "comments": |
-    <div {{ format_attr(attributes) if attributes }}
-    >
-        {{ format_children(children) }}
-    </div
+    {% for d in data %}
+        <div {{ format_attr(attributes, d) if attributes }} >
+            {{ format_children(children) }}
+        </div>
+    {% endfor %}
 #
 "comment": |
     {% for d in data['comments'] %}
@@ -1896,7 +1897,7 @@ data_card: |
                                         {% if config.buttons and config.buttons.delete %}
                                             <button 
                                                 class="btn btn-square btn-sm text-red-500"
-                                                {{ format_attr(config.buttons.delete.attributes) }}
+                                                {{ format_attr(config.buttons.delete.attributes, d) }}
                                             >
                                                 {{ icons.trash }}
                                             </button>
@@ -1956,95 +1957,9 @@ data_card: |
                 </div>
             </div>
         </div>
-    {% endfor %}
-#
-data_card1: |
-    {% for d in data %}
-        <div 
-            class="
-                card bg-base-100 shadow-xl w-full mt-2 mb-2 
-                {{ attributes.class if attributes and attributes.class else '' }}
-            "
-            {{ format_attr(attributes) if attributes }}
-        >
-            <div class="card-body break-all" style="word-wrap: break-word;">
-                {% if config %}
-                    <div class="card-actions justify-end">
-                        <div class="dropdown dropdown-end">
-                            <button class="btn btn-square btn-sm" >
-                                {{ icons.ellipsis_horizontal }}
-                            </button>
-                            <ul
-                                tabindex="0"
-                                class="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 p-2 shadow"
-                            >
-                                <li>
-                                    <div>
-                                        <button class="btn btn-square btn-sm">
-                                            {{ icons.edit }}
-                                        </button>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="hidden">
-                                        {% if config.buttons and config.buttons.delete %}
-                                            <button 
-                                                class="btn btn-square btn-sm text-red-500"
-                                                {{ format_attr(config.buttons.delete.attributes) }}
-                                            >
-                                                {{ icons.trash }}
-                                            </button>
-                                        {% endif %}
-                                        
-                                        {% if config.buttons and config.buttons.cancel %}
-                                            <button class="btn btn-square btn-sm"
-                                                onmousedown="onMousedownDataCardCancel(this)">
-                                                {{ icons.cancel }}
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        {% if config.buttons and config.buttons.delete %}
-                                            <button class="btn btn-square btn-sm" 
-                                                onmousedown="onMousedownDataCardTrash(this)"
-                                            >
-                                                {{ icons.trash }}
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                        
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                {% endif%}
-                {% if items %}
-                    {% for item in items %}
-                        {{ item.key }} :
-                        {% if item.key in d %}
-                            {{ d[item.key] }} 
-                        {% endif %}
-                        </br>
-                    {% endfor %}
-                {% endif%}
-                <div class="card-actions justify-end">
-                    {% if config.buttons and config.buttons.left %}>
-                        <button class="btn btn-square btn-sm"
-                        >
-                            {{ icons.arrow_left }}
-                        </button>
-                    {% endif %}
-                    {% if config.buttons and config.buttons.right %}
-                        <button 
-                            class="btn btn-square btn-sm"
-                            {{ format_attr(d.attributes.go) }}
-                        >
-                            {{ icons.arrow_right }}
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% if data|length == 1 %}
+            {{ format_children(children) }}
+        {% endif %}
     {% endfor %}
 #
 "editor-quill": |

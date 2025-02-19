@@ -101,8 +101,7 @@ class ConfigManager:
                 gv.classes = gv.HTML_TEMPLATES.get('classes', {})
 
             # 加载嵌入的 YAML 数据
-            gv.base_config = ConfigManager.load_data_from_yaml(
-                'base_config.yaml')
+            gv.base_config = ConfigManager.load_data_from_yaml('base_config.yaml')
             # pprint.pprint(gv.base_config)
             # child_config = yaml.safe_load(child_yaml)
             '''    
