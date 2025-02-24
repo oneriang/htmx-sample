@@ -48,7 +48,7 @@ component_definitions:
       hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
       hx-swap: innerHTML
       hx-target: '#blog'
-      hx-trigger: init, newPost from:body, deletePost from:body
+      hx-trigger: init, post_blog_post from:body, deletePost from:body
     config:
       buttons:
         prev:
@@ -91,31 +91,32 @@ component_definitions:
       - $ref: comments
     items:
       - key: id
-      # - key: title
-      # - key: content
+      - key: title
+      - key: content
       # - key: status
       # - key: visibility
       # - key: category_name
       # - key: category_id
       # - key: author_id
       # - key: author_name
-      # - key: views_count
+      - key: views_count
+      - key: featured_image
 
   comments:
     id: comments
     type: comments
     attributes:
       id: comments
-      hx-get: "/blog/post/comments?post_id={id}"
+      hx-get: /blog/post/comments?post_id={id}
       hx-swap: innerHTML
-      hx-target: '#comments'
-      hx-trigger: load, newPostComment from:body
+      hx-target: '#container-comments'
+      hx-trigger: load, post_blog_post_comment from:body
     children:
       - $ref: comment
 
   comment:
     id: comment
-    type: comment
+    base: component_definitions.base_data_card
     attributes:
       id: comment
     items:

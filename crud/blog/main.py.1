@@ -1,0 +1,62 @@
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from db import get_db
+from models import models
+import config
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# 初始化数据库
+@app.on_event("startup")
+async def startup():
+    async with get_db() as db:
+        await db.run_sync(models['Post'].metadata.create_all)
+
+# 动态路由注册
+for route in config.load_config()['routes']:
+    async def route_handler(request: Request, **params):
+        action_name = route['handler']
+        action = config.load_config()['actions'][action_name]
+        model = models[action['model']]
+        
+        async with get_db() as db:
+            # 数据库操作
+            if action['operation'] == 'read_all':
+                query = model.select().order_by(text(action.get('order_by', '')))
+                result = await db.execute(query)
+                data = result.scalars().all()
+                return templates.TemplateResponse(
+                    route['template'],
+                    {"request": request, "posts": data}
+                )
+                
+            elif action['operation'] == 'create':
+                form_data = await request.form()
+                new_post = model(**{k: form_data[k] for k in action['fields']})
+                db.add(new_post)
+                await db.commit()
+                return HTMLResponse(status_code=201)
+                
+            elif action['operation'] == 'read_one':
+                post_id = params.get(action['id_param'])
+                result = await db.execute(
+                    model.select().where(model.id == post_id)
+                )
+                post = result.scalars().first()
+                if not post:
+                    raise HTTPException(status_code=404, detail="Post not found")
+                return templates.TemplateResponse(
+                    route['template'],
+                    {"request": request, "post": post}
+                )
+
+    app.add_route(
+        path=route['path'],
+        methods=[route['method'].split()],
+        endpoint=route_handler,
+        name=route['handler']
+    )

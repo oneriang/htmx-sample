@@ -1,0 +1,42 @@
+routes:
+  - path: /posts
+    method: GET
+    handler: list_posts
+    template: posts.html
+    htmx: true
+
+  - path: /posts
+    method: POST
+    handler: create_post
+    htmx_target: "#posts-list"
+
+  - path: /posts/{id}
+    method: GET
+    handler: get_post
+    template: post.html
+
+models:
+  Post:
+    table: posts
+    fields:
+      id: Integer(primary_key=True)
+      title: String(100)
+      content: Text
+      author: String(50)
+      # created_at: DateTime(server_default=text("CURRENT_TIMESTAMP"))
+
+actions:
+  list_posts:
+    model: Post
+    operation: read_all
+    order_by: -created_at
+
+  create_post:
+    model: Post
+    operation: create
+    fields: [title, content, author]
+
+  get_post:
+    model: Post
+    operation: read_one
+    id_param: id

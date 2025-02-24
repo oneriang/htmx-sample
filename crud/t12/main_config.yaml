@@ -96,24 +96,6 @@ component_definitions:
         config:
           label: Test
       - $ref: main_data_table
-    #   - type: table
-    #   - type: hero
-    #   - type: carousel
-    #   - type: tabs
-    #   - $ref: stats
-    # #   - $ref: main_data_table
-    #   - $ref: button
-    #   - type: tooltip
-    #     attributes:
-    #       tip: tip
-    #       text: tt
-    #   - type: stat
-    #     attributes:
-    #       label: File Manager
-    #     title: a
-    #     color: red
-    #     value: 1
-    #     desc: asdfg
 
   todo_list:
     id: todo_list
@@ -125,11 +107,6 @@ component_definitions:
     type: list
     value: DatabaseManager.get_tables
 
-  # main_data_table:
-  #   id: main_data_table
-  #   type: data-table
-  #   config: get_configs
-  #   data: get_table_data
   main_data_table:
     id: main_data_table
     type: data-table
@@ -313,16 +290,3 @@ components:
   - $ref: main_layout
   - $ref: modal_form
   - $ref: modal_message
-  # - $ref: login
-#   - $ref: registration_form
-#   - type: file_upload_form
-#     attributes:
-#       label: Profile Picture
-#       button: 
-#         label: Upload
-  # - type: file_manager
-  #   files: get_files
-  #   attributes:
-  #     label: File Manager
-  # - $ref: file_manager
-  # - $ref: button

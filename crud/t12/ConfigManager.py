@@ -62,9 +62,9 @@ class ConfigManager:
                 filename = 'main_config.yaml'
             with open(filename, "r", encoding="utf-8") as file:
                 return yaml.safe_load(file)
-        except (IOError, yaml.YAMLError) as e:
-            logging.error(f"Error loading YAML data from {filename}: {e}")
-            return None
+        # except (IOError, yaml.YAMLError) as e:
+        #     logging.error(f"Error loading YAML data from {filename}: {e}")
+        #     return None
 
         except Exception as e:
             eee(e)

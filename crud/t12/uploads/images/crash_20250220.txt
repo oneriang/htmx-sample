@@ -1,0 +1,28 @@
+Crash time: 2025-02-20 01:48:17
+App Version: 8.5.300.450594193.08(65075803)
+OS Version: 14_34
+Android ID: 92d4229a2419b06c
+Vendor: motorola
+Model: motorola edge 40
+CPU ABI: arm64-v8a
+
+java.lang.RuntimeException: android.app.BackgroundServiceStartNotAllowedException: Not allowed to start service Intent { cmp=com.agc.gcam85/com.google.android.apps.camera.prewarm.NoOpPrewarmService }: app is in background uid UidRecord{63c716c u0a451 TRNB idle change:idle|uncached|procstate procs:0 seq(8142775,8142775)} caps=------
+	at android.app.job.JobServiceEngine$JobHandler.handleMessage(JobServiceEngine.java:172)
+	at android.os.Handler.dispatchMessage(Handler.java:111)
+	at android.os.Looper.loopOnce(Looper.java:242)
+	at android.os.Looper.loop(Looper.java:362)
+	at android.app.ActivityThread.main(ActivityThread.java:8448)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:992)
+Caused by: android.app.BackgroundServiceStartNotAllowedException: Not allowed to start service Intent { cmp=com.agc.gcam85/com.google.android.apps.camera.prewarm.NoOpPrewarmService }: app is in background uid UidRecord{63c716c u0a451 TRNB idle change:idle|uncached|procstate procs:0 seq(8142775,8142775)} caps=------
+	at android.app.ContextImpl.startServiceCommon(ContextImpl.java:1965)
+	at android.app.ContextImpl.startService(ContextImpl.java:1920)
+	at android.content.ContextWrapper.startService(ContextWrapper.java:825)
+	at drh.b(Unknown Source:7)
+	at com.google.android.apps.camera.keepalive.ProcessGcService.onStartJob(Unknown Source:48)
+	at android.app.job.JobService$1.onStartJob(JobService.java:102)
+	at android.app.job.JobServiceEngine$JobHandler.handleMessage(JobServiceEngine.java:168)
+	... 7 more
+---------------------------------end----------------------------------
+

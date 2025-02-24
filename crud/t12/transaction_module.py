@@ -797,22 +797,25 @@ class TransactionModule:
                     os.makedirs(os.path.dirname(destination), exist_ok=True)
                     with open(destination, "wb") as buffer:
                         shutil.copyfileobj(file.file, buffer)
+
+                    print(destination)
+                    return destination
                         
                     #print(file)
                     
-                    res = {"filename": file.filename, "destination": destination}
-                    '''
-                    print(res)
-                    '''
+                    # res = {"filename": file.filename, "destination": destination}
+                    # '''
+                    # print(res)
+                    # '''
                     
-                    if step.get('data_to'):
-                        gv.data[step.get('data_to')] = res
-                        '''
-                        print(step.get('data_to'))
-                        print(gv.data[step.get('data_to')])
-                        '''
+                    # if step.get('data_to'):
+                    #     gv.data[step.get('data_to')] = res
+                    #     '''
+                    #     print(step.get('data_to'))
+                    #     print(gv.data[step.get('data_to')])
+                    #     '''
                         
-                    return res
+                    # return res
         
                 elif action == "download_file":
                     file_path: str = step.get("file_path", "")
@@ -1226,29 +1229,60 @@ class TransactionModule:
                         # 替换参数和处理上传文件
                         if 'values' in step:
                             for key, value in step['values'].items():
-                                #print(step['values'][key])
-                                step['values'][key] = None
-                                if 'data_from' in value:
-                                    s_data_from = value['data_from']
-                                    if 'data_key' in value:
-                                        s_data_key = value['data_key']
-                                        if s_data_from in gv.data:
-                                            if s_data_key in gv.data[s_data_from]:
-                                                step['values'][key] = gv.data[s_data_from][s_data_key]
-                                else:      
-                                    matches = re.findall(r'\{\{(.*?)\}\}', value)
-                                    # 去除多余的空格
-                                    matches = [match.strip() for match in matches]
-                                    if matches:
-                                        param_name = matches[0].strip()
-                                        if isinstance(value, str) and param_name:
-                                            if param_name in self.dynamic_values:
-                                                step['values'][key] = params.get(param_name, value)
-                                            else:
-                                                step['values'][key] = params.get(param_name, None)
-                                    else:
-                                        pass
-                                #print(step['values'][key])
+                                print(step['values'][key])
+                                print('1++++++++++')
+                                print(key)
+                                params_value = params.get(key, None)
+                                print(params_value)
+                                print(type(params_value))
+                                #print(type(params_value) is UploadFile)
+                                print(isinstance(params_value, UploadFile))
+                                #files = [value1 for value1 in params.values() if isinstance(value1, UploadFile)]
+                                #print(files)
+                                print('1++++++++++')
+                                #if isinstance(params_value, UploadFile):
+                                if type(params_value).__name__ == "UploadFile":
+                                #if hasattr(params_value, "filename") and hasattr(params_value, "file"):
+                                    print(f"😀🙊🙊🙊🙊🙊🙊🙊 是文件")
+                                    print('++++++++++')
+                                    print(key)
+                                    print(value)
+                                    print('++++++++++')
+                                    step1 = {}
+                                    step1['action'] = 'upload_file'
+                                    step1['file'] = params_value #.get('file')
+                                    step1['file_name'] = params_value.filename #get('file_name')
+                                    step1['folder_path'] = "uploads/images"
+                                    step['values'][key] = self.execute_step(step1)
+                                    print('🙊🙊🙊🙊🙊🙊🙊🙊')
+                                    print(step['values'][key])
+                                    print('🙊🙊🙊🙊🙊🙊🙊🙊')
+                                else:
+                                    step['values'][key] = None
+                                    if 'data_from' in value:
+                                        s_data_from = value['data_from']
+                                        if 'data_key' in value:
+                                            s_data_key = value['data_key']
+                                            if s_data_from in gv.data:
+                                                if s_data_key in gv.data[s_data_from]:
+                                                    step['values'][key] = gv.data[s_data_from][s_data_key]
+                                    else:      
+                                        matches = re.findall(r'\{\{(.*?)\}\}', value)
+                                        # 去除多余的空格
+                                        matches = [match.strip() for match in matches]
+                                        if matches:
+                                            param_name = matches[0].strip()
+                                            if isinstance(value, str) and param_name:
+                                                if param_name in self.dynamic_values:
+                                                    step['values'][key] = params.get(param_name, value)
+                                                else:
+                                                    step['values'][key] = params.get(param_name, '')
+                                        else:
+                                            param_name = value
+                                            step['values'][key] = params.get(param_name, '')
+                                        
+                                            pass
+                                    #print(step['values'][key])
                         '''     
                         if 'filter_values' in step:
                             print(step['filter_values'])
@@ -1279,10 +1313,10 @@ class TransactionModule:
                         if 'offset' in step and 'offset' in params:
                             step['offset'] = params['offset']
 
-                        if step['action'] == 'upload_file':
-                            step['file'] = params.get('file')
-                            step['file_name'] = params.get('file_name')
-                            step['folder_path'] = params.get('folder_path')
+                        # if step['action'] == 'upload_file':
+                        #     step['file'] = params.get('file')
+                        #     step['file_name'] = params.get('file_name')
+                        #     step['folder_path'] = params.get('folder_path')
                         
                         if step['action'] == 'execute':
                             step['sql'] = self.replace_dynamic_values(step['sql'], params)

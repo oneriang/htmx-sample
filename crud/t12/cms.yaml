@@ -339,33 +339,33 @@ transactions:
           updated_at: "{{ current_timestamp }}"
 
   # 3. 创建文章
-  - name: create_post
+  - name: post_blog_post
     steps:
-      # 上传特色图片
-      - action: upload_file
-        folder_path: "uploads/images"
-        file_name: "{{ file_name }}"
-        file: "{{ featured_image }}"
-        data_to: image_upload
+      # # 上传特色图片
+      # - action: upload_file
+      #   folder_path: "uploads/images"
+      #   file_name: "{{ file_name }}"
+      #   file: "{{ featured_image }}"
+      #   data_to: image_upload
 
       # 创建文章
       - action: insert
         data_from: image_upload
         table: posts
         values:
-          title: "{{ title }}"
-          slug: "{{ slug }}"
-          content: "{{ content }}"
-          excerpt: "{{ excerpt }}"
-          featured_image: 
-              data_from: image_upload
-              data_key: destination
-          author_id: "{{ current_user_id }}"
-          category_id: "{{ category_id }}"
-          status: "{{ status }}"
-          visibility: "{{ visibility }}"
-          author_id: "{{author_id}}"
-          published_at: "{{ published_at }}"
+          title: title
+          slug: slug
+          content: content
+          excerpt: excerpt
+          featured_image: featured_image
+          # featured_image: 
+          #     data_from: image_upload
+          #     data_key: destination
+          author_id: current_user_id
+          category_id: category_id
+          status: status
+          visibility: visibility
+          published_at: "{{ current_timestamp }}"
           created_at: "{{ current_timestamp }}"
           updated_at: "{{ current_timestamp }}"
         data_to: new_post
@@ -640,16 +640,16 @@ transactions:
       #   sql: "UPDATE posts SET views_count = views_count + 1 WHERE id = {{ post_info[0].id }}"
 
   # 6. 添加评论
-  - name: add_comment
+  - name: post_blog_post_comment
     steps:
       - action: insert
         table: comments
         values:
-          post_id: "{{ post_id }}"
-          user_id: "{{ user_id }}"
-          parent_id: "{{ parent_id }}"
-          content: "{{ content }}"
-          status: "{{ status }}"
+          post_id: post_id
+          user_id: user_id
+          parent_id: parent_id
+          content: content
+          status: status
           created_at: "{{ current_timestamp }}"
           updated_at: "{{ current_timestamp }}"
 
@@ -675,7 +675,7 @@ transactions:
         order_by:
           - field: id
             direction: desc
-        data_to: comments
+        data_to: post_comments
   
   - name: add_categorie
     steps:

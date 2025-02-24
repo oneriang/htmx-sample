@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+    <h1>{{ post.title }}</h1>
+    <div class="meta">
+        <span>By {{ post.author }}</span>
+        <span> · {{ post.created_at }}</span>
+    </div>
+    <div class="content">
+        {{ post.content }}
+    </div>
+    <a href="/posts">Back to List</a>
+</article>
+{% endblock %}

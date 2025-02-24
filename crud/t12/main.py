@@ -95,12 +95,34 @@ async def universal_handler(any_path: str, request: Request):
 
         # 判断请求方法
         if http_method == "GET":
+            if full_path == '/':
+                return await CustomRenderer.get(request)
+            if full_path == '/favicon.ico':
+                pass
+            else:
+                if full_path == '/blog':
+                    return await BlogManager.get_blog(request)
+                elif full_path == '/blog/posts':
+                    is_htmx_request = request.headers.get("HX-Request") == "true"
+                    if is_htmx_request:
+                        return await BlogManager.get_blog_posts(request)
+                    else:
+                        await BlogManager.get_blog(request)
+                elif full_path == '/blog/post/form':
+                    return await BlogManager.get_post_form(request)
+                elif full_path.startswith('/api/blog/'):
+                    return await BlogManager.get(request)
+                elif full_path == '/blog/post/comments':
+                    return await BlogManager.get_blog_post_comments(request)
+                elif full_path == '/component':
+                    return await rendered_component(request)
+                elif full_path == '/edit':
+                    return await edit_form(request)
+                else:
+                    return await CustomRenderer.get(request)
             pass
         elif http_method == "POST":
-            if full_path == '/blog/post/comment':
-                return await BlogManager.post_blog_post_comment(request)
-            if full_path == '/blog/post':
-                return await BlogManager.post_blog_post(request)
+            return await BlogManager.post(request)
             pass
         #    #eturn f"Received a POST request at path: {any_path}"
         # elif http_method == "PUT":
@@ -117,43 +139,6 @@ async def universal_handler(any_path: str, request: Request):
         # else:
         #     return f"Received an unknown method ({http_method}) at path: {any_path}"
 
-        if request.url.path == '/':
-            return await CustomRenderer.get(request)
-
-        if request.url.path == '/blog/post/comments':
-            return await BlogManager.get_blog_post_comments(request)
-
-        if request.url.path == '/api/blog/categories':
-            return await BlogManager.get(request)
-
-        if request.url.path == '/api/blog/tags':
-            return await BlogManager.get(request)
-
-        if request.url.path == '/api/blog/users':
-            return await BlogManager.get(request)
-
-        if request.url.path == '/component':
-            return await rendered_component(request)
-
-        if request.url.path == '/edit':
-            return await edit_form(request)
-
-        if request.url.path == '/blog/post/form':
-            return await BlogManager.get_post_form(request)
-            
-        if request.url.path == '/blog/posts':
-            is_htmx_request = request.headers.get("HX-Request") == "true"
-            if is_htmx_request:
-                return await BlogManager.get_posts(request)
-            else:
-                await BlogManager.get_blog(request)
-        
-        if request.url.path == '/blog':
-            return await BlogManager.get_blog(request)
-        if request.url.path == '/blog/settings':
-            return await CustomRenderer.get(request)
-        if request.url.path == '/blog/about':
-            return await CustomRenderer.get(request)
 
         return full_path
 
@@ -269,7 +254,7 @@ class BlogManager:
             eee(e)
 
     @staticmethod
-    async def get_posts(request: Request):
+    async def get_blog_posts(request: Request):
         try:
             ConfigManager.load_data()
 
@@ -278,13 +263,31 @@ class BlogManager:
             
             result = BlogManager.get_data(query_params)
             
-            gv.component_dict['posts']['data'] = result
+            gv.component_dict['post']['data'] = result
             
-            h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
+            h = PageRenderer.generate_html(gv.component_dict['post'], 'post')
 
-            response = HTMLResponse(content=h)
-            return response
+            return HTMLResponse(content=h)
             
+        except Exception as e:
+            eee(e)
+
+    @staticmethod
+    async def get_blog_post_comments(request: Request):
+        try:
+            ConfigManager.load_data()
+
+            query_params = BlogManager.get_query_paramas(request)
+            query_params['data_name'] = 'post_comments'
+
+            result = BlogManager.get_data(query_params)
+
+            gv.component_dict['comment']['data'] = result
+
+            h = PageRenderer.generate_html(gv.component_dict['comment'], 'comment')
+
+            return HTMLResponse(content=h)
+
         except Exception as e:
             eee(e)
 
@@ -371,66 +374,27 @@ class BlogManager:
             eee(e)
 
     @staticmethod
-    async def get_blog_post_comments(request: Request):
+    async def post(request: Request):
         try:
             gv.request = request
 
-            ConfigManager.load_data()
+            # 获取 URL 路径
+            full_path = request.url.path
 
-            query_params = dict(request.query_params)
+            # 去除末尾的斜杠，然后按 "/" 分割路径
+            path_parts = full_path.rstrip("/").split("/")
 
-            search_term = str(query_params['search_term']) if 'search_term' in query_params else ''
-            page_size = int(query_params['page_size']) if 'page_size' in query_params else 5
-            page_number = int(query_params['page_number']) if 'page_number' in query_params else 1
-            post_id = int(query_params['post_id']) if 'post_id' in query_params else None
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='get_post_comments',
-                params={
-                    'search_term': '%' + search_term + '%',
-                    'limit': page_size,
-                    'offset': (page_number - 1) * page_size,
-                    'post_id': post_id
-                },
-                config_file="cms.yaml"
-            )
-
-            page_config = PageRenderer.load_page_config('blog_config.yaml')
-
-            gv.component_dict['comment']['data'] = gv.data
-
-            h = PageRenderer.generate_html(gv.component_dict['comment'].copy(), 'comment')
-
-            return HTMLResponse(content=h)
-
-        except Exception as e:
-            eee(e)
-
-    @staticmethod
-    async def post_blog_post(request: Request):
-        try:
             form_data = await request.form()
-            file = form_data.get('featured_image')
+            
+            func_name = 'post' + '_'.join(path_parts)
 
             result = DatabaseManager.tm.execute_transactions(
-                transaction_name='create_post',
-                params={
-                    'title': form_data['title'],
-                    'slug': "slug",
-                    'content': form_data['content'],
-                    'status': form_data['status'],
-                    # 'file': form_data['featured_image']
-                    'visibility': form_data['visibility'],
-                    'category_id': form_data['category_id'],
-                    'author_id': form_data['author_id'],
-                    "file": file,
-                    "file_name": file.filename,
-                    "folder_path": "./uploaded"
-                },
+                transaction_name=func_name,
+                params=form_data,
                 config_file="cms.yaml"
             )
 
-            headers = {"HX-Trigger": "newPost"}
+            headers = {"HX-Trigger": func_name}
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
@@ -479,29 +443,6 @@ class BlogManager:
             )
 
             headers = {"HX-Trigger": "deletePost"}
-            return HTMLResponse(content='ok', headers=headers)
-
-        except Exception as e:
-            eee(e)
-
-    @staticmethod
-    async def post_blog_post_comment(request: Request):
-        try:
-
-            form_data = await request.form()
-
-            result = DatabaseManager.tm.execute_transactions(
-                transaction_name='add_comment',
-                params={
-                    'post_id': form_data['post_id'],
-                    # 'parent_id': form_data['parent_id'],
-                    # 'user_id': form_data['user_id'],
-                    'content': form_data['content']
-                },
-                config_file="cms.yaml"
-            )
-
-            headers = {"HX-Trigger": "newPostComment"}
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
@@ -613,7 +554,6 @@ class PageRenderer:
                     rendered_children = []
                     for child in component.get('children', []):
                         child1 = PageRenderer.resolve_component(child)
-
                         child1['data'] = component.get('data', {})
                         rendered_children.append(PageRenderer.generate_html(child1))
                 else:
@@ -661,7 +601,14 @@ class PageRenderer:
                             value = '{}?{}'.format(parsed_url.path, parsed_url.query)
                         else:
                             if data:
-                                value = BlogManager.get_formatted_url(value, data)
+                                if isinstance(data, list) and len(data) == 1:
+                                    data1 = data[0]
+                                    print(value)
+                                    print(data1)
+                                    value = BlogManager.get_formatted_url(value, data1)
+                                else:
+                                    value = BlogManager.get_formatted_url(value, data)
+                                print(value)
                             else:
                                 query_params = BlogManager.get_query_paramas(gv.request)
                                 if component:
