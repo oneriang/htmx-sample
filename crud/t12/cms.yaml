@@ -655,7 +655,7 @@ transactions:
 
 
   # 4. 获取评论列表
-  - name: get_post_comments
+  - name: get_comments
     steps:
       - action: get
         table: comments
@@ -675,7 +675,7 @@ transactions:
         order_by:
           - field: id
             direction: desc
-        data_to: post_comments
+        data_to: comments
   
   - name: add_categorie
     steps:

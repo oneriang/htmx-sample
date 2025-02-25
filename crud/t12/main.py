@@ -105,7 +105,7 @@ async def universal_handler(any_path: str, request: Request):
                 elif full_path == '/blog/posts':
                     is_htmx_request = request.headers.get("HX-Request") == "true"
                     if is_htmx_request:
-                        return await BlogManager.get_blog_posts(request)
+                        return await BlogManager.get(request)
                     else:
                         await BlogManager.get_blog(request)
                 elif full_path == '/blog/post/form':
@@ -113,7 +113,7 @@ async def universal_handler(any_path: str, request: Request):
                 elif full_path.startswith('/api/blog/'):
                     return await BlogManager.get(request)
                 elif full_path == '/blog/post/comments':
-                    return await BlogManager.get_blog_post_comments(request)
+                    return await BlogManager.get(request)
                 elif full_path == '/component':
                     return await rendered_component(request)
                 elif full_path == '/edit':
@@ -252,7 +252,38 @@ class BlogManager:
 
         except Exception as e:
             eee(e)
+    '''
+    @staticmethod
+    async def get_data_list(request: Request):
+        try:
+            ConfigManager.load_data()
+            
+            # 获取 URL 路径
+            full_path = request.url.path
 
+            # 去除末尾的斜杠，然后按 "/" 分割路径
+            path_parts = full_path.rstrip("/").split("/")
+
+            # 获取最后一个部分作为 page_name
+            data_name = unquote(path_parts[-1]) if path_parts else ""
+        
+            #data_name = 'posts'
+
+            query_params = BlogManager.get_query_paramas(request)
+            query_params['data_name'] = data_name
+            
+            result = BlogManager.get_data(query_params)
+            
+            gv.component_dict[data_name]['data'] = result
+            
+            h = PageRenderer.generate_html(gv.component_dict[data_name], data_name)
+
+            return HTMLResponse(content=h)
+            
+        except Exception as e:
+            eee(e)
+    '''
+    '''        
     @staticmethod
     async def get_blog_posts(request: Request):
         try:
@@ -263,9 +294,9 @@ class BlogManager:
             
             result = BlogManager.get_data(query_params)
             
-            gv.component_dict['post']['data'] = result
+            gv.component_dict['posts']['data'] = result
             
-            h = PageRenderer.generate_html(gv.component_dict['post'], 'post')
+            h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
 
             return HTMLResponse(content=h)
             
@@ -287,10 +318,11 @@ class BlogManager:
             h = PageRenderer.generate_html(gv.component_dict['comment'], 'comment')
 
             return HTMLResponse(content=h)
-
+            
         except Exception as e:
             eee(e)
-
+    '''
+    
     @staticmethod
     async def get_post_form(request: Request):
         try:
@@ -348,6 +380,8 @@ class BlogManager:
     async def get(request: Request):
         try:
             gv.request = request
+            
+            ConfigManager.load_data()
 
             # 获取 URL 路径
             full_path = request.url.path
@@ -357,11 +391,14 @@ class BlogManager:
 
             # 获取最后一个部分作为 page_name
             page_name = unquote(path_parts[-1]) if path_parts else ""
-
+            
+            '''
             query_params = dict(request.query_params)
-
             query_params['data_name'] = page_name
-
+            '''
+            query_params = BlogManager.get_query_paramas(request)
+            query_params['data_name'] = page_name
+            
             result = BlogManager.get_data(query_params)
 
             gv.component_dict[page_name]['data'] = result
@@ -553,6 +590,7 @@ class PageRenderer:
                 if isinstance(component['children'], list):
                     rendered_children = []
                     for child in component.get('children', []):
+                        print(child)
                         child1 = PageRenderer.resolve_component(child)
                         child1['data'] = component.get('data', {})
                         rendered_children.append(PageRenderer.generate_html(child1))

@@ -31,11 +31,11 @@ component_definitions:
     attributes:
       id: blog
     children:
-      - $ref: posts
+      - $ref: container_posts
       
-  posts:
-    id: posts
-    type: posts
+  container_posts:
+    id: container_posts
+    type: container_posts
     const:
       params:
         data_name: 'posts'
@@ -49,6 +49,23 @@ component_definitions:
       hx-swap: innerHTML
       hx-target: '#blog'
       hx-trigger: init, post_blog_post from:body, deletePost from:body
+    # config:
+    #   buttons:
+    #     prev:
+    #       attributes:
+    #         hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}
+    #         hx-swap: 'innerHTML'
+    #         hx-target: '#blog'
+    #     next:
+    #       attributes:
+    #         hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
+    #         hx-swap: 'innerHTML'
+    #         hx-target: '#blog'
+    children:
+      - $ref: posts
+
+  posts:
+    base: component_definitions.base_data_card
     config:
       buttons:
         prev:
@@ -61,13 +78,6 @@ component_definitions:
             hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
             hx-swap: 'innerHTML'
             hx-target: '#blog'
-    children:
-      - $ref: post
-
-  post:
-    base: component_definitions.base_data_card
-    config:
-      buttons:
         delete:
           attributes:
             hx-delete: /blog/posts?post_id={id}
@@ -88,7 +98,7 @@ component_definitions:
       id: post
     children:
       - $ref: form_comment
-      - $ref: comments
+      - $ref: container_comments
     items:
       - key: id
       - key: title
@@ -102,23 +112,23 @@ component_definitions:
       - key: views_count
       - key: featured_image
 
-  comments:
-    id: comments
-    type: comments
+  container_comments:
+    id: container_comments
+    type: container_comments
     attributes:
-      id: comments
+      id: container_comments
       hx-get: /blog/post/comments?post_id={id}
       hx-swap: innerHTML
       hx-target: '#container-comments'
       hx-trigger: load, post_blog_post_comment from:body
     children:
-      - $ref: comment
+      - $ref: comments
 
-  comment:
-    id: comment
+  comments:
+    id: comments
     base: component_definitions.base_data_card
     attributes:
-      id: comment
+      id: comments
     items:
       - key: id
       - key: content

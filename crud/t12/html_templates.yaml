@@ -1112,7 +1112,7 @@ layout: |
         {{ format_children(children) }}
     </div>       
 #
-posts: |
+posts1: |
     <div class="mt-5" {{ format_attr(attributes, None, component) }}>
         {% if data|length > 1 %}
             <div class="flex justify-end gap-2">
@@ -1135,46 +1135,50 @@ posts: |
         {{ format_children(children) }}
     </div>
 #
-"comments": |
+container_posts: |
+    <div class="mt-5" {{ format_attr(attributes, None, component) }}>
+        {{ format_children(children) }}
+    </div>
+#
+container_comments: |
     <div class="mt-5" {{ format_attr(attributes, data) }}>
         <div id="container-comments">
             {{ format_children(children) }}
         </div>
     </div>
 #
-# "comments1": |
-#     {% for d in data %}
-#         <div {{ format_attr(attributes, d) if attributes }} >
-#             {{ format_children(children) }}
-#         </div>
-#     {% endfor %}
-# #
-# "comment": |
-#     {% for d in data['post_comments'] %}
-#         <div class="card bg-base-100 shadow-xl w-full mt-2 mb-2 
-#             {{ attributes.class if attributes and attributes.class else '' }}"
-#             {{ format_attr(attributes) if attributes }}
-#         >
-#             <div class="card-body break-all" style="word-wrap: break-word;">
-#                 {% if items %}
-#                     {% for item in items %}
-#                         {{ item.key }} :
-#                         {% if item.key in d %}
-#                             {{ d[item.key] }} 
-#                         {% endif %}
-#                         </br>
-#                     {% endfor %}
-#                 {% endif%}
-#             </div>
-#         </div>
-#     {% endfor %}
-# #
 "container_data": |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
 #
 data_card: |
+    <div class="mt-5">
+        {% if data|length > 1 %}
+            <div class="flex justify-end gap-2">
+                {% if config %}
+                    {% if config.buttons and config.buttons.prev %}
+                        <button 
+                            type="submit"
+                            class="btn bg-green-500 hover:bg-blue-700 text-white"
+                            {{ format_attr(config.buttons.prev.attributes) }}
+                        >
+                            Prev
+                        </button>
+                    {% endif %}
+                    {% if config.buttons and config.buttons.next %}
+                        <button 
+                            type="submit"
+                            class="btn bg-green-500 hover:bg-blue-700 text-white"
+                            {{ format_attr(config.buttons.next.attributes) }}
+                        >
+                            Next
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
     {% for d in data %}
         <div 
             class="
