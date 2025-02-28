@@ -10,10 +10,11 @@ component_definitions:
         - $ref: container_tags
 
   container_tags:
-    base: component_definitions.base_container
+    # base: component_definitions.base_container
+    type: container_data
     attributes:
       id: container_tags
-      hx-get: /api/blog/tags
+      hx-get: /blog/tags
       hx-trigger: load, newBlogTag from:body
     children:
       - $ref: tags

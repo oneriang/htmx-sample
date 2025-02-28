@@ -60,7 +60,6 @@
     <div class="loader"></div>
   </div>
 
-
   <script>
 
     var is_popstate = false;
@@ -68,33 +67,34 @@
     document.getElementById('loading-indicator').style.display = 'none';
 
     document.body.addEventListener('htmx:beforeRequest', function () {
-      console.log('beforeRequest');
-      document.getElementById('loading-indicator').style.display = 'block';
+        show_loading();
     });
 
     function show_loading() {
-      document.getElementById('loading-indicator').style.display = 'block';
+        document.getElementById('loading-indicator').style.display = 'block';
     };
 
     function hide_loading() {
-      document.getElementById('loading-indicator').style.display = 'none';
+        document.getElementById('loading-indicator').style.display = 'none';
     };
 
     document.body.addEventListener('htmx:afterRequest', function (event) {
       console.log('afterRequest');
-      console.log(event.detail.pathInfo.responsePath);
+      const p = event.detail.pathInfo.responsePath;
+      console.log(p);
       if (is_popstate == false) {
-        history.pushState({}, '', event.detail.pathInfo.responsePath);
+        if (p.startsWith('/blog/posts/form'))
+        {
+          
+        }
+        else
+        {
+          history.pushState({}, '', p);
+        }
       }
-      document.getElementById('loading-indicator').style.display = 'none';
+      hide_loading();
       is_popstate = false;
-    
     });
-
-    // document.body.addEventListener('htmx:historyRestore', function (event) {
-    //   // 在这里处理浏览器前进后退的逻辑，例如加载对应的内容
-    //   console.log('URL restored:');
-    // });
 
     // 监听浏览器的前进和后退事件
     window.addEventListener('popstate', function (event) {
@@ -111,13 +111,6 @@
       });
     });
 
-    document.body.addEventListener('htmx:pushedIntoHistory', function (event) {
-      console.log('pushedIntoHistory');
-    });
-
-    document.body.addEventListener('htmx:beforeHistoryUpdate', function (event) {
-      console.log('beforeHistoryUpdate');
-    });
   </script>
 
   <style>
@@ -178,7 +171,7 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      htmx.trigger('#posts', 'init');
+      //htmx.trigger('#posts', 'init');
     });
   </script>
 

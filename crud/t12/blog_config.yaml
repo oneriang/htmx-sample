@@ -18,7 +18,7 @@ component_definitions:
           - type: button
             attributes:
               text: New
-              hx-get: /blog/post/form
+              hx-get: /blog/posts/form
               hx-target: "#form_container"
       - type: form_container
         attributes:
@@ -44,56 +44,55 @@ component_definitions:
         page_number: 1
         post_id: ''
     attributes:
-      id: posts
+      id: container_posts
       hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number}
       hx-swap: innerHTML
-      hx-target: '#blog'
-      hx-trigger: init, post_blog_post from:body, deletePost from:body
-    # config:
-    #   buttons:
-    #     prev:
-    #       attributes:
-    #         hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}
-    #         hx-swap: 'innerHTML'
-    #         hx-target: '#blog'
-    #     next:
-    #       attributes:
-    #         hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
-    #         hx-swap: 'innerHTML'
-    #         hx-target: '#blog'
+    #  hx-target: '#container_posts'
+      hx-trigger: | 
+                    load, 
+                    post_blog_post from:body, 
+                    put_blog_posts from:body,
+                    delete_blog_posts from:body
     children:
       - $ref: posts
 
   posts:
     base: component_definitions.base_data_card
+    const:
+      params:
+        data_name: 'posts'
+        search_term: ''
+        page_size: 5
+        page_number: 1
+        post_id: ''
     config:
       buttons:
         prev:
           attributes:
             hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number - 1}
             hx-swap: 'innerHTML'
-            hx-target: '#blog'
+            hx-target: '#container_posts'
         next:
           attributes:
             hx-get: /blog/posts?search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
             hx-swap: 'innerHTML'
-            hx-target: '#blog'
+            hx-target: '#container_posts'
         delete:
           attributes:
-            hx-delete: /blog/posts?post_id={id}
+            hx-delete: /blog/posts?id={id}
             hx-target: '#target'
         edit: 
           attributes:
-            hx-post: /blog/posts/form?post_id={id}
+            hx-get: /blog/posts/form?id={id}
             hx-target: '#form_container'
         left:
           attributes:
             hx-get: history_back
-            hx-target: '#blog'
+            hx-target: '#container_posts'
         right:
           attributes:
-            hx-get: /blog/posts?post_id={id}
-            hx-target: '#blog'
+            hx-get: /blog/posts?id={id}
+            hx-target: '#container_posts'
     attributes:
       id: post
     children:
@@ -103,12 +102,6 @@ component_definitions:
       - key: id
       - key: title
       - key: content
-      # - key: status
-      # - key: visibility
-      # - key: category_name
-      # - key: category_id
-      # - key: author_id
-      # - key: author_name
       - key: views_count
       - key: featured_image
 
@@ -117,16 +110,42 @@ component_definitions:
     type: container_comments
     attributes:
       id: container_comments
-      hx-get: /blog/post/comments?post_id={id}
+      hx-get: /blog/post/comments?id={id}
       hx-swap: innerHTML
       hx-target: '#container-comments'
-      hx-trigger: load, post_blog_post_comment from:body
+      hx-trigger: | 
+                    load, 
+                    post_blog_post_comments from:body, 
+                    delete_blog_post_comments from:body
     children:
       - $ref: comments
 
   comments:
     id: comments
     base: component_definitions.base_data_card
+    const:
+      params:
+        data_name: 'comments'
+        search_term: ''
+        page_size: 5
+        page_number: 1
+        post_id: ''
+    config:
+      buttons:
+        prev:
+          attributes:
+            hx-get: /blog/post/comments?post_id={id}&search_term={search_term}&page_size={page_size}&page_number={page_number - 1}
+            hx-swap: 'innerHTML'
+            hx-target: '#container-comments'
+        next:
+          attributes:
+            hx-get: /blog/post/comments?post_id={id}&search_term={search_term}&page_size={page_size}&page_number={page_number + 1}
+            hx-swap: 'innerHTML'
+            hx-target: '#container-comments'
+        delete:
+          attributes:
+            hx-delete: /blog/post/comments?id={id}
+            hx-target: '#target'
     attributes:
       id: comments
     items:
@@ -138,11 +157,11 @@ component_definitions:
     type: form_search
     attributes:
       title: Search
-      hx-get: "/blog/posts?api=posts"
+      hx-get: "/blog/posts"
       hx-target: "#blog"
-
-  form_edit:
-    id: form_edit
+      
+  form_post:
+    id: form_post
     base: component_definitions.base_form_edit
     cols:
       id: {}
@@ -172,8 +191,43 @@ component_definitions:
     config:
       id: posts
     attributes:
-      id: form_edit
-      hx-post: "/blog/post"
+      id: form_post
+      hx-post: "/blog/posts"
+      hx-target: "#target"
+      
+  form_put:
+    id: form_put
+    base: component_definitions.base_form_edit
+    cols:
+      id: {}
+      title: {}
+      content: {}
+      category_id: {}
+      author_id: {}
+      featured_image:
+        input_type: file
+        label: Imgae
+      status:
+        input_type: select
+        label: Status
+        required: true
+        options:
+          - { value: draft, label: draft }
+          - { value: published, label: published }
+          - { value: archived, label: archived }
+      visibility:
+        input_type: select
+        label: Visibility
+        required: true
+        options:
+          - { value: public, label: Public }
+          - { value: private, label: Private }
+          - { value: password_protected, label: Password Protected }
+    config:
+      id: posts
+    attributes:
+      id: form_put
+      hx-put: "/blog/posts"
       hx-target: "#target"
 
   form_comment:
@@ -187,7 +241,7 @@ component_definitions:
     config:
       id: comments
     attributes:
-      hx-post: "/blog/post/comment"
+      hx-post: "/blog/post/comments"
       hx-target: "#target"
 
 components:

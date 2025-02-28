@@ -662,7 +662,7 @@ layout: |
         </div>
     </div>
 #
-"input": |
+input: |
     <label class="label">
         <span class="label-text">{{ attributes.label }}</span>
     </label>
@@ -699,7 +699,7 @@ layout: |
         </label>
     {% endif %}
 #
-"modal_message": |
+modal_message: |
     <dialog id="{{ attributes.id.value }}" class="modal">
         <div method="dialog" class="modal-box">
             <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
@@ -712,7 +712,7 @@ layout: |
         </div>
     </dialog>
 #
-"modal_form": |
+modal_form: |
     <dialog id="{{ attributes.id.value }}" class="modal">
         <div method="dialog" class="modal-box">
             <h3 class="font-bold text-lg hidden">{{ attributes.title.value }}</h3>
@@ -726,7 +726,7 @@ layout: |
         </div>
     </dialog>
 #
-"form_base": |
+form_base: |
     <h2 class="text-xl font-bold mb-4">
     {{ attributes.title }} {{ config.table_name }}
     </h2>
@@ -834,7 +834,7 @@ layout: |
         });
     </script>
 #
-"form_base_type_1": |
+form_base_type_1: |
     <script>
         function removeForm() {
             show_loading();
@@ -1028,7 +1028,7 @@ layout: |
         });
     </script>
 #
-"form_search": |
+form_search: |
     <form 
         {{ format_attr(attributes) }}
         class="gap-2">
@@ -1059,17 +1059,16 @@ layout: |
         </div>
     </form>
 #
-"alert": |
+alert: |
     <div role="alert"
         {{ format_attr(attributes)}}>
         {{ icons.info }}
         <span>
-          55555
           {{ content }}
         </span>
     </div>
 #
-"checkbox": |
+checkbox: |
     <div class="form-control">
       <label class="label cursor-pointer">
         <span class="label-text">Remember me</span>
@@ -1077,7 +1076,7 @@ layout: |
       </label>
     </div>
 #
-"modal": |
+modal: |
     <div class="modal" id="{{ attributes.id.value }}">
         <div class="modal-box">
             <h3 class="font-bold text-lg">{{ attributes.title.value }}</h3>
@@ -1088,11 +1087,11 @@ layout: |
         </div>
     </div>
 #
-"btn": |
+btn: |
     <button hx-get="/create?table_name=Yuangong" hx-target="#modal-content"
                           hx-trigger="click" onclick="modal_form.showModal()" class="text-blue-500 hover:underline">Edit</button>
 #
-"link": |
+link: |
     <a class="link {{ attributes.class if attributes and attributes.class else '' }}"
         {% for attr, value in attributes.items() %}
             {% if attr not in ['class'] %}
@@ -1103,37 +1102,14 @@ layout: |
         {{ config.label }}
     </a>
 #
-"form_container": |
+form_container: |
     <div {{ format_attr(attributes) }} >
     </div>
 #
-"blog": |
+blog: |
     <div {{ format_attr(attributes, None, component) }} >
         {{ format_children(children) }}
     </div>       
-#
-posts1: |
-    <div class="mt-5" {{ format_attr(attributes, None, component) }}>
-        {% if data|length > 1 %}
-            <div class="flex justify-end gap-2">
-                <button 
-                    type="submit"
-                    class="btn bg-green-500 hover:bg-blue-700 text-white"
-                    {{ format_attr(config.buttons.prev.attributes) }}
-                >
-                    Prev
-                </button>
-                <button 
-                    type="submit"
-                    class="btn bg-green-500 hover:bg-blue-700 text-white"
-                    {{ format_attr(config.buttons.next.attributes) }}
-                >
-                    Next
-                </button>
-            </div>
-        {% endif %}
-        {{ format_children(children) }}
-    </div>
 #
 container_posts: |
     <div class="mt-5" {{ format_attr(attributes, None, component) }}>
@@ -1147,33 +1123,81 @@ container_comments: |
         </div>
     </div>
 #
-"container_data": |
+container_data: |
     <div {{ format_attr(attributes) if attributes }}>
         {{ format_children(children) }}
     </div>
 #
 data_card: |
     <div class="mt-5">
+        {{ query_params }}
         {% if data|length > 1 %}
+        <div class="navbar bg-base-100 py-0 min-h-0">
+          <div class="flex-none">
+            <a class="btn btn-ghost text-lg">
+              {{ query_params.page_number }} of {{ query_params.page_count }}
+            </a>
+          </div>
+          <div class="flex-1">
+            
+          </div>
+          <div class="flex-none">
+             {% if config %}
+                  {% if config.buttons and config.buttons.prev %}
+                      {% if query_params.page_number > 1 %}
+                          <button 
+                              type="submit"
+                              class="btn btn-sm bg-green-500 hover:bg-blue-700 text-white"
+                              {{ format_attr(config.buttons.prev.attributes) }}
+                          >
+                              {{ icons.prev }}
+                          </button>
+                      {% endif %}
+                  {% endif %}
+                  {% if config.buttons and config.buttons.next %}
+                      {% if query_params.page_number < query_params.page_count %}
+                          <button 
+                              type="submit"
+                              class="btn btn-sm bg-green-500 hover:bg-blue-700 text-white"
+                              {{ format_attr(config.buttons.next.attributes) }}
+                          >
+                              {{ icons.next }}
+                          </button>
+                      {% endif %}
+                  {% endif %}
+              {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% if data|length > 1 and query_params.total_count > query_params.page_size %}
             <div class="flex justify-end gap-2">
+                <div 
+                    class="btn bg-gray-300 text-white"
+                >
+                  {{ query_params.page_number }} of {{ query_params.page_count }}
+                </div>
                 {% if config %}
                     {% if config.buttons and config.buttons.prev %}
-                        <button 
-                            type="submit"
-                            class="btn bg-green-500 hover:bg-blue-700 text-white"
-                            {{ format_attr(config.buttons.prev.attributes) }}
-                        >
-                            Prev
-                        </button>
+                        {% if query_params.page_number > 1 %}
+                            <button 
+                                type="submit"
+                                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                                {{ format_attr(config.buttons.prev.attributes) }}
+                            >
+                                Prev
+                            </button>
+                        {% endif %}
                     {% endif %}
                     {% if config.buttons and config.buttons.next %}
-                        <button 
-                            type="submit"
-                            class="btn bg-green-500 hover:bg-blue-700 text-white"
-                            {{ format_attr(config.buttons.next.attributes) }}
-                        >
-                            Next
-                        </button>
+                        {% if query_params.page_number < query_params.page_count %}
+                            <button 
+                                type="submit"
+                                class="btn bg-green-500 hover:bg-blue-700 text-white"
+                                {{ format_attr(config.buttons.next.attributes) }}
+                            >
+                                Next
+                            </button>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             </div>
@@ -1200,9 +1224,14 @@ data_card: |
                             >
                                 <li>
                                     <div>
-                                        <button class="btn btn-square btn-sm">
-                                            {{ icons.edit }}
-                                        </button>
+                                        {% if config.buttons and config.buttons.edit %}
+                                            <button 
+                                                class="btn btn-square btn-sm"
+                                                {{ format_attr(config.buttons.edit.attributes, d) }}
+                                            >
+                                                {{ icons.edit }}
+                                            </button>
+                                        {% endif %}
                                     </div>
                                 </li>
                                 <li>
@@ -1275,10 +1304,15 @@ data_card: |
         {% endif %}
     {% endfor %}
 #
-"buttons": |
+buttons: |
     <div class="flex justify-start">
         {{ format_children(children) }}
     </div>
+#
+button: |
+    <button class="btn btn-primary my-2" {{ format_attr(attributes) }}>
+        {{ attributes.text }}
+    </button>
 #
 icons:
     add: |
@@ -1354,7 +1388,7 @@ icons:
           <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
         </svg>
 #
-"classes":
+classes:
     "input": |
         input input-bordered input-md w-full
 

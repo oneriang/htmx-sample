@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 import traceback
+import math
 
 from fastapi import FastAPI, Response, Request, Form, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -108,8 +109,8 @@ async def universal_handler(any_path: str, request: Request):
                         return await BlogManager.get(request)
                     else:
                         await BlogManager.get_blog(request)
-                elif full_path == '/blog/post/form':
-                    return await BlogManager.get_post_form(request)
+                elif full_path == '/blog/posts/form':
+                    return await BlogManager.get_posts_form(request)
                 elif full_path.startswith('/api/blog/'):
                     return await BlogManager.get(request)
                 elif full_path == '/blog/post/comments':
@@ -125,13 +126,15 @@ async def universal_handler(any_path: str, request: Request):
             return await BlogManager.post(request)
             pass
         #    #eturn f"Received a POST request at path: {any_path}"
-        # elif http_method == "PUT":
+        elif http_method == "PUT":
+            return await BlogManager.put(request)
+            pass
         #     return f"Received a PUT request at path: {any_path}"
         elif http_method == "DELETE":
-            if full_path == '/blog/post/comment':
-                return await BlogManager.post_blog_post_comment(request)
+            if full_path == '/blog/post/comments':
+                return await BlogManager.delete(request)
             if full_path == '/blog/posts':
-                return await BlogManager.delete_blog_post(request)
+                return await BlogManager.delete(request)
             pass
         #     #return f"Received a DELETE request at path: {any_path}"
         # elif http_method == "PATCH":
@@ -199,7 +202,7 @@ class BlogManager:
             eee(e)
 
     @staticmethod
-    def get_data(query_params):
+    def get_data(func_name, query_params):
         try:
             data_name = query_params.get('data_name', '')
 
@@ -209,16 +212,31 @@ class BlogManager:
             search_term = query_params.get('search_term', '')
             page_size = query_params.get('page_size', 5)
             page_number = query_params.get('page_number', 1)
+                        
+            result = DatabaseManager.tm.execute_transactions(
+                transaction_name=func_name + '_' + 'count',
+                params={
+                    'search_term': '%' + search_term + '%',
+                },
+                config_file="cms.yaml"
+            )
+            print('😀😀😀😀😀😀😀')
+            total_count = result[0]['count']
+            page_count = math.ceil(total_count / page_size)
+            query_params['total_count'] = total_count
+            query_params['page_count'] = page_count
+            print(query_params)
+            print('😀😀😀😀😀😀😀')
             
-            post_id = query_params.get('post_id', None)
+            id = query_params.get('id', None)
 
             result = DatabaseManager.tm.execute_transactions(
-                transaction_name='get_' + data_name,
+                transaction_name=func_name,
                 params={
                     'search_term': '%' + search_term + '%',
                     'limit': page_size,
                     'offset': (page_number - 1) * page_size,
-                    'post_id': post_id
+                    'id': id
                 },
                 config_file="cms.yaml"
             )
@@ -252,79 +270,9 @@ class BlogManager:
 
         except Exception as e:
             eee(e)
-    '''
-    @staticmethod
-    async def get_data_list(request: Request):
-        try:
-            ConfigManager.load_data()
-            
-            # 获取 URL 路径
-            full_path = request.url.path
-
-            # 去除末尾的斜杠，然后按 "/" 分割路径
-            path_parts = full_path.rstrip("/").split("/")
-
-            # 获取最后一个部分作为 page_name
-            data_name = unquote(path_parts[-1]) if path_parts else ""
-        
-            #data_name = 'posts'
-
-            query_params = BlogManager.get_query_paramas(request)
-            query_params['data_name'] = data_name
-            
-            result = BlogManager.get_data(query_params)
-            
-            gv.component_dict[data_name]['data'] = result
-            
-            h = PageRenderer.generate_html(gv.component_dict[data_name], data_name)
-
-            return HTMLResponse(content=h)
-            
-        except Exception as e:
-            eee(e)
-    '''
-    '''        
-    @staticmethod
-    async def get_blog_posts(request: Request):
-        try:
-            ConfigManager.load_data()
-
-            query_params = BlogManager.get_query_paramas(request)
-            query_params['data_name'] = 'posts'
-            
-            result = BlogManager.get_data(query_params)
-            
-            gv.component_dict['posts']['data'] = result
-            
-            h = PageRenderer.generate_html(gv.component_dict['posts'], 'posts')
-
-            return HTMLResponse(content=h)
-            
-        except Exception as e:
-            eee(e)
-
-    @staticmethod
-    async def get_blog_post_comments(request: Request):
-        try:
-            ConfigManager.load_data()
-
-            query_params = BlogManager.get_query_paramas(request)
-            query_params['data_name'] = 'post_comments'
-
-            result = BlogManager.get_data(query_params)
-
-            gv.component_dict['comment']['data'] = result
-
-            h = PageRenderer.generate_html(gv.component_dict['comment'], 'comment')
-
-            return HTMLResponse(content=h)
-            
-        except Exception as e:
-            eee(e)
-    '''
     
     @staticmethod
-    async def get_post_form(request: Request):
+    async def get_posts_form(request: Request):
         try:
             gv.request = request
 
@@ -334,14 +282,14 @@ class BlogManager:
 
             result = []
 
-            if 'post_id' in query_params:
+            if 'id' in query_params:
 
-                post_id = int(query_params['post_id'])
+                id = int(query_params['id'])
 
                 result = DatabaseManager.tm.execute_transactions(
                     transaction_name='get_post_detail',
                     params={
-                        'post_id': post_id
+                        'id': id
                     },
                     config_file="cms.yaml"
                 )
@@ -351,9 +299,9 @@ class BlogManager:
                 try:
                     if len(result) > 0:
                         PageRenderer.load_page_config('blog_config.yaml')
-                        gv.component_dict['form_edit']['data'] = result[0]
+                        gv.component_dict['form_put']['data'] = result[0]
 
-                        h = PageRenderer.generate_html(gv.component_dict['form_edit'])
+                        h = PageRenderer.generate_html(gv.component_dict['form_put'])
                 except Exception as e:
                     eee(e)
 
@@ -365,8 +313,8 @@ class BlogManager:
                 try:
                     if True:
                         PageRenderer.load_page_config('blog_config.yaml')
-                        gv.component_dict['form_edit']['data'] = result
-                        h = PageRenderer.generate_html(gv.component_dict['form_edit'])
+                        gv.component_dict['form_post']['data'] = result
+                        h = PageRenderer.generate_html(gv.component_dict['form_post'])
                 except Exception as e:
                     eee(e)
 
@@ -389,21 +337,20 @@ class BlogManager:
             # 去除末尾的斜杠，然后按 "/" 分割路径
             path_parts = full_path.rstrip("/").split("/")
 
+            func_name = 'get' + '_'.join(path_parts)
+            
             # 获取最后一个部分作为 page_name
             page_name = unquote(path_parts[-1]) if path_parts else ""
             
-            '''
-            query_params = dict(request.query_params)
-            query_params['data_name'] = page_name
-            '''
             query_params = BlogManager.get_query_paramas(request)
             query_params['data_name'] = page_name
             
-            result = BlogManager.get_data(query_params)
+            result = BlogManager.get_data(func_name, query_params)
 
             gv.component_dict[page_name]['data'] = result
+            gv.component_dict[page_name]['query_params'] = query_params
 
-            h = PageRenderer.generate_html(gv.component_dict[page_name], page_name)
+            h = PageRenderer.generate_html(gv.component_dict[page_name])
 
             return HTMLResponse(content=h)
 
@@ -437,49 +384,56 @@ class BlogManager:
         except Exception as e:
             eee(e)
 
+
     @staticmethod
-    async def put_blog_post(request: Request):
+    async def put(request: Request):
         try:
+            gv.request = request
+
+            # 获取 URL 路径
+            full_path = request.url.path
+
+            # 去除末尾的斜杠，然后按 "/" 分割路径
+            path_parts = full_path.rstrip("/").split("/")
+
             form_data = await request.form()
-            file = form_data.get('featured_image')
+            
+            func_name = 'put' + '_'.join(path_parts)
 
             result = DatabaseManager.tm.execute_transactions(
-                transaction_name='update_post',
-                params={
-                    'id': form_data['id'],
-                    'title': form_data['title'],
-                    'content': form_data['content'],
-                    'status': form_data['status'],
-                    'visibility': form_data['visibility'],
-                    'category_id': form_data['category_id'],
-                    'author_id': form_data['author_id'],
-                    "file": file,
-                    "file_name": file.filename,
-                    "folder_path": "./uploaded"
-                },
+                transaction_name=func_name,
+                params=form_data,
                 config_file="cms.yaml"
             )
 
-            headers = {"HX-Trigger": "updatePost"}
+            headers = {"HX-Trigger": func_name}
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
             eee(e)
-
+            
     @staticmethod
-    async def delete_blog_post(request: Request):
+    async def delete(request: Request):
         try:
+            gv.request = request
+
+            # 获取 URL 路径
+            full_path = request.url.path
+
+            # 去除末尾的斜杠，然后按 "/" 分割路径
+            path_parts = full_path.rstrip("/").split("/")
+
+            func_name = 'delete' + '_'.join(path_parts)
+
             query_params = dict(request.query_params)
 
             result = DatabaseManager.tm.execute_transactions(
-                transaction_name='delete_post',
-                params={
-                    'id': query_params['post_id']
-                },
+                transaction_name=func_name,
+                params=query_params,
                 config_file="cms.yaml"
             )
 
-            headers = {"HX-Trigger": "deletePost"}
+            headers = {"HX-Trigger": func_name}
             return HTMLResponse(content='ok', headers=headers)
 
         except Exception as e:
@@ -541,7 +495,7 @@ class PageRenderer:
             eee(e)
 
     @staticmethod
-    def generate_html(component: Dict[str, Any], page_name='') -> str:
+    def generate_html(component: Dict[str, Any]) -> str:
         try:
             component = copy.deepcopy(component)
 
@@ -590,7 +544,6 @@ class PageRenderer:
                 if isinstance(component['children'], list):
                     rendered_children = []
                     for child in component.get('children', []):
-                        print(child)
                         child1 = PageRenderer.resolve_component(child)
                         child1['data'] = component.get('data', {})
                         rendered_children.append(PageRenderer.generate_html(child1))
@@ -606,7 +559,6 @@ class PageRenderer:
                 component=component,
                 attributes=component.get('attributes', {}),
                 config=component.get('config', {}),
-                # data=component.get('data', {}),
                 data=data,
                 value=component.get('value', []),
                 key=component.get('key', []),
@@ -620,7 +572,8 @@ class PageRenderer:
                 min=min,
                 site_name='7777',
                 format_attr=PageRenderer.format_attr,
-                format_children=PageRenderer.format_children
+                format_children=PageRenderer.format_children,
+                query_params=component.get('query_params', {})
             )
 
             return h
@@ -633,7 +586,7 @@ class PageRenderer:
             s = ''
             if attributes:
                 for attr, value in attributes.items():
-                    if attr == 'hx-get' or attr == 'hx-delete':
+                    if attr == 'hx-get' or attr == 'hx-post' or attr == 'hx-put' or attr == 'hx-delete':
                         if value == 'history_back':
                             parsed_url = urlparse(gv.request.headers['hx-current-url'])
                             value = '{}?{}'.format(parsed_url.path, parsed_url.query)
@@ -641,12 +594,9 @@ class PageRenderer:
                             if data:
                                 if isinstance(data, list) and len(data) == 1:
                                     data1 = data[0]
-                                    print(value)
-                                    print(data1)
                                     value = BlogManager.get_formatted_url(value, data1)
                                 else:
                                     value = BlogManager.get_formatted_url(value, data)
-                                print(value)
                             else:
                                 query_params = BlogManager.get_query_paramas(gv.request)
                                 if component:

@@ -1229,34 +1229,20 @@ class TransactionModule:
                         # 替换参数和处理上传文件
                         if 'values' in step:
                             for key, value in step['values'].items():
-                                print(step['values'][key])
-                                print('1++++++++++')
-                                print(key)
+                                
                                 params_value = params.get(key, None)
-                                print(params_value)
-                                print(type(params_value))
-                                #print(type(params_value) is UploadFile)
-                                print(isinstance(params_value, UploadFile))
-                                #files = [value1 for value1 in params.values() if isinstance(value1, UploadFile)]
-                                #print(files)
-                                print('1++++++++++')
+                                
                                 #if isinstance(params_value, UploadFile):
                                 if type(params_value).__name__ == "UploadFile":
                                 #if hasattr(params_value, "filename") and hasattr(params_value, "file"):
-                                    print(f"😀🙊🙊🙊🙊🙊🙊🙊 是文件")
-                                    print('++++++++++')
-                                    print(key)
-                                    print(value)
-                                    print('++++++++++')
+                                    
                                     step1 = {}
                                     step1['action'] = 'upload_file'
                                     step1['file'] = params_value #.get('file')
                                     step1['file_name'] = params_value.filename #get('file_name')
                                     step1['folder_path'] = "uploads/images"
                                     step['values'][key] = self.execute_step(step1)
-                                    print('🙊🙊🙊🙊🙊🙊🙊🙊')
-                                    print(step['values'][key])
-                                    print('🙊🙊🙊🙊🙊🙊🙊🙊')
+                                    
                                 else:
                                     step['values'][key] = None
                                     if 'data_from' in value:
